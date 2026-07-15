@@ -297,18 +297,18 @@
 
   .range-label {
     position: absolute;
-    left: 8px;
+    right: 4px;
     z-index: 16;
-    background: rgba(245, 180, 0, 0.16);
-    border: 1px solid var(--yellow);
-    color: var(--yellow);
+    background: var(--yellow);
+    color: #1a1200;
     font-family: var(--font-mono);
     font-size: 0.62rem;
-    font-weight: 700;
-    padding: 2px 6px;
+    font-weight: 800;
+    padding: 3px 7px;
     border-radius: 6px;
     white-space: nowrap;
     pointer-events: none;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
     transition: top 0.1s linear;
   }
   .range-label.hidden { display: none; }
@@ -869,12 +869,12 @@ function clearPriceLines() {
   for (const l of priceLinesList) { try { candleSeries.removePriceLine(l); } catch (e) {} }
   priceLinesList = [];
 }
-function addPriceLine(price, color) {
+function addPriceLine(price, color, showAxisLabel) {
   if (price === null || price === undefined) return;
   // no native `title` — the in-pane title label collides with candles/other
   // labels when lines sit close together, so labels are drawn as custom
-  // HTML pinned to the chart's left edge instead (see updateRangeLabels).
-  const l = candleSeries.createPriceLine({ price, color, lineWidth: 2, lineStyle: LightweightCharts.LineStyle.Dashed, axisLabelVisible: true });
+  // HTML pinned to the chart's right edge instead (see updateRangeLabels).
+  const l = candleSeries.createPriceLine({ price, color, lineWidth: 2, lineStyle: LightweightCharts.LineStyle.Dashed, axisLabelVisible: showAxisLabel !== false });
   priceLinesList.push(l);
 }
 function updateRangeZone(drill) {
@@ -899,16 +899,18 @@ function updateRangeLabels(drill) {
   }
   highEl.classList.remove("hidden");
   lowEl.classList.remove("hidden");
+  highEl.textContent = `RANGE HIGH ${drill.range_high.toFixed(2)}`;
+  lowEl.textContent = `RANGE LOW ${drill.range_low.toFixed(2)}`;
   let highTop, lowTop;
-  if (Math.abs(yHigh - yLow) < 15) {
+  if (Math.abs(yHigh - yLow) < 22) {
     // lines too close together to each carry their own label at the line's
     // height — stack one above, one below, so they never overlap each other
     const mid = (yHigh + yLow) / 2;
-    highTop = mid - 17;
-    lowTop = mid + 1;
+    highTop = mid - 20;
+    lowTop = mid + 4;
   } else {
-    highTop = yHigh - 8;
-    lowTop = yLow - 8;
+    highTop = yHigh - 9;
+    lowTop = yLow - 9;
   }
   highEl.style.top = Math.max(2, highTop) + "px";
   lowEl.style.top = Math.max(2, lowTop) + "px";
@@ -991,12 +993,12 @@ function renderShell() {
     <div class="chart-card slide-in" id="chartCard">
       <div id="chartContainer"></div>
       <div class="range-zone" id="rangeZone"></div>
-      <div class="range-label hidden" id="rangeHighLabel">Range High</div>
-      <div class="range-label hidden" id="rangeLowLabel">Range Low</div>
+      <div class="range-label hidden" id="rangeHighLabel"></div>
+      <div class="range-label hidden" id="rangeLowLabel"></div>
       <div class="forming-marker hidden" id="formingMarker"><span class="dot"></span>Breakout forming</div>
     </div>
     <div class="legend-row">
-      <span><span class="swatch" style="background:#f5b400"></span>Range High/Low</span>
+      <span><span class="swatch" style="background:#f5b400"></span>Range High/Low (the zone price is stuck in)</span>
       <span><span class="swatch" style="background:#c792ea"></span>VWAP</span>
     </div>
     <div class="timer-bar-wrap"><div class="timer-fill" id="timerFill"></div></div>
@@ -1038,8 +1040,10 @@ function loadDrill(drill, opts) {
   vwapSeries.setData(drill.vwap.slice(0, drill.candles.length).map(v => ({ time: toEasternChartTime(v.time), value: v.value })));
 
   clearPriceLines();
-  addPriceLine(drill.range_high, "#f5b400");
-  addPriceLine(drill.range_low, "#f5b400");
+  // native axis badge disabled — the custom "RANGE HIGH/LOW <price>" tags
+  // (updateRangeLabels) fully replace it with combined title+price text
+  addPriceLine(drill.range_high, "#f5b400", false);
+  addPriceLine(drill.range_low, "#f5b400", false);
   const lastVol = drill.candles[drill.candles.length - 1].volume;
   const avgVol = drill.volume_ratio > 0 ? lastVol / drill.volume_ratio : null;
   if (avgVol) {
