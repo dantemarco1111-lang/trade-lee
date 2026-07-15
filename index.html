@@ -37,7 +37,7 @@
   /* ---------- hero ---------- */
   .hero {
     position: relative;
-    padding: 40px 0 60px;
+    padding: 40px 0 20px;
     text-align: center;
     overflow: hidden;
   }
@@ -46,6 +46,8 @@
     top: 0; left: 0; width: 100%; height: 100%;
     opacity: 0.22;
     pointer-events: none;
+    -webkit-mask-image: linear-gradient(90deg, transparent, black 12%, black 88%, transparent);
+    mask-image: linear-gradient(90deg, transparent, black 12%, black 88%, transparent);
   }
   .hero-inner { position: relative; z-index: 2; }
   .hero h1 {
@@ -73,8 +75,30 @@
     .hero-ctas .btn { width: auto; }
   }
 
+  /* ---------- mock preview (fills the gap between hero and how-it-works) ---------- */
+  .mock-preview-section { padding: 26px 0 10px; }
+  .mock-preview {
+    max-width: 320px;
+    margin: 0 auto;
+    padding: 16px 16px 18px;
+    text-decoration: none;
+    display: block;
+    transition: transform 0.15s cubic-bezier(.34,1.56,.64,1), border-color 0.15s ease;
+  }
+  .mock-preview:hover { border-color: var(--border-strong); transform: translateY(-2px); }
+  .mock-preview-chart { margin-bottom: 12px; display: block; }
+  .mock-preview-buttons { display: flex; gap: 8px; }
+  .mock-btn {
+    flex: 1; text-align: center; padding: 10px 6px; border-radius: 10px;
+    font-family: var(--font-display); font-weight: 700; font-size: 0.66rem;
+    letter-spacing: 0.3px; color: #fff;
+  }
+  .mock-real { background: linear-gradient(180deg, #2fbf9f, var(--green-dark)); }
+  .mock-fake { background: linear-gradient(180deg, #f0563f, var(--red-dark)); }
+
   /* ---------- how it works ---------- */
   .section { padding: 50px 0; }
+  .section-tight { padding-top: 16px; }
   .section-title {
     font-family: var(--font-display); font-weight: 700;
     font-size: 1.5rem; text-align: center; margin: 0 0 30px;
@@ -89,7 +113,7 @@
     padding: 22px 18px;
     text-align: center;
   }
-  .how-card .icon { font-size: 1.8rem; margin-bottom: 10px; }
+  .how-card .icon { margin-bottom: 12px; display: flex; justify-content: center; }
   .how-card h3 {
     font-family: var(--font-display); font-size: 1.05rem; font-weight: 700; margin: 0 0 8px;
   }
@@ -118,7 +142,8 @@
     <nav class="nav-links-desktop">
       <a href="/play/?mode=daily">Daily Drill</a>
       <a href="/play/?mode=practice">Practice</a>
-      <span class="nav-disabled">Strategies <span class="soon-tag">SOON</span></span>
+      <a href="/risk/">Risk</a>
+      <a href="/strategies/">Strategies</a>
       <span class="nav-disabled">Learn <span class="soon-tag">SOON</span></span>
     </nav>
     <button class="hamburger-btn" id="hamburgerBtn" aria-label="Open menu">
@@ -131,7 +156,8 @@
   <button class="mobile-menu-close" id="mobileMenuClose" aria-label="Close menu">✕</button>
   <a href="/play/?mode=daily">Daily Drill</a>
   <a href="/play/?mode=practice">Practice</a>
-  <span class="nav-disabled-mobile">Strategies <span class="soon-tag">SOON</span></span>
+  <a href="/risk/">Risk</a>
+  <a href="/strategies/">Strategies</a>
   <span class="nav-disabled-mobile">Learn <span class="soon-tag">SOON</span></span>
 </div>
 
@@ -148,21 +174,70 @@
 </section>
 
 <div class="wrap">
-  <section class="section">
+  <section class="mock-preview-section">
+    <a class="mock-preview card" href="/play/?mode=practice" aria-label="Preview the game">
+      <svg class="mock-preview-chart" viewBox="0 0 300 90" width="100%" height="90" preserveAspectRatio="xMidYMid meet">
+        <line x1="0" y1="28" x2="300" y2="28" stroke="#f5b400" stroke-width="1.5" stroke-dasharray="4 3"/>
+        <line x1="0" y1="60" x2="300" y2="60" stroke="#f5b400" stroke-width="1.5" stroke-dasharray="4 3"/>
+        <line x1="20" y1="38" x2="20" y2="50" stroke="#ef5350" stroke-width="2"/>
+        <rect x="15" y="40" width="10" height="7" fill="#ef5350"/>
+        <line x1="47" y1="36" x2="47" y2="52" stroke="#26a69a" stroke-width="2"/>
+        <rect x="42" y="42" width="10" height="5" fill="#26a69a"/>
+        <line x1="74" y1="40" x2="74" y2="55" stroke="#ef5350" stroke-width="2"/>
+        <rect x="69" y="42" width="10" height="8" fill="#ef5350"/>
+        <line x1="101" y1="35" x2="101" y2="48" stroke="#26a69a" stroke-width="2"/>
+        <rect x="96" y="38" width="10" height="12" fill="#26a69a"/>
+        <line x1="128" y1="38" x2="128" y2="58" stroke="#ef5350" stroke-width="2"/>
+        <rect x="123" y="38" width="10" height="14" fill="#ef5350"/>
+        <line x1="155" y1="34" x2="155" y2="50" stroke="#26a69a" stroke-width="2"/>
+        <rect x="150" y="40" width="10" height="12" fill="#26a69a"/>
+        <line x1="182" y1="40" x2="182" y2="60" stroke="#ef5350" stroke-width="2"/>
+        <rect x="177" y="40" width="10" height="15" fill="#ef5350"/>
+        <line x1="209" y1="33" x2="209" y2="48" stroke="#26a69a" stroke-width="2"/>
+        <rect x="204" y="36" width="10" height="19" fill="#26a69a"/>
+        <line x1="236" y1="36" x2="236" y2="62" stroke="#ef5350" stroke-width="2"/>
+        <rect x="231" y="36" width="10" height="22" fill="#ef5350"/>
+        <line x1="270" y1="8" x2="270" y2="42" stroke="#26a69a" stroke-width="2.5"/>
+        <rect x="264" y="14" width="12" height="28" fill="#26a69a"/>
+      </svg>
+      <div class="mock-preview-buttons">
+        <div class="mock-btn mock-real">REAL BREAKOUT</div>
+        <div class="mock-btn mock-fake">FAKEOUT</div>
+      </div>
+    </a>
+  </section>
+
+  <section class="section section-tight">
     <div class="section-title">How it works</div>
     <div class="how-grid">
       <div class="card how-card">
-        <div class="icon">📊</div>
+        <div class="icon">
+          <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <line x1="10" y1="4" x2="10" y2="16" stroke="#22c55e" stroke-width="2.5"/>
+            <rect x="6" y="16" width="8" height="12" rx="1.5" fill="#22c55e"/>
+            <line x1="26" y1="10" x2="26" y2="34" stroke="#22c55e" stroke-width="2.5"/>
+            <rect x="22" y="14" width="8" height="10" rx="1.5" fill="#22c55e"/>
+          </svg>
+        </div>
         <h3>Read the setup</h3>
         <p>Real chart, real volume, real levels — no simulations.</p>
       </div>
       <div class="card how-card">
-        <div class="icon">⚡</div>
+        <div class="icon">
+          <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M22 4L10 22H18L16 36L30 16H21L22 4Z" fill="#22c55e"/>
+          </svg>
+        </div>
         <h3>Make the call</h3>
         <p>Real breakout or fakeout — you've got 10 seconds.</p>
       </div>
       <div class="card how-card">
-        <div class="icon">🔥</div>
+        <div class="icon">
+          <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M20 3C20 3 9 15 9 24C9 30.6 13.9 36 20 36C26.1 36 31 30.6 31 24C31 15 20 3 20 3Z" fill="#f5b400"/>
+            <path d="M20 14C20 14 15 20 15 25C15 28.3 17.2 31 20 31C22.8 31 25 28.3 25 25C25 20 20 14 20 14Z" fill="#05070c" opacity="0.35"/>
+          </svg>
+        </div>
         <h3>Build your streak</h3>
         <p>New drill every day at market open. Come back daily.</p>
       </div>

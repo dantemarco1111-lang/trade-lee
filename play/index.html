@@ -59,6 +59,11 @@
     max-width: 480px;
     margin: 0 auto;
   }
+  .site-nav .nav-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
   .site-nav a.nav-wordmark {
     font-family: var(--font-display);
     font-weight: 700;
@@ -69,10 +74,29 @@
     align-items: center;
     gap: 6px;
   }
+  .exit-btn {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: var(--text-dim);
+    font-family: var(--font-body);
+    font-size: 0.8rem;
+    font-weight: 600;
+    padding: 8px 10px;
+    cursor: pointer;
+    transition: transform 0.15s cubic-bezier(.34,1.56,.64,1), color 0.15s ease;
+  }
+  .exit-btn:hover { color: var(--text); }
+  .exit-btn:active { transform: scale(0.94); }
+  .exit-btn.hidden { display: none; }
   .site-nav .nav-right {
     display: flex;
     align-items: center;
     gap: 8px;
+  }
+
+  @media (min-width: 860px) {
+    #app, .site-nav { max-width: 860px; }
   }
   .nav-streak {
     font-family: var(--font-mono);
@@ -271,6 +295,24 @@
     50% { transform: scale(1.2); opacity: 1; box-shadow: 0 0 0 6px rgba(245,180,0,0); }
   }
 
+  .range-label {
+    position: absolute;
+    left: 8px;
+    z-index: 16;
+    background: rgba(245, 180, 0, 0.16);
+    border: 1px solid var(--yellow);
+    color: var(--yellow);
+    font-family: var(--font-mono);
+    font-size: 0.62rem;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 6px;
+    white-space: nowrap;
+    pointer-events: none;
+    transition: top 0.1s linear;
+  }
+  .range-label.hidden { display: none; }
+
   .legend-row {
     display: flex; flex-wrap: wrap; gap: 10px; justify-content: center;
     font-size: 0.68rem; color: var(--muted); margin: 3px 0 2px;
@@ -360,6 +402,33 @@
     background: none; border: none; color: var(--muted); font-size: 0.85rem;
     text-decoration: underline; cursor: pointer; padding: 8px;
   }
+
+  /* ---------- exit confirm modal ---------- */
+  .exit-confirm-overlay {
+    position: fixed; inset: 0; z-index: 300;
+    background: rgba(5, 7, 12, 0.72);
+    display: flex; align-items: center; justify-content: center;
+    padding: 20px;
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.15s ease;
+  }
+  .exit-confirm-overlay.show { opacity: 1; pointer-events: auto; }
+  .exit-confirm-card {
+    background: var(--card2); border: 1px solid var(--border-strong); border-radius: 16px;
+    padding: 22px; max-width: 340px; width: 100%; text-align: center;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.5);
+    transform: scale(0.95); transition: transform 0.15s ease;
+  }
+  .exit-confirm-overlay.show .exit-confirm-card { transform: scale(1); }
+  .exit-confirm-text { font-size: 0.98rem; font-weight: 600; margin-bottom: 18px; line-height: 1.4; }
+  .exit-confirm-buttons { display: flex; gap: 10px; }
+  .exit-confirm-buttons button {
+    flex: 1; padding: 13px; font-size: 0.92rem; font-weight: 700; font-family: var(--font-display);
+    border-radius: 12px; cursor: pointer; transition: transform 0.15s cubic-bezier(.34,1.56,.64,1);
+  }
+  .exit-confirm-buttons button:active { transform: scale(0.95); }
+  #exitStayBtn { background: var(--card); border: 1px solid var(--border); color: var(--text); }
+  #exitLeaveBtn { background: linear-gradient(180deg, #f0563f, var(--red-dark)); border: none; color: #fff; }
 
   .loading, .error { text-align: center; padding: 60px 12px; color: var(--muted); }
   .error { color: var(--red); }
@@ -454,14 +523,25 @@
 
   /* ---------- tutorial ---------- */
   .tutorial-callout {
-    position: absolute; left: 10px; right: 10px; z-index: 60;
+    position: relative;
+    margin: 12px 0 4px;
+    z-index: 60;
     background: var(--card2); border: 1px solid var(--yellow); border-radius: 12px;
     padding: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.5);
     animation: coachIn 0.2s ease;
   }
-  .tutorial-callout.pos-upper { top: 40px; }
-  .tutorial-callout.pos-lower { bottom: 40px; }
-  .tutorial-callout.pos-right { top: 50%; transform: translateY(-50%); }
+  .tutorial-callout::before {
+    content: "";
+    position: absolute;
+    top: -8px;
+    width: 0; height: 0;
+    border-left: 8px solid transparent;
+    border-right: 8px solid transparent;
+    border-bottom: 8px solid var(--yellow);
+  }
+  .tutorial-callout.arrow-left::before { left: 26px; }
+  .tutorial-callout.arrow-center::before { left: 50%; margin-left: -8px; }
+  .tutorial-callout.arrow-right::before { right: 26px; }
   .callout-text { font-size: 0.88rem; margin-bottom: 8px; line-height: 1.35; }
   .callout-next {
     width: 100%; padding: 10px; font-size: 0.85rem; font-weight: 700; font-family: var(--font-display); border-radius: 10px;
@@ -483,14 +563,20 @@
     .chart-card { height: 46vh; }
   }
   @media (min-width: 600px) {
-    .chart-card { height: 44vh; max-height: 420px; }
     .timer-bar-wrap { margin: 6px 0 6px; }
+  }
+  @media (min-width: 860px) {
+    #app { min-height: auto; padding-bottom: 40px; }
+    .chart-card { height: 540px; min-height: 520px; max-height: 560px; }
   }
 </style>
 </head>
 <body>
 <nav class="site-nav">
-  <a class="nav-wordmark" href="/">📈 Trade Lee</a>
+  <div class="nav-left">
+    <button class="exit-btn hidden" id="exitBtn">← Exit</button>
+    <a class="nav-wordmark" href="/">📈 Trade Lee</a>
+  </div>
   <div class="nav-right">
     <span class="nav-streak hidden" id="navStreakFlame"></span>
     <button class="icon-btn" id="soundToggle">🔊</button>
@@ -506,6 +592,16 @@
 </div>
 
 <div id="confettiLayer"></div>
+
+<div class="exit-confirm-overlay" id="exitConfirmOverlay">
+  <div class="exit-confirm-card">
+    <div class="exit-confirm-text">Leave this drill? It will count as a skip.</div>
+    <div class="exit-confirm-buttons">
+      <button id="exitStayBtn">Stay</button>
+      <button id="exitLeaveBtn">Leave</button>
+    </div>
+  </div>
+</div>
 
 <script>
 /* ============================= CONSTANTS ============================= */
@@ -567,6 +663,7 @@ let sessionResults = [];
 let currentMode = null; // 'practice' | 'daily' | 'tutorial'
 let currentDrill = null;
 let currentDrillMultiplier = 1;
+let drillInProgress = false;
 
 let chart = null, candleSeries = null, volumeSeries = null, vwapSeries = null;
 let priceLinesList = [];
@@ -772,9 +869,12 @@ function clearPriceLines() {
   for (const l of priceLinesList) { try { candleSeries.removePriceLine(l); } catch (e) {} }
   priceLinesList = [];
 }
-function addPriceLine(price, color, title) {
+function addPriceLine(price, color) {
   if (price === null || price === undefined) return;
-  const l = candleSeries.createPriceLine({ price, color, lineWidth: 2, lineStyle: LightweightCharts.LineStyle.Dashed, axisLabelVisible: true, title });
+  // no native `title` — the in-pane title label collides with candles/other
+  // labels when lines sit close together, so labels are drawn as custom
+  // HTML pinned to the chart's left edge instead (see updateRangeLabels).
+  const l = candleSeries.createPriceLine({ price, color, lineWidth: 2, lineStyle: LightweightCharts.LineStyle.Dashed, axisLabelVisible: true });
   priceLinesList.push(l);
 }
 function updateRangeZone(drill) {
@@ -785,6 +885,33 @@ function updateRangeZone(drill) {
   if (yHigh === null || yLow === null) return;
   zone.style.top = Math.min(yHigh, yLow) + "px";
   zone.style.height = Math.max(2, Math.abs(yLow - yHigh)) + "px";
+}
+function updateRangeLabels(drill) {
+  const highEl = document.getElementById("rangeHighLabel");
+  const lowEl = document.getElementById("rangeLowLabel");
+  if (!highEl || !lowEl || !candleSeries) return;
+  const yHigh = candleSeries.priceToCoordinate(drill.range_high);
+  const yLow = candleSeries.priceToCoordinate(drill.range_low);
+  if (yHigh === null || yLow === null) {
+    highEl.classList.add("hidden");
+    lowEl.classList.add("hidden");
+    return;
+  }
+  highEl.classList.remove("hidden");
+  lowEl.classList.remove("hidden");
+  let highTop, lowTop;
+  if (Math.abs(yHigh - yLow) < 15) {
+    // lines too close together to each carry their own label at the line's
+    // height — stack one above, one below, so they never overlap each other
+    const mid = (yHigh + yLow) / 2;
+    highTop = mid - 17;
+    lowTop = mid + 1;
+  } else {
+    highTop = yHigh - 8;
+    lowTop = yLow - 8;
+  }
+  highEl.style.top = Math.max(2, highTop) + "px";
+  lowEl.style.top = Math.max(2, lowTop) + "px";
 }
 function pulseRangeZone() {
   const zone = document.getElementById("rangeZone");
@@ -864,6 +991,8 @@ function renderShell() {
     <div class="chart-card slide-in" id="chartCard">
       <div id="chartContainer"></div>
       <div class="range-zone" id="rangeZone"></div>
+      <div class="range-label hidden" id="rangeHighLabel">Range High</div>
+      <div class="range-label hidden" id="rangeLowLabel">Range Low</div>
       <div class="forming-marker hidden" id="formingMarker"><span class="dot"></span>Breakout forming</div>
     </div>
     <div class="legend-row">
@@ -893,6 +1022,7 @@ function loadDrill(drill, opts) {
   currentDrill = drill;
   answered = false;
   currentDrillMultiplier = multiplier;
+  setDrillInProgress(true);
   renderShell();
   const counterEl = document.getElementById("drillCounter");
   if (counterEl) counterEl.textContent = `${sessionIndex + 1}/${DRILLS_PER_SESSION}`;
@@ -908,8 +1038,8 @@ function loadDrill(drill, opts) {
   vwapSeries.setData(drill.vwap.slice(0, drill.candles.length).map(v => ({ time: toEasternChartTime(v.time), value: v.value })));
 
   clearPriceLines();
-  addPriceLine(drill.range_high, "#f5b400", "Range High");
-  addPriceLine(drill.range_low, "#f5b400", "Range Low");
+  addPriceLine(drill.range_high, "#f5b400");
+  addPriceLine(drill.range_low, "#f5b400");
   const lastVol = drill.candles[drill.candles.length - 1].volume;
   const avgVol = drill.volume_ratio > 0 ? lastVol / drill.volume_ratio : null;
   if (avgVol) {
@@ -920,6 +1050,7 @@ function loadDrill(drill, opts) {
   chart.timeScale().fitContent();
   requestAnimationFrame(() => requestAnimationFrame(() => {
     updateRangeZone(drill);
+    updateRangeLabels(drill);
     positionFormingMarker(drill);
   }));
 
@@ -1008,6 +1139,7 @@ function startPlayout(drill, choice) {
 
     chart.timeScale().fitContent();
     updateRangeZone(drill);
+    updateRangeLabels(drill);
 
     i++;
     const progress = i / totalSteps;
@@ -1174,6 +1306,7 @@ function launchConfetti() {
   }
 }
 function showEndOfDay() {
+  setDrillInProgress(false);
   const content = document.getElementById("content");
   const correctCount = sessionResults.filter(r => r.correct === true).length;
   const bestWin = sessionResults.reduce((m, r) => Math.max(m, r.pnl), 0);
@@ -1234,6 +1367,7 @@ function showDailyResultRecap() {
 }
 function renderDailyResultScreen(drill, isCorrect, isFizzle) {
   currentMode = null;
+  setDrillInProgress(false);
   clearInterval(window.__countdownInterval);
   const outcomeText = isFizzle
     ? "No follow-through — sometimes the market just naps 😴"
@@ -1285,9 +1419,9 @@ function startCountdown() {
 
 /* ============================= TUTORIAL ============================= */
 const TUTORIAL_STEPS = [
-  { text: "Price is coiling in this zone — that's the consolidation range.", pos: "pos-upper" },
-  { text: "Real breakouts usually bring a volume surge. Watch this pane.", pos: "pos-lower" },
-  { text: "This candle just broke the range — your call.", pos: "pos-right" },
+  { text: "Price is coiling in this zone — that's the consolidation range.", arrow: "arrow-left" },
+  { text: "Real breakouts usually bring a volume surge. Watch this pane.", arrow: "arrow-center" },
+  { text: "This candle just broke the range — your call.", arrow: "arrow-right" },
 ];
 function renderTutorialIntro() {
   const reals = allDrills.filter(d => d.outcome === "real").sort((a, b) => b.volume_ratio - a.volume_ratio);
@@ -1316,12 +1450,12 @@ function showTutorialStep(stepIndex) {
   const card = document.getElementById("chartCard");
   const callout = document.createElement("div");
   callout.id = "tutorialCallout";
-  callout.className = "tutorial-callout " + step.pos;
+  callout.className = "tutorial-callout " + step.arrow;
   callout.innerHTML = `
     <div class="callout-text">${step.text}</div>
     <button class="callout-next" id="calloutNext">${stepIndex === TUTORIAL_STEPS.length - 1 ? "Your call →" : "Got it →"}</button>
   `;
-  card.appendChild(callout);
+  card.insertAdjacentElement("afterend", callout);
   document.getElementById("calloutNext").onclick = () => showTutorialStep(stepIndex + 1);
 }
 function skipTutorial() {
@@ -1335,6 +1469,7 @@ function skipTutorial() {
 function renderTutorialOutro() {
   appState.hasSeenTutorial = true;
   saveState();
+  setDrillInProgress(false);
   const root = document.getElementById("screenRoot");
   root.innerHTML = `
     <div class="tutorial-outro">
@@ -1350,6 +1485,7 @@ function renderTutorialOutro() {
 /* ============================= START SCREEN ============================= */
 function renderStartScreen() {
   currentMode = null;
+  setDrillInProgress(false);
   clearTimer();
   clearTimeout(playoutHandle);
   clearTimeout(autoAdvanceHandle);
@@ -1491,7 +1627,37 @@ function updateNavStreak() {
     el.classList.add("hidden");
   }
 }
+function setDrillInProgress(value) {
+  drillInProgress = value;
+  const btn = document.getElementById("exitBtn");
+  if (btn) btn.classList.toggle("hidden", !drillInProgress);
+}
+function handleExitClick() {
+  if (drillInProgress) {
+    document.getElementById("exitConfirmOverlay").classList.add("show");
+  } else {
+    renderStartScreen();
+  }
+}
+function confirmExitDrill() {
+  document.getElementById("exitConfirmOverlay").classList.remove("show");
+  clearTimer();
+  clearTimeout(playoutHandle);
+  clearTimeout(autoAdvanceHandle);
+  if (currentMode === "practice") {
+    streak = 0;
+    multiplier = 1;
+    sessionResults.push({ pnl: 0, correct: null, skipped: true });
+  }
+  renderStartScreen();
+}
+function cancelExitDrill() {
+  document.getElementById("exitConfirmOverlay").classList.remove("show");
+}
 document.getElementById("soundToggle").onclick = toggleSound;
+document.getElementById("exitBtn").onclick = handleExitClick;
+document.getElementById("exitStayBtn").onclick = cancelExitDrill;
+document.getElementById("exitLeaveBtn").onclick = confirmExitDrill;
 
 /* ============================= DEEP LINKS ============================= */
 let pendingDeepLinkMode = (function () {

@@ -4,9 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Strategies — Trade Lee</title>
-<meta name="description" content="Strategy breakdowns: ORB, VWAP plays, and more. Coming soon to Trade Lee.">
+<meta name="description" content="Three intraday strategy breakdowns: Opening Range Breakout, VWAP Pullback, and Breakout + Volume Confirmation — setup, entry, stop, and the honest catch for each.">
 <meta property="og:title" content="Strategies — Trade Lee">
-<meta property="og:description" content="Strategy breakdowns: ORB, VWAP plays, and more. Coming soon to Trade Lee.">
+<meta property="og:description" content="Three intraday strategy breakdowns: Opening Range Breakout, VWAP Pullback, and Breakout + Volume Confirmation — setup, entry, stop, and the honest catch for each.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://trade-lee.vercel.app/strategies/">
 <meta property="og:image" content="https://trade-lee.vercel.app/og-image.png">
@@ -14,7 +14,7 @@
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="Strategies — Trade Lee">
-<meta name="twitter:description" content="Strategy breakdowns: ORB, VWAP plays, and more. Coming soon to Trade Lee.">
+<meta name="twitter:description" content="Three intraday strategy breakdowns — setup, entry, stop, and the honest catch for each.">
 <meta name="twitter:image" content="https://trade-lee.vercel.app/og-image.png">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230b0e14'/%3E%3Cline x1='11' y1='4' x2='11' y2='28' stroke='%2326a69a' stroke-width='2.2'/%3E%3Crect x='7' y='10' width='8' height='10' rx='1' fill='%2326a69a'/%3E%3Cline x1='23' y1='6' x2='23' y2='25' stroke='%23ef5350' stroke-width='2.2'/%3E%3Crect x='19' y='12' width='8' height='7' rx='1' fill='%23ef5350'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -44,7 +44,8 @@
     <nav class="nav-links-desktop">
       <a href="/play/?mode=daily">Daily Drill</a>
       <a href="/play/?mode=practice">Practice</a>
-      <span class="nav-disabled">Strategies <span class="soon-tag">SOON</span></span>
+      <a href="/risk/">Risk</a>
+      <a href="/strategies/">Strategies</a>
       <span class="nav-disabled">Learn <span class="soon-tag">SOON</span></span>
     </nav>
     <button class="hamburger-btn" id="hamburgerBtn" aria-label="Open menu">
@@ -57,21 +58,69 @@
   <button class="mobile-menu-close" id="mobileMenuClose" aria-label="Close menu">✕</button>
   <a href="/play/?mode=daily">Daily Drill</a>
   <a href="/play/?mode=practice">Practice</a>
-  <span class="nav-disabled-mobile">Strategies <span class="soon-tag">SOON</span></span>
+  <a href="/risk/">Risk</a>
+  <a href="/strategies/">Strategies</a>
   <span class="nav-disabled-mobile">Learn <span class="soon-tag">SOON</span></span>
 </div>
 
-<main class="wrap">
-  <div class="coming-soon">
-    <div class="badge">COMING SOON</div>
-    <h1>Strategies</h1>
-    <p class="teaser">Strategy breakdowns: ORB, VWAP plays, and more.</p>
-    <form class="notify-form" id="notifyForm">
-      <input type="email" placeholder="you@email.com" required id="notifyEmail">
-      <button type="submit" class="btn btn-primary" id="notifyBtn">Notify me</button>
-    </form>
-    <div class="notify-note">No spam. We'll email you when this is live.</div>
+<main class="content-page">
+  <div class="content-hero">
+    <div class="badge">STRATEGIES</div>
+    <h1>Three setups worth knowing</h1>
+    <p>No secrets, no black boxes — just the setups, the entries, and the honest weaknesses of each.</p>
   </div>
+
+  <section class="content-card card">
+    <h2><span class="card-num">1</span>Opening Range Breakout (ORB)</h2>
+    <p class="summary">The most studied intraday setup — a 2023 academic study (Zarattini &amp; Aziz) backtested a 5-minute ORB on US equities and found significant edge on high-volume days.</p>
+    <div class="strategy-block-label">The setup</div>
+    <ul class="checklist">
+      <li><span class="check-icon">→</span>Mark the high/low of the first 15 minutes after 9:30 AM ET</li>
+      <li><span class="check-icon">→</span>Enter on a 5-min candle CLOSE beyond the range — not a wick poke</li>
+      <li><span class="check-icon">→</span>Stop at the opposite side of the range</li>
+      <li><span class="check-icon">→</span>Target 1.5-2x your risk</li>
+      <li><span class="check-icon">→</span>Only trade it 9:45-11:00 AM, when volume is real</li>
+    </ul>
+    <div class="the-catch">
+      <span class="catch-label">The catch</span>
+      Most breakouts fail in chop — it wins by catching a few big trend days, so expect strings of small losses. Never move your stop.
+    </div>
+    <a class="content-cta" href="/play/?mode=daily">Train this pattern → Play the daily drill</a>
+  </section>
+
+  <section class="content-card card">
+    <h2><span class="card-num">2</span>VWAP Pullback</h2>
+    <p class="summary">Institutions benchmark their fills to VWAP, so trending stocks repeatedly bounce off it.</p>
+    <div class="strategy-block-label">The setup</div>
+    <ul class="checklist">
+      <li><span class="check-icon">→</span>Stock trending clearly above VWAP with rising volume</li>
+      <li><span class="check-icon">→</span>Wait for a pullback that TOUCHES VWAP and prints a rejection candle — long lower wick or engulfing</li>
+      <li><span class="check-icon">→</span>Enter on that candle's close</li>
+      <li><span class="check-icon">→</span>Stop just below VWAP</li>
+      <li><span class="check-icon">→</span>Ride toward the prior high</li>
+    </ul>
+    <div class="the-catch">
+      <span class="catch-label">The catch</span>
+      Dead in sideways markets — if price is crossing VWAP repeatedly, there's no trend to pull back within. Stay out.
+    </div>
+    <a class="content-cta" href="/play/?mode=daily">Train this pattern → Play the daily drill</a>
+  </section>
+
+  <section class="content-card card">
+    <h2><span class="card-num">3</span>Breakout + Volume Confirmation</h2>
+    <p class="summary">A breakout is only as real as its volume — this is literally what the daily drill trains your eye to see.</p>
+    <div class="strategy-block-label">The setup</div>
+    <ul class="checklist">
+      <li><span class="check-icon">→</span>Consolidation of at least 45 minutes with a tight range</li>
+      <li><span class="check-icon">→</span>Breakout candle closes beyond the range on 1.5-2x+ average volume → higher odds of follow-through</li>
+      <li><span class="check-icon">→</span>Weak volume breakout = fade candidate back into the range</li>
+    </ul>
+    <div class="the-catch">
+      <span class="catch-label">The catch</span>
+      Volume confirms, it doesn't guarantee — even confirmed breaks fail into major levels overhead (prior day high, big round numbers). Always know what's above you.
+    </div>
+    <a class="content-cta" href="/play/?mode=daily">Train this pattern → Play the daily drill</a>
+  </section>
 </main>
 
 <footer class="site-footer">
@@ -83,7 +132,7 @@
       <a href="#" rel="noopener">X</a>
       <a href="#" rel="noopener">Instagram</a>
     </div>
-    <div class="footer-disclaimer">Educational game. Not financial advice.</div>
+    <div class="footer-disclaimer">Educational content, not financial advice.</div>
   </div>
 </footer>
 
@@ -94,15 +143,6 @@
   document.getElementById("mobileMenuClose").onclick = () => overlay.classList.remove("open");
   overlay.querySelectorAll("a").forEach(a => a.addEventListener("click", () => overlay.classList.remove("open")));
 })();
-
-/* placeholder only — no data is captured or sent anywhere */
-document.getElementById("notifyForm").addEventListener("submit", function (e) {
-  e.preventDefault();
-  document.getElementById("notifyEmail").disabled = true;
-  const btn = document.getElementById("notifyBtn");
-  btn.textContent = "You're on the list ✓";
-  btn.disabled = true;
-});
 </script>
 </body>
 </html>

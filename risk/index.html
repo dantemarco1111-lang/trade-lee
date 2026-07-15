@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Risk Management — Trade Lee</title>
+<meta name="description" content="The risk rules that keep traders funded: the 1% rule, trailing drawdown, daily loss limits, and risk-reward math — with a live position size calculator.">
+<meta property="og:title" content="Risk Management — Trade Lee">
+<meta property="og:description" content="The risk rules that keep traders funded: the 1% rule, trailing drawdown, daily loss limits, and risk-reward math — with a live position size calculator.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://trade-lee.vercel.app/risk/">
+<meta property="og:image" content="https://trade-lee.vercel.app/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Risk Management — Trade Lee">
+<meta name="twitter:description" content="The risk rules that keep traders funded — with a live position size calculator.">
+<meta name="twitter:image" content="https://trade-lee.vercel.app/og-image.png">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230b0e14'/%3E%3Cline x1='11' y1='4' x2='11' y2='28' stroke='%2326a69a' stroke-width='2.2'/%3E%3Crect x='7' y='10' width='8' height='10' rx='1' fill='%2326a69a'/%3E%3Cline x1='23' y1='6' x2='23' y2='25' stroke='%23ef5350' stroke-width='2.2'/%3E%3Crect x='19' y='12' width='8' height='7' rx='1' fill='%23ef5350'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@500;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@500;700&display=swap">
+<link rel="stylesheet" href="/theme.css">
+<style>
+  html, body {
+    margin: 0; padding: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-body);
+    overflow-x: hidden;
+    -webkit-tap-highlight-color: transparent;
+    min-height: 100vh;
+  }
+  a { color: inherit; }
+  .wrap { max-width: 1100px; margin: 0 auto; padding: 0 20px; }
+
+  /* ---------- calculator ---------- */
+  .calc-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 20px 0 4px; }
+  .calc-field label {
+    display: block; font-size: 0.72rem; color: var(--text-dim); margin-bottom: 5px;
+    text-transform: uppercase; letter-spacing: 0.4px;
+  }
+  .calc-field input {
+    width: 100%; background: var(--surface-2); border: 1px solid var(--border-strong); border-radius: 10px;
+    padding: 11px 12px; color: var(--text); font-family: var(--font-mono); font-size: 0.95rem;
+    outline: none;
+  }
+  .calc-field input:focus { border-color: var(--green); }
+  .calc-output { display: flex; gap: 12px; margin-top: 18px; }
+  .calc-output .out-cell {
+    flex: 1; background: rgba(34, 197, 94, 0.08); border: 1px solid rgba(34, 197, 94, 0.3);
+    border-radius: 10px; padding: 16px 10px; text-align: center;
+  }
+  .calc-output .out-cell .out-val {
+    font-family: var(--font-mono); font-variant-numeric: tabular-nums;
+    font-size: 1.6rem; font-weight: 700; color: var(--green);
+  }
+  .calc-output .out-cell .out-label {
+    font-size: 0.68rem; color: var(--text-dim); text-transform: uppercase;
+    letter-spacing: 0.4px; margin-top: 4px;
+  }
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="wrap site-header-inner">
+    <a class="nav-wordmark" href="/">📈 Trade Lee</a>
+    <nav class="nav-links-desktop">
+      <a href="/play/?mode=daily">Daily Drill</a>
+      <a href="/play/?mode=practice">Practice</a>
+      <a href="/risk/">Risk</a>
+      <a href="/strategies/">Strategies</a>
+      <span class="nav-disabled">Learn <span class="soon-tag">SOON</span></span>
+    </nav>
+    <button class="hamburger-btn" id="hamburgerBtn" aria-label="Open menu">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</header>
+
+<div class="mobile-menu-overlay" id="mobileMenuOverlay">
+  <button class="mobile-menu-close" id="mobileMenuClose" aria-label="Close menu">✕</button>
+  <a href="/play/?mode=daily">Daily Drill</a>
+  <a href="/play/?mode=practice">Practice</a>
+  <a href="/risk/">Risk</a>
+  <a href="/strategies/">Strategies</a>
+  <span class="nav-disabled-mobile">Learn <span class="soon-tag">SOON</span></span>
+</div>
+
+<main class="content-page">
+  <div class="content-hero">
+    <div class="badge">RISK MANAGEMENT</div>
+    <h1>The rules that keep you funded</h1>
+    <p>Entries get all the attention. Risk management is what actually decides whether you're still trading in six months.</p>
+  </div>
+
+  <section class="content-card card">
+    <h2><span class="card-num">1</span>The 1% Rule</h2>
+    <p>Never risk more than 1% of your account on a single trade. On a $10,000 account, that's a $100 max loss — no exceptions, no "this one's different."</p>
+    <div class="formula">Position size = (Account × Risk %) ÷ Stop distance</div>
+    <div class="calc-grid">
+      <div class="calc-field">
+        <label for="calcAccount">Account size ($)</label>
+        <input type="number" id="calcAccount" value="10000" min="0" step="100">
+      </div>
+      <div class="calc-field">
+        <label for="calcRiskPct">Risk (%)</label>
+        <input type="number" id="calcRiskPct" value="1" min="0" step="0.1">
+      </div>
+      <div class="calc-field">
+        <label for="calcEntry">Entry price ($)</label>
+        <input type="number" id="calcEntry" value="100" min="0" step="0.01">
+      </div>
+      <div class="calc-field">
+        <label for="calcStop">Stop price ($)</label>
+        <input type="number" id="calcStop" value="99" min="0" step="0.01">
+      </div>
+    </div>
+    <div class="calc-output">
+      <div class="out-cell">
+        <div class="out-val" id="calcShares">—</div>
+        <div class="out-label">Max shares</div>
+      </div>
+      <div class="out-cell">
+        <div class="out-val" id="calcDollarRisk">—</div>
+        <div class="out-label">Dollar risk</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="content-card card">
+    <h2><span class="card-num">2</span>Why Most Funded Traders Fail</h2>
+    <p>About 86% of prop firm evaluations fail — and most of those failures aren't bad entries, they're risk violations: oversizing a position, revenge trading right after a loss, or blowing through the daily loss limit.</p>
+    <p>The evaluation isn't really testing your ability to pick trades. It's testing your discipline.</p>
+  </section>
+
+  <section class="content-card card">
+    <h2><span class="card-num">3</span>Trailing Drawdown, Explained</h2>
+    <p>Most futures prop firms (think Apex, Topstep) use a trailing max drawdown. It rises with your equity peak — including unrealized profit on trades that are still open — and then locks in at that level.</p>
+    <p><strong>Example:</strong> you're trading a $50,000 account with a $2,500 trailing drawdown. A trade runs up $1,000 in your favor, but you let it drift back to breakeven before closing it. You didn't lose any real money — but your drawdown floor had already moved up by that $1,000 peak, so you just burned $1,000 of your cushion without banking a single dollar.</p>
+    <p><strong>Rule of thumb:</strong> take partial profits, and always respect where your peak has been — not just where price is right now.</p>
+  </section>
+
+  <section class="content-card card">
+    <h2><span class="card-num">4</span>The Daily Loss Limit</h2>
+    <p>Decide your max daily loss BEFORE the session starts — commonly 2-3% of the account, or after 2-3 losing trades, whichever comes first. Hit it? Close the platform. No exceptions.</p>
+    <p>Here's why: the math of digging out of a hole gets brutal fast.</p>
+    <table class="data-table">
+      <thead><tr><th>Drawdown</th><th>Gain needed to recover</th></tr></thead>
+      <tbody>
+        <tr><td>10%</td><td>11%</td></tr>
+        <tr><td>25%</td><td>33%</td></tr>
+        <tr><td>50%</td><td>100%</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section class="content-card card">
+    <h2><span class="card-num">5</span>Risk-Reward Reality</h2>
+    <p>You don't need to be right most of the time to be profitable — you need your average win to beat your average loss. At a 1:2 risk-reward ratio, you're profitable winning just 40% of your trades. This is exactly why cutting losers fast matters more than being right.</p>
+    <table class="data-table">
+      <thead><tr><th>Risk : Reward</th><th>Breakeven win rate</th><th>In practice</th></tr></thead>
+      <tbody>
+        <tr><td>1 : 1</td><td>&gt;50%</td><td>needs strong accuracy</td></tr>
+        <tr><td>1 : 2</td><td>&gt;33%</td><td>40% win rate = profitable</td></tr>
+        <tr><td>1 : 3</td><td>&gt;25%</td><td>room to be wrong often</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section class="content-card card">
+    <h2><span class="card-num">6</span>Rules That Keep You Funded</h2>
+    <ul class="checklist">
+      <li><span class="check-icon">✓</span>Bracket orders on every entry — stop and target placed WITH the trade, never added after the fact</li>
+      <li><span class="check-icon">✓</span>One setup, one session window, max 2-3 trades a day</li>
+      <li><span class="check-icon">✓</span>Never add to a loser</li>
+      <li><span class="check-icon">✓</span>Flat before major news releases</li>
+      <li><span class="check-icon">✓</span>Respect consistency rules — most firms have them, and a single huge day can void your payout. Steady beats spectacular.</li>
+    </ul>
+  </section>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <div class="footer-wordmark">📈 Trade Lee</div>
+    <div class="footer-tagline">Trade Lee — train your eye. © 2026</div>
+    <div class="footer-links">
+      <a href="#" rel="noopener">TikTok</a>
+      <a href="#" rel="noopener">X</a>
+      <a href="#" rel="noopener">Instagram</a>
+    </div>
+    <div class="footer-disclaimer">Educational content, not financial advice.</div>
+  </div>
+</footer>
+
+<script>
+(function () {
+  const overlay = document.getElementById("mobileMenuOverlay");
+  document.getElementById("hamburgerBtn").onclick = () => overlay.classList.add("open");
+  document.getElementById("mobileMenuClose").onclick = () => overlay.classList.remove("open");
+  overlay.querySelectorAll("a").forEach(a => a.addEventListener("click", () => overlay.classList.remove("open")));
+})();
+
+function calcRisk() {
+  const account = parseFloat(document.getElementById("calcAccount").value) || 0;
+  const riskPct = parseFloat(document.getElementById("calcRiskPct").value) || 0;
+  const entry = parseFloat(document.getElementById("calcEntry").value) || 0;
+  const stop = parseFloat(document.getElementById("calcStop").value) || 0;
+  const stopDistance = Math.abs(entry - stop);
+  const riskBudget = account * (riskPct / 100);
+  const maxShares = stopDistance > 0 ? Math.floor(riskBudget / stopDistance) : 0;
+  const dollarRisk = maxShares * stopDistance;
+  document.getElementById("calcShares").textContent = maxShares.toLocaleString();
+  document.getElementById("calcDollarRisk").textContent = "$" + dollarRisk.toLocaleString(undefined, { maximumFractionDigits: 2 });
+}
+["calcAccount", "calcRiskPct", "calcEntry", "calcStop"].forEach(id => {
+  document.getElementById(id).addEventListener("input", calcRisk);
+});
+calcRisk();
+</script>
+</body>
+</html>
