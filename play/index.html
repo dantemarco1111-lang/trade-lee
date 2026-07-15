@@ -973,7 +973,7 @@ function clearPriceLines() {
 }
 function addPriceLine(price, color, showAxisLabel) {
   if (price === null || price === undefined) return;
-  // no native `title` — the in-pane title label collides with candles/other
+  // no native `title` �� the in-pane title label collides with candles/other
   // labels when lines sit close together, so labels are drawn as custom
   // HTML pinned to the chart's right edge instead (see updateRangeLabels).
   const l = candleSeries.createPriceLine({ price, color, lineWidth: 2, lineStyle: LightweightCharts.LineStyle.Dashed, axisLabelVisible: showAxisLabel !== false });
@@ -1853,5 +1853,6 @@ async function init() {
 }
 init();
 </script>
+<script defer src="/_vercel/insights/script.js"></script>
 </body>
 </html>
