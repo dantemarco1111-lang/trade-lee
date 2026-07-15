@@ -25,7 +25,6 @@
 <style>
   html, body {
     margin: 0; padding: 0;
-    background: var(--bg);
     color: var(--text);
     font-family: var(--font-body);
     overflow-x: hidden;
@@ -140,11 +139,23 @@
   <div class="wrap site-header-inner">
     <a class="nav-wordmark" href="/">📈 Trade Lee</a>
     <nav class="nav-links-desktop">
-      <a href="/play/?mode=daily">Daily Drill</a>
-      <a href="/play/?mode=practice">Practice</a>
-      <a href="/risk/">Risk</a>
-      <a href="/strategies/">Strategies</a>
-      <span class="nav-disabled">Learn <span class="soon-tag">SOON</span></span>
+      <div class="nav-dropdown" id="playDropdown">
+        <button class="nav-dropdown-trigger" type="button">Play <span class="caret">▾</span></button>
+        <div class="nav-dropdown-menu">
+          <a href="/play/?mode=daily">Daily Drill</a>
+          <a href="/play/?mode=practice">Practice</a>
+        </div>
+      </div>
+      <div class="nav-dropdown" id="learnDropdown">
+        <button class="nav-dropdown-trigger" type="button">Learn <span class="caret">▾</span></button>
+        <div class="nav-dropdown-menu">
+          <a href="/risk/">Risk</a>
+          <a href="/strategies/">Strategies</a>
+          <span class="nav-disabled-item">Learn <span class="soon-tag">SOON</span></span>
+        </div>
+      </div>
+      <a href="/funded/">Get Funded</a>
+      <a href="/leaderboard/">Leaderboard</a>
     </nav>
     <button class="hamburger-btn" id="hamburgerBtn" aria-label="Open menu">
       <span></span><span></span><span></span>
@@ -154,11 +165,16 @@
 
 <div class="mobile-menu-overlay" id="mobileMenuOverlay">
   <button class="mobile-menu-close" id="mobileMenuClose" aria-label="Close menu">✕</button>
+  <div class="mobile-menu-label">Play</div>
   <a href="/play/?mode=daily">Daily Drill</a>
   <a href="/play/?mode=practice">Practice</a>
+  <div class="mobile-menu-label">Learn</div>
   <a href="/risk/">Risk</a>
   <a href="/strategies/">Strategies</a>
   <span class="nav-disabled-mobile">Learn <span class="soon-tag">SOON</span></span>
+  <div class="mobile-menu-label">More</div>
+  <a href="/funded/">Get Funded</a>
+  <a href="/leaderboard/">Leaderboard</a>
 </div>
 
 <section class="hero">
@@ -353,6 +369,19 @@
   document.getElementById("hamburgerBtn").onclick = () => overlay.classList.add("open");
   document.getElementById("mobileMenuClose").onclick = () => overlay.classList.remove("open");
   overlay.querySelectorAll("a").forEach(a => a.addEventListener("click", () => overlay.classList.remove("open")));
+
+  document.querySelectorAll(".nav-dropdown").forEach(dd => {
+    const trigger = dd.querySelector(".nav-dropdown-trigger");
+    trigger.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const isOpen = dd.classList.contains("open");
+      document.querySelectorAll(".nav-dropdown.open").forEach(o => o.classList.remove("open"));
+      if (!isOpen) dd.classList.add("open");
+    });
+  });
+  document.addEventListener("click", () => {
+    document.querySelectorAll(".nav-dropdown.open").forEach(o => o.classList.remove("open"));
+  });
 })();
 </script>
 </body>

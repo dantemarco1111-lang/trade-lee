@@ -3,18 +3,18 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Learn — Trade Lee</title>
-<meta name="description" content="Chart-reading lessons, one concept at a time. Coming soon to Trade Lee.">
-<meta property="og:title" content="Learn — Trade Lee">
-<meta property="og:description" content="Chart-reading lessons, one concept at a time. Coming soon to Trade Lee.">
+<title>Leaderboard — Trade Lee</title>
+<meta name="description" content="Your personal Trade Lee records — best session P&L, best streak, accuracy, and Ticks earned. Global rankings launch with accounts, coming soon.">
+<meta property="og:title" content="Leaderboard — Trade Lee">
+<meta property="og:description" content="Your personal Trade Lee records. Global rankings launch with accounts, coming soon.">
 <meta property="og:type" content="website">
-<meta property="og:url" content="https://trade-lee.vercel.app/learn/">
+<meta property="og:url" content="https://trade-lee.vercel.app/leaderboard/">
 <meta property="og:image" content="https://trade-lee.vercel.app/og-image.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Learn — Trade Lee">
-<meta name="twitter:description" content="Chart-reading lessons, one concept at a time. Coming soon to Trade Lee.">
+<meta name="twitter:title" content="Leaderboard — Trade Lee">
+<meta name="twitter:description" content="Your personal Trade Lee records. Global rankings launch with accounts, coming soon.">
 <meta name="twitter:image" content="https://trade-lee.vercel.app/og-image.png">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230b0e14'/%3E%3Cline x1='11' y1='4' x2='11' y2='28' stroke='%2326a69a' stroke-width='2.2'/%3E%3Crect x='7' y='10' width='8' height='10' rx='1' fill='%2326a69a'/%3E%3Cline x1='23' y1='6' x2='23' y2='25' stroke='%23ef5350' stroke-width='2.2'/%3E%3Crect x='19' y='12' width='8' height='7' rx='1' fill='%23ef5350'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -33,6 +33,28 @@
   }
   a { color: inherit; }
   .wrap { max-width: 1100px; margin: 0 auto; padding: 0 20px; }
+
+  .records-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
+  @media (min-width: 560px) { .records-grid { grid-template-columns: repeat(3, 1fr); } }
+  .record-cell {
+    background: var(--surface-2); border: 1px solid var(--border); border-radius: 12px;
+    padding: 18px 10px; text-align: center;
+  }
+  .record-val {
+    font-family: var(--font-mono); font-variant-numeric: tabular-nums;
+    font-size: 1.5rem; font-weight: 700; color: var(--green);
+  }
+  .record-val.neg { color: var(--red); }
+  .record-val.neutral { color: var(--text); }
+  .record-label {
+    font-size: 0.68rem; color: var(--text-dim); text-transform: uppercase;
+    letter-spacing: 0.4px; margin-top: 6px;
+  }
+
+  .leaderboard-locked { opacity: 0.75; text-align: center; }
+  .leaderboard-locked h2 { justify-content: center; }
+  .leaderboard-locked h2 .card-num { background: var(--surface-2); color: var(--text-dim); }
+  .leaderboard-locked p { max-width: 480px; margin: 0 auto; }
 </style>
 </head>
 <body>
@@ -79,17 +101,22 @@
   <a href="/leaderboard/">Leaderboard</a>
 </div>
 
-<main class="wrap">
-  <div class="coming-soon">
-    <div class="badge">COMING SOON</div>
-    <h1>Learn</h1>
-    <p class="teaser">Chart-reading lessons, one concept at a time.</p>
-    <form class="notify-form" id="notifyForm">
-      <input type="email" placeholder="you@email.com" required id="notifyEmail">
-      <button type="submit" class="btn btn-primary" id="notifyBtn">Notify me</button>
-    </form>
-    <div class="notify-note">No spam. We'll email you when this is live.</div>
+<main class="content-page">
+  <div class="content-hero">
+    <div class="badge">LEADERBOARD</div>
+    <h1>Your Records</h1>
+    <p>Tracked locally on this device — no account needed yet.</p>
   </div>
+
+  <section class="content-card card">
+    <h2><span class="card-num">#</span>Personal Bests</h2>
+    <div class="records-grid" id="recordsGrid"></div>
+  </section>
+
+  <section class="content-card card leaderboard-locked">
+    <h2><span class="card-num">🔒</span>Global Leaderboard</h2>
+    <p>Global rankings launch with accounts — coming soon. Your records are already being tracked locally, so your stats are ready when it goes live.</p>
+  </section>
 </main>
 
 <footer class="site-footer">
@@ -101,7 +128,7 @@
       <a href="#" rel="noopener">X</a>
       <a href="#" rel="noopener">Instagram</a>
     </div>
-    <div class="footer-disclaimer">Educational game. Not financial advice.</div>
+    <div class="footer-disclaimer">Educational content, not financial advice.</div>
   </div>
 </footer>
 
@@ -126,14 +153,41 @@
   });
 })();
 
-/* placeholder only — no data is captured or sent anywhere */
-document.getElementById("notifyForm").addEventListener("submit", function (e) {
-  e.preventDefault();
-  document.getElementById("notifyEmail").disabled = true;
-  const btn = document.getElementById("notifyBtn");
-  btn.textContent = "You're on the list ✓";
-  btn.disabled = true;
-});
+const STORAGE_KEY = "tradeLeeState_v1";
+function defaultState() {
+  return {
+    bestSessionPnl: null, bestStreakEver: 0, dailyWinStreak: 0,
+    totalDrillsAnswered: 0, totalCorrect: 0, ticksEarnedAllTime: 0,
+  };
+}
+function loadState() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return defaultState();
+    return Object.assign(defaultState(), JSON.parse(raw));
+  } catch (e) { return defaultState(); }
+}
+function formatMoney(n) {
+  const sign = n < 0 ? "-" : "";
+  return sign + "$" + Math.abs(Math.round(n)).toLocaleString("en-US");
+}
+
+const state = loadState();
+const accuracy = state.totalDrillsAnswered ? Math.round(100 * state.totalCorrect / state.totalDrillsAnswered) : 0;
+const records = [
+  { val: state.bestSessionPnl === null ? "—" : (state.bestSessionPnl >= 0 ? "+" : "") + formatMoney(state.bestSessionPnl), label: "Best Session P&L", cls: state.bestSessionPnl === null ? "neutral" : (state.bestSessionPnl >= 0 ? "" : "neg") },
+  { val: state.bestStreakEver || 0, label: "Best Streak Ever", cls: "neutral" },
+  { val: state.dailyWinStreak || 0, label: "Daily Win Streak", cls: "neutral" },
+  { val: state.totalDrillsAnswered || 0, label: "Total Drills", cls: "neutral" },
+  { val: accuracy + "%", label: "Overall Accuracy", cls: "neutral" },
+  { val: "⚡ " + (state.ticksEarnedAllTime || 0), label: "Ticks Earned All-Time", cls: "neutral" },
+];
+document.getElementById("recordsGrid").innerHTML = records.map(r => `
+  <div class="record-cell">
+    <div class="record-val ${r.cls}">${r.val}</div>
+    <div class="record-label">${r.label}</div>
+  </div>
+`).join("");
 </script>
 </body>
 </html>

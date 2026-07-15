@@ -109,6 +109,8 @@
     padding: 6px 10px;
   }
   .nav-streak.hidden { display: none; }
+  a.nav-streak.nav-ticks { text-decoration: none; cursor: pointer; transition: transform 0.15s cubic-bezier(.34,1.56,.64,1); }
+  a.nav-streak.nav-ticks:active { transform: scale(0.93); }
 
   /* ---------- top bar ---------- */
   .topbar {
@@ -320,6 +322,26 @@
   .legend-row span { display: inline-flex; align-items: center; gap: 4px; }
   .legend-row .swatch { display: inline-block; width: 10px; height: 2px; }
 
+  .powerup-bar { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin: 8px 0 2px; }
+  .powerup-bar.hidden { display: none; }
+  .powerup-chip {
+    background: var(--card2); border: 1px solid var(--border-strong); color: var(--text);
+    font-family: var(--font-body); font-size: 0.78rem; font-weight: 600;
+    padding: 7px 12px; border-radius: 999px; cursor: pointer;
+    transition: transform 0.15s cubic-bezier(.34,1.56,.64,1), border-color 0.15s ease;
+  }
+  .powerup-chip:active { transform: scale(0.94); }
+  .powerup-chip:hover { border-color: var(--gold); }
+  .powerup-chip.active { background: rgba(245,180,0,0.12); border-color: var(--yellow); color: var(--yellow); cursor: default; }
+  .powerup-chip .chip-count { color: var(--text-dim); font-family: var(--font-mono); }
+  .second-chance-btn {
+    width: 100%; padding: 13px; font-size: 0.92rem; font-weight: 700; font-family: var(--font-display);
+    border-radius: 12px; border: 1px solid rgba(199, 146, 234, 0.4); background: rgba(199, 146, 234, 0.1);
+    color: var(--purple); cursor: pointer; margin-top: 8px;
+    transition: transform 0.15s cubic-bezier(.34,1.56,.64,1);
+  }
+  .second-chance-btn:active { transform: scale(0.97); }
+
   /* ---------- timer ---------- */
   .timer-bar-wrap {
     height: 8px; background: var(--card2); border-radius: 5px;
@@ -480,6 +502,12 @@
     padding: 8px 18px; font-weight: 700; font-size: 0.95rem; margin-bottom: 22px;
   }
   .start-daily-streak .win-streak { color: var(--green); font-size: 0.85rem; font-weight: 600; }
+  .start-daily-streak .freeze-icons { font-size: 0.9rem; }
+  .freeze-notice {
+    background: rgba(92, 158, 255, 0.1); border: 1px solid rgba(92, 158, 255, 0.35);
+    color: #5c9eff; border-radius: 12px; padding: 10px 14px; font-size: 0.85rem;
+    font-weight: 600; margin-bottom: 16px;
+  }
   .mode-btn {
     width: 100%; padding: 20px; font-size: 1.05rem; font-weight: 700; font-family: var(--font-display); border-radius: 16px;
     border: none; cursor: pointer; color: #fff; margin-bottom: 12px; letter-spacing: 0.3px;
@@ -496,15 +524,9 @@
   }
   .mini-stat .v { font-family: var(--font-mono); font-variant-numeric: tabular-nums; font-size: 1.2rem; font-weight: 700; }
   .mini-stat .l { font-size: 0.6rem; color: var(--muted); text-transform: uppercase; margin-top: 2px; letter-spacing: 0.4px; }
-  .mini-stat.freeze-teaser { cursor: pointer; opacity: 0.55; }
-  .freeze-badge {
-    position: absolute; top: -7px; right: -4px; background: var(--muted); color: var(--bg);
-    font-size: 0.5rem; font-weight: 800; padding: 2px 5px; border-radius: 6px; letter-spacing: 0.3px;
-  }
-  .freeze-tooltip {
-    margin-top: 10px; background: var(--card2); border: 1px solid var(--border); border-radius: 10px;
-    padding: 10px 12px; font-size: 0.78rem; color: var(--muted); text-align: center;
-  }
+  a.mini-stat { text-decoration: none; color: inherit; cursor: pointer; transition: transform 0.15s cubic-bezier(.34,1.56,.64,1); }
+  a.mini-stat:active { transform: scale(0.96); }
+  a.mini-stat .v { color: var(--gold); }
 
   /* ---------- daily result ---------- */
   .daily-result { text-align: center; padding: 20px 8px 10px; }
@@ -578,6 +600,7 @@
     <a class="nav-wordmark" href="/">📈 Trade Lee</a>
   </div>
   <div class="nav-right">
+    <a class="nav-streak nav-ticks" id="navTicks" href="/powerups/"></a>
     <span class="nav-streak hidden" id="navStreakFlame"></span>
     <button class="icon-btn" id="soundToggle">🔊</button>
   </div>
@@ -630,6 +653,14 @@ function defaultState() {
     bestStreakEver: 0,
     totalDrillsAnswered: 0,
     totalCorrect: 0,
+    // power-ups economy
+    ticks: 0,
+    ticksEarnedAllTime: 0,
+    ownedFreezes: 0,
+    ownedTimeExtends: 0,
+    ownedSecondChances: 0,
+    ownedDoubleDowns: 0,
+    freezeConsumedPending: false,
   };
 }
 function loadPersistedState() {
@@ -664,6 +695,10 @@ let currentMode = null; // 'practice' | 'daily' | 'tutorial'
 let currentDrill = null;
 let currentDrillMultiplier = 1;
 let drillInProgress = false;
+let timeExtendUsedThisDrill = false;
+let doubleDownActiveThisDrill = false;
+let secondChanceUsedThisSession = false;
+let preDrillSnapshot = null;
 
 let chart = null, candleSeries = null, volumeSeries = null, vwapSeries = null;
 let priceLinesList = [];
@@ -812,6 +847,11 @@ function recordDailyResult(drill, isCorrect, isFizzle) {
   appState.lastDailyOutcomeCorrect = isCorrect;
   appState.lastDailyIsFizzle = isFizzle;
   saveState();
+
+  awardTicks(10 + (isCorrect ? 5 : 0));
+  if (appState.dailyPlayStreak > 0 && appState.dailyPlayStreak % 5 === 0) {
+    awardTicks(50);
+  }
 }
 function incrementGlobalStats(isCorrect) {
   appState.totalDrillsAnswered = (appState.totalDrillsAnswered || 0) + 1;
@@ -824,6 +864,68 @@ function updateBestStreakEver(streakVal) {
 function updateBestSessionPnl(pnl) {
   if (appState.bestSessionPnl === null || pnl > appState.bestSessionPnl) { appState.bestSessionPnl = pnl; saveState(); return true; }
   return false;
+}
+
+/* ============================= TICKS / POWER-UPS ============================= */
+function awardTicks(n) {
+  appState.ticks = (appState.ticks || 0) + n;
+  appState.ticksEarnedAllTime = (appState.ticksEarnedAllTime || 0) + n;
+  saveState();
+  updateNavStreak();
+}
+function checkStreakFreeze() {
+  const today = getEtDateString(0);
+  const yesterday = getEtDateString(-1);
+  if (!appState.lastDailyDate || appState.lastDailyDate === today || appState.lastDailyDate === yesterday) return;
+  const lastDate = new Date(appState.lastDailyDate + "T00:00:00Z");
+  const todayDate = new Date(today + "T00:00:00Z");
+  const daysSince = Math.round((todayDate - lastDate) / 86400000);
+  const missedDays = daysSince - 1;
+  if (missedDays === 1 && (appState.ownedFreezes || 0) > 0) {
+    appState.ownedFreezes -= 1;
+    appState.lastDailyDate = yesterday; // bridge the single missed day so the streak continues normally
+    appState.freezeConsumedPending = true;
+    saveState();
+  }
+}
+
+function renderPowerupBar() {
+  const bar = document.getElementById("powerupBar");
+  if (!bar) return;
+  if (currentMode !== "practice") { bar.classList.add("hidden"); bar.innerHTML = ""; return; }
+
+  const chips = [];
+  if (!timeExtendUsedThisDrill && (appState.ownedTimeExtends || 0) > 0) {
+    chips.push(`<button class="powerup-chip" id="useTimeExtendBtn">⏱ +5s <span class="chip-count">(${appState.ownedTimeExtends})</span></button>`);
+  }
+  if (doubleDownActiveThisDrill) {
+    chips.push(`<span class="powerup-chip active">💰 2x ACTIVE</span>`);
+  } else if ((appState.ownedDoubleDowns || 0) > 0) {
+    chips.push(`<button class="powerup-chip" id="useDoubleDownBtn">💰 Double Down <span class="chip-count">(${appState.ownedDoubleDowns})</span></button>`);
+  }
+
+  if (!chips.length) { bar.classList.add("hidden"); bar.innerHTML = ""; return; }
+  bar.classList.remove("hidden");
+  bar.innerHTML = chips.join("");
+  const teBtn = document.getElementById("useTimeExtendBtn");
+  if (teBtn) teBtn.onclick = useTimeExtend;
+  const ddBtn = document.getElementById("useDoubleDownBtn");
+  if (ddBtn) ddBtn.onclick = useDoubleDown;
+}
+function useTimeExtend() {
+  if (timeExtendUsedThisDrill || (appState.ownedTimeExtends || 0) <= 0 || answered) return;
+  appState.ownedTimeExtends -= 1;
+  timeExtendUsedThisDrill = true;
+  timerDeadline += 5000;
+  saveState();
+  renderPowerupBar();
+}
+function useDoubleDown() {
+  if (doubleDownActiveThisDrill || (appState.ownedDoubleDowns || 0) <= 0 || answered) return;
+  appState.ownedDoubleDowns -= 1;
+  doubleDownActiveThisDrill = true;
+  saveState();
+  renderPowerupBar();
 }
 
 /* ============================= DIFFICULTY RAMP ============================= */
@@ -1001,6 +1103,7 @@ function renderShell() {
       <span><span class="swatch" style="background:#f5b400"></span>Range High/Low (the zone price is stuck in)</span>
       <span><span class="swatch" style="background:#c792ea"></span>VWAP</span>
     </div>
+    <div class="powerup-bar hidden" id="powerupBar"></div>
     <div class="timer-bar-wrap"><div class="timer-fill" id="timerFill"></div></div>
     <div class="buttons-row" id="buttonsRow">
       <button class="btn real" id="realBtn">REAL BREAKOUT</button>
@@ -1024,8 +1127,12 @@ function loadDrill(drill, opts) {
   currentDrill = drill;
   answered = false;
   currentDrillMultiplier = multiplier;
+  timeExtendUsedThisDrill = false;
+  doubleDownActiveThisDrill = false;
+  preDrillSnapshot = { streak, multiplier, bankroll, sessionPnl };
   setDrillInProgress(true);
   renderShell();
+  renderPowerupBar();
   const counterEl = document.getElementById("drillCounter");
   if (counterEl) counterEl.textContent = `${sessionIndex + 1}/${DRILLS_PER_SESSION}`;
 
@@ -1226,8 +1333,9 @@ function finishPlayout(drill, choice) {
 
   if (currentMode === "practice") {
     updateStreakAndMultiplier(isCorrect);
-    const pnl = computePnl(drill, isCorrect, currentDrillMultiplier);
-    sessionResults.push({ pnl, correct: isCorrect, skipped: false });
+    const doubleDownMult = doubleDownActiveThisDrill ? 2 : 1;
+    const pnl = computePnl(drill, isCorrect, currentDrillMultiplier * doubleDownMult);
+    sessionResults.push({ pnl, correct: isCorrect, skipped: false, doubledDown: doubleDownActiveThisDrill });
     incrementGlobalStats(isCorrect);
 
     const prevBankroll = bankroll, prevSessionPnl = sessionPnl;
@@ -1279,7 +1387,49 @@ function showCoachCard(drill, isCorrect, pnl, isFizzle) {
 
   card.classList.remove("hidden");
   document.getElementById("buttonsRow").classList.add("hidden");
-  autoAdvanceHandle = setTimeout(() => advanceOrEnd(), 2500);
+
+  const existingSecondChance = document.getElementById("secondChanceBtn");
+  if (existingSecondChance) existingSecondChance.remove();
+
+  const canOfferSecondChance = currentMode === "practice" && !isCorrect && !secondChanceUsedThisSession && (appState.ownedSecondChances || 0) > 0;
+  if (canOfferSecondChance) {
+    const btn = document.createElement("button");
+    btn.className = "second-chance-btn";
+    btn.id = "secondChanceBtn";
+    btn.textContent = `🔄 Use Second Chance (${appState.ownedSecondChances})`;
+    btn.onclick = useSecondChance;
+    card.insertBefore(btn, document.getElementById("nextBtn"));
+  } else {
+    autoAdvanceHandle = setTimeout(() => advanceOrEnd(), 2500);
+  }
+}
+function useSecondChance() {
+  if (secondChanceUsedThisSession || (appState.ownedSecondChances || 0) <= 0) return;
+  appState.ownedSecondChances -= 1;
+  secondChanceUsedThisSession = true;
+  saveState();
+  clearTimeout(autoAdvanceHandle);
+
+  sessionResults.pop();
+  streak = preDrillSnapshot.streak;
+  multiplier = preDrillSnapshot.multiplier;
+  bankroll = preDrillSnapshot.bankroll;
+  sessionPnl = preDrillSnapshot.sessionPnl;
+  updateStreakDisplay();
+  const bankrollEl = document.getElementById("bankrollValue");
+  if (bankrollEl) bankrollEl.textContent = formatMoney(bankroll);
+  const pnlEl = document.getElementById("pnlValue");
+  if (pnlEl) {
+    pnlEl.textContent = formatMoney(sessionPnl);
+    pnlEl.classList.toggle("pnl-up", sessionPnl >= 0);
+    pnlEl.classList.toggle("pnl-down", sessionPnl < 0);
+  }
+
+  const usedIds = new Set(sessionDeck.map(d => d.id));
+  const candidates = allDrills.filter(d => !usedIds.has(d.id));
+  const replacement = candidates.length ? candidates[Math.floor(Math.random() * candidates.length)] : currentDrill;
+  sessionDeck[sessionIndex] = replacement;
+  loadDrill(replacement);
 }
 
 /* ============================= PRACTICE SESSION FLOW ============================= */
@@ -1316,6 +1466,7 @@ function showEndOfDay() {
   const bestWin = sessionResults.reduce((m, r) => Math.max(m, r.pnl), 0);
   const isNewBest = updateBestSessionPnl(sessionPnl);
   updateBestStreakEver(bestStreak);
+  awardTicks(25);
 
   content.innerHTML = `
     <div class="end-of-day">
@@ -1347,6 +1498,7 @@ function startNewPracticeSession() {
 function startNewSession() {
   sessionIndex = 0; sessionPnl = 0; bankroll = STARTING_BANKROLL;
   streak = 0; bestStreak = 0; multiplier = 1; sessionResults = [];
+  secondChanceUsedThisSession = false;
   sessionDeck = buildSessionDeck();
   document.getElementById("bankrollValue").textContent = formatMoney(bankroll);
   document.getElementById("pnlValue").textContent = "$0";
@@ -1498,6 +1650,8 @@ function renderStartScreen() {
   const today = getEtDateString(0);
   const alreadyPlayedDaily = appState.lastDailyDate === today;
   const accuracy = appState.totalDrillsAnswered ? Math.round(100 * appState.totalCorrect / appState.totalDrillsAnswered) : 0;
+  const showFreezeNotice = !!appState.freezeConsumedPending;
+  if (showFreezeNotice) { appState.freezeConsumedPending = false; saveState(); }
 
   const root = document.getElementById("screenRoot");
   root.innerHTML = `
@@ -1505,9 +1659,12 @@ function renderStartScreen() {
       <div class="start-wordmark">📈 Trade Lee</div>
       <div class="start-sub">Can you spot the real breakout?</div>
 
+      ${showFreezeNotice ? `<div class="freeze-notice">🧊 Streak saved by freeze! Your streak didn't reset.</div>` : ""}
+
       <div class="start-daily-streak">
         <span>🔥</span> ${appState.dailyPlayStreak || 0} day streak
         ${appState.dailyWinStreak > 0 ? `<span class="win-streak">· ${appState.dailyWinStreak} win streak</span>` : ""}
+        ${appState.ownedFreezes > 0 ? `<span class="freeze-icons">${"🧊".repeat(appState.ownedFreezes)}</span>` : ""}
       </div>
 
       <button class="mode-btn daily-btn ${alreadyPlayedDaily ? "done" : ""}" id="dailyBtn">
@@ -1518,17 +1675,12 @@ function renderStartScreen() {
       <div class="start-stats-row">
         <div class="mini-stat"><div class="v">${accuracy}%</div><div class="l">Accuracy</div></div>
         <div class="mini-stat"><div class="v">${appState.bestStreakEver || 0}</div><div class="l">Best Streak</div></div>
-        <div class="mini-stat freeze-teaser" id="freezeTeaser">
-          <div class="v">❄️</div><div class="l">Streak Freeze</div>
-          <div class="freeze-badge">SOON</div>
-        </div>
+        <a class="mini-stat" href="/powerups/"><div class="v">⚡ ${appState.ticks || 0}</div><div class="l">Ticks</div></a>
       </div>
-      <div class="freeze-tooltip hidden" id="freezeTooltip">Protect your streak on days you can't trade. Coming soon.</div>
     </div>
   `;
   document.getElementById("dailyBtn").onclick = handleDailyButtonClick;
   document.getElementById("practiceBtn").onclick = startNewPracticeSession;
-  document.getElementById("freezeTeaser").onclick = () => document.getElementById("freezeTooltip").classList.toggle("hidden");
 }
 
 /* ============================= SHARE CARD ============================= */
@@ -1623,13 +1775,16 @@ function generateAndShareCard(mode, data) {
 /* ============================= NAV ============================= */
 function updateNavStreak() {
   const el = document.getElementById("navStreakFlame");
-  if (!el) return;
-  if (appState.dailyPlayStreak > 0) {
-    el.textContent = `🔥 ${appState.dailyPlayStreak}`;
-    el.classList.remove("hidden");
-  } else {
-    el.classList.add("hidden");
+  if (el) {
+    if (appState.dailyPlayStreak > 0) {
+      el.textContent = `🔥 ${appState.dailyPlayStreak}`;
+      el.classList.remove("hidden");
+    } else {
+      el.classList.add("hidden");
+    }
   }
+  const ticksEl = document.getElementById("navTicks");
+  if (ticksEl) ticksEl.textContent = `⚡ ${appState.ticks || 0}`;
 }
 function setDrillInProgress(value) {
   drillInProgress = value;
@@ -1683,6 +1838,7 @@ async function init() {
     if (!res.ok) throw new Error("drills.json not found");
     allDrills = await res.json();
     if (!allDrills.length) throw new Error("No drills in drills.json");
+    checkStreakFreeze();
     updateNavStreak();
     if (!appState.hasSeenTutorial) renderTutorialIntro();
     else goToStartOrDeepLink();
