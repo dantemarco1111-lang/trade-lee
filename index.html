@@ -34,16 +34,6 @@
   a { color: inherit; }
   .wrap { max-width: 1100px; margin: 0 auto; padding: 0 20px; }
 
-  /* ---------- nav ---------- */
-  .nav {
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 20px 0;
-  }
-  .nav-wordmark {
-    font-family: var(--font-display); font-weight: 700; font-size: 1.15rem;
-    text-decoration: none; display: flex; align-items: center; gap: 6px;
-  }
-
   /* ---------- hero ---------- */
   .hero {
     position: relative;
@@ -118,27 +108,31 @@
     font-size: clamp(1.8rem, 5vw, 2.6rem); font-weight: 700; color: var(--gold);
   }
   .proof .proof-stat-label { color: var(--text-dim); font-size: 0.85rem; margin-top: 4px; }
-
-  /* ---------- footer ---------- */
-  footer { padding: 50px 0 30px; text-align: center; border-top: 1px solid var(--border); margin-top: 20px; }
-  .footer-wordmark { font-family: var(--font-display); font-weight: 700; font-size: 1.1rem; margin-bottom: 8px; }
-  .footer-tagline { color: var(--text-dim); font-size: 0.88rem; margin-bottom: 18px; }
-  .footer-links { display: flex; justify-content: center; gap: 18px; margin-bottom: 18px; }
-  .footer-links a {
-    text-decoration: none; color: var(--text-dim); font-size: 0.85rem;
-    border: 1px solid var(--border); border-radius: 999px; padding: 8px 16px;
-    transition: border-color 0.15s ease, color 0.15s ease;
-  }
-  .footer-links a:hover { border-color: var(--text-dim); color: var(--text); }
-  .footer-disclaimer { color: var(--text-dim); font-size: 0.75rem; opacity: 0.7; }
 </style>
 </head>
 <body>
 
-<div class="wrap">
-  <nav class="nav">
+<header class="site-header">
+  <div class="wrap site-header-inner">
     <a class="nav-wordmark" href="/">📈 Trade Lee</a>
-  </nav>
+    <nav class="nav-links-desktop">
+      <a href="/play/?mode=daily">Daily Drill</a>
+      <a href="/play/?mode=practice">Practice</a>
+      <span class="nav-disabled">Strategies <span class="soon-tag">SOON</span></span>
+      <span class="nav-disabled">Learn <span class="soon-tag">SOON</span></span>
+    </nav>
+    <button class="hamburger-btn" id="hamburgerBtn" aria-label="Open menu">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</header>
+
+<div class="mobile-menu-overlay" id="mobileMenuOverlay">
+  <button class="mobile-menu-close" id="mobileMenuClose" aria-label="Close menu">✕</button>
+  <a href="/play/?mode=daily">Daily Drill</a>
+  <a href="/play/?mode=practice">Practice</a>
+  <span class="nav-disabled-mobile">Strategies <span class="soon-tag">SOON</span></span>
+  <span class="nav-disabled-mobile">Learn <span class="soon-tag">SOON</span></span>
 </div>
 
 <section class="hero">
@@ -184,10 +178,10 @@
   </section>
 </div>
 
-<footer>
+<footer class="site-footer">
   <div class="wrap">
     <div class="footer-wordmark">📈 Trade Lee</div>
-    <div class="footer-tagline">Built by a 17-year-old trader. Building in public.</div>
+    <div class="footer-tagline">Trade Lee — train your eye. © 2026</div>
     <div class="footer-links">
       <a href="#" rel="noopener">TikTok</a>
       <a href="#" rel="noopener">X</a>
@@ -276,6 +270,14 @@
   }
   window.addEventListener("resize", () => { resize(); seed(); });
   init();
+})();
+
+/* mobile hamburger menu */
+(function () {
+  const overlay = document.getElementById("mobileMenuOverlay");
+  document.getElementById("hamburgerBtn").onclick = () => overlay.classList.add("open");
+  document.getElementById("mobileMenuClose").onclick = () => overlay.classList.remove("open");
+  overlay.querySelectorAll("a").forEach(a => a.addEventListener("click", () => overlay.classList.remove("open")));
 })();
 </script>
 </body>

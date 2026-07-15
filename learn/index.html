@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Learn — Trade Lee</title>
+<meta name="description" content="Chart-reading lessons, one concept at a time. Coming soon to Trade Lee.">
+<meta property="og:title" content="Learn — Trade Lee">
+<meta property="og:description" content="Chart-reading lessons, one concept at a time. Coming soon to Trade Lee.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://trade-lee.vercel.app/learn/">
+<meta property="og:image" content="https://trade-lee.vercel.app/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Learn — Trade Lee">
+<meta name="twitter:description" content="Chart-reading lessons, one concept at a time. Coming soon to Trade Lee.">
+<meta name="twitter:image" content="https://trade-lee.vercel.app/og-image.png">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230b0e14'/%3E%3Cline x1='11' y1='4' x2='11' y2='28' stroke='%2326a69a' stroke-width='2.2'/%3E%3Crect x='7' y='10' width='8' height='10' rx='1' fill='%2326a69a'/%3E%3Cline x1='23' y1='6' x2='23' y2='25' stroke='%23ef5350' stroke-width='2.2'/%3E%3Crect x='19' y='12' width='8' height='7' rx='1' fill='%23ef5350'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@500;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@500;700&display=swap">
+<link rel="stylesheet" href="/theme.css">
+<style>
+  html, body {
+    margin: 0; padding: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-body);
+    overflow-x: hidden;
+    -webkit-tap-highlight-color: transparent;
+    min-height: 100vh;
+  }
+  a { color: inherit; }
+  .wrap { max-width: 1100px; margin: 0 auto; padding: 0 20px; }
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="wrap site-header-inner">
+    <a class="nav-wordmark" href="/">📈 Trade Lee</a>
+    <nav class="nav-links-desktop">
+      <a href="/play/?mode=daily">Daily Drill</a>
+      <a href="/play/?mode=practice">Practice</a>
+      <span class="nav-disabled">Strategies <span class="soon-tag">SOON</span></span>
+      <span class="nav-disabled">Learn <span class="soon-tag">SOON</span></span>
+    </nav>
+    <button class="hamburger-btn" id="hamburgerBtn" aria-label="Open menu">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</header>
+
+<div class="mobile-menu-overlay" id="mobileMenuOverlay">
+  <button class="mobile-menu-close" id="mobileMenuClose" aria-label="Close menu">✕</button>
+  <a href="/play/?mode=daily">Daily Drill</a>
+  <a href="/play/?mode=practice">Practice</a>
+  <span class="nav-disabled-mobile">Strategies <span class="soon-tag">SOON</span></span>
+  <span class="nav-disabled-mobile">Learn <span class="soon-tag">SOON</span></span>
+</div>
+
+<main class="wrap">
+  <div class="coming-soon">
+    <div class="badge">COMING SOON</div>
+    <h1>Learn</h1>
+    <p class="teaser">Chart-reading lessons, one concept at a time.</p>
+    <form class="notify-form" id="notifyForm">
+      <input type="email" placeholder="you@email.com" required id="notifyEmail">
+      <button type="submit" class="btn btn-primary" id="notifyBtn">Notify me</button>
+    </form>
+    <div class="notify-note">No spam. We'll email you when this is live.</div>
+  </div>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <div class="footer-wordmark">📈 Trade Lee</div>
+    <div class="footer-tagline">Trade Lee — train your eye. © 2026</div>
+    <div class="footer-links">
+      <a href="#" rel="noopener">TikTok</a>
+      <a href="#" rel="noopener">X</a>
+      <a href="#" rel="noopener">Instagram</a>
+    </div>
+    <div class="footer-disclaimer">Educational game. Not financial advice.</div>
+  </div>
+</footer>
+
+<script>
+(function () {
+  const overlay = document.getElementById("mobileMenuOverlay");
+  document.getElementById("hamburgerBtn").onclick = () => overlay.classList.add("open");
+  document.getElementById("mobileMenuClose").onclick = () => overlay.classList.remove("open");
+  overlay.querySelectorAll("a").forEach(a => a.addEventListener("click", () => overlay.classList.remove("open")));
+})();
+
+/* placeholder only — no data is captured or sent anywhere */
+document.getElementById("notifyForm").addEventListener("submit", function (e) {
+  e.preventDefault();
+  document.getElementById("notifyEmail").disabled = true;
+  const btn = document.getElementById("notifyBtn");
+  btn.textContent = "You're on the list ✓";
+  btn.disabled = true;
+});
+</script>
+</body>
+</html>
