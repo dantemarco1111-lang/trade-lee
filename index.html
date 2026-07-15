@@ -1,0 +1,1406 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Trade Lee — spot the real breakout</title>
+<meta name="description" content="A Duolingo-style drill that trains you to read real breakouts from fakeouts, using real market data.">
+<meta property="og:title" content="Trade Lee — spot the real breakout">
+<meta property="og:description" content="One chart. Ten seconds. Is it a real breakout or a fakeout? Train your eye with real market data.">
+<meta property="og:type" content="website">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230b0e14'/%3E%3Cline x1='11' y1='4' x2='11' y2='28' stroke='%2326a69a' stroke-width='2.2'/%3E%3Crect x='7' y='10' width='8' height='10' rx='1' fill='%2326a69a'/%3E%3Cline x1='23' y1='6' x2='23' y2='25' stroke='%23ef5350' stroke-width='2.2'/%3E%3Crect x='19' y='12' width='8' height='7' rx='1' fill='%23ef5350'/%3E%3C/svg%3E">
+<script src="https://unpkg.com/lightweight-charts/dist/lightweight-charts.standalone.production.js"></script>
+<style>
+  :root {
+    --bg: #0b0e14;
+    --card: #141922;
+    --card2: #1a2029;
+    --border: #262b36;
+    --text: #e6e9ef;
+    --muted: #8b95a7;
+    --green: #22c55e;
+    --red: #ef4444;
+    --candle-green: #26a69a;
+    --candle-red: #ef5350;
+    --yellow: #f5b400;
+    --purple: #c792ea;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body {
+    margin: 0; padding: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+    overscroll-behavior-y: contain;
+  }
+  #app {
+    max-width: 480px;
+    margin: 0 auto;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    padding: 10px 12px 16px;
+    position: relative;
+  }
+
+  /* ---------- top bar ---------- */
+  .topbar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    padding: 2px 0 6px;
+  }
+  .bankroll { text-align: center; }
+  .bankroll-label {
+    font-size: 0.65rem;
+    color: var(--muted);
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+  }
+  .bankroll-value {
+    font-size: 2rem;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+    transition: color 0.2s;
+  }
+  .bankroll-value.flash-green { color: var(--green); }
+  .bankroll-value.flash-red { color: var(--red); }
+  .icon-btn {
+    position: absolute;
+    right: 0;
+    top: 2px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    width: 38px; height: 38px;
+    font-size: 1.1rem;
+    color: var(--text);
+    cursor: pointer;
+  }
+  .icon-btn:active { transform: scale(0.92); }
+
+  /* ---------- stats bar ---------- */
+  .statsbar { display: flex; gap: 6px; margin-bottom: 6px; }
+  .stat-chip {
+    flex: 1;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 6px 4px;
+    text-align: center;
+  }
+  .stat-chip .stat-value {
+    font-size: 1.05rem;
+    font-weight: 800;
+    display: inline-block;
+    transition: transform 0.15s;
+  }
+  .stat-chip .stat-value.pnl-up { color: var(--green); }
+  .stat-chip .stat-value.pnl-down { color: var(--red); }
+  .stat-chip .stat-label {
+    display: block;
+    font-size: 0.6rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-top: 1px;
+  }
+  .stat-value.shatter { animation: shatter 0.5s ease; }
+  @keyframes shatter {
+    0% { transform: scale(1) rotate(0); opacity: 1; }
+    20% { transform: scale(1.15) rotate(-4deg); opacity: 1; }
+    40% { transform: scale(0.9) rotate(4deg); opacity: 0.6; filter: blur(0.5px); }
+    60% { transform: scale(1.05) rotate(-2deg); opacity: 0.4; }
+    100% { transform: scale(1) rotate(0); opacity: 1; }
+  }
+
+  /* ---------- multiplier badge ---------- */
+  .multiplier-badge {
+    position: absolute;
+    top: 82px;
+    left: 50%;
+    transform: translateX(-50%) scale(0);
+    background: linear-gradient(135deg, #ffb020, #ff5e3a);
+    color: #1a0a00;
+    font-weight: 900;
+    font-size: 1.3rem;
+    padding: 10px 22px;
+    border-radius: 999px;
+    box-shadow: 0 6px 24px rgba(255, 130, 0, 0.5);
+    z-index: 50;
+    pointer-events: none;
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+  }
+  .multiplier-badge.show { animation: badgeSlam 1.4s cubic-bezier(.34,1.56,.64,1) forwards; }
+  @keyframes badgeSlam {
+    0% { transform: translateX(-50%) scale(0) rotate(-8deg); opacity: 0; }
+    15% { transform: translateX(-50%) scale(1.25) rotate(4deg); opacity: 1; }
+    30% { transform: translateX(-50%) scale(0.95) rotate(-2deg); opacity: 1; }
+    45% { transform: translateX(-50%) scale(1.05) rotate(0); opacity: 1; }
+    75% { transform: translateX(-50%) scale(1) rotate(0); opacity: 1; }
+    100% { transform: translateX(-50%) scale(1) rotate(0); opacity: 0; }
+  }
+
+  /* ---------- chart ---------- */
+  .chart-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 6px 6px 2px;
+    position: relative;
+    height: 50vh;
+    min-height: 300px;
+    max-height: 460px;
+    overflow: hidden;
+  }
+  .chart-card.slide-in { animation: slideIn 0.3s ease-out; }
+  @keyframes slideIn {
+    from { transform: translateX(24px); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+  }
+  .chart-card.zoom-pulse { animation: zoomPulse 0.25s ease; }
+  @keyframes zoomPulse { 0% { transform: scale(1); } 50% { transform: scale(1.02); } 100% { transform: scale(1); } }
+  .chart-card.shake { animation: shakeAnim 0.2s ease; }
+  @keyframes shakeAnim {
+    0%, 100% { transform: translateX(0); }
+    20% { transform: translateX(-8px); } 40% { transform: translateX(7px); }
+    60% { transform: translateX(-5px); } 80% { transform: translateX(3px); }
+  }
+  #chartContainer { width: 100%; height: 100%; transition: filter 0.4s ease; }
+  #chartContainer.desaturate { filter: grayscale(0.7) brightness(0.85); }
+  #chartContainer.fizzle-fade { filter: grayscale(1) brightness(0.7); }
+
+  .range-zone {
+    position: absolute;
+    left: 6px; right: 6px;
+    background: rgba(245, 180, 0, 0.08);
+    border-top: 1px dashed rgba(245, 180, 0, 0.5);
+    border-bottom: 1px dashed rgba(245, 180, 0, 0.5);
+    pointer-events: none;
+    transition: background 0.15s ease;
+    z-index: 15;
+  }
+  .range-zone.pulse { background: rgba(245, 180, 0, 0.28); }
+
+  .forming-marker {
+    position: absolute;
+    top: 8px; right: 10px;
+    z-index: 20;
+    background: rgba(245, 180, 0, 0.18);
+    border: 1px solid var(--yellow);
+    color: var(--yellow);
+    font-size: 0.65rem;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 999px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    pointer-events: none;
+    white-space: nowrap;
+    transition: top 0.1s linear, left 0.1s linear;
+  }
+  .forming-marker .dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: var(--yellow);
+    animation: formingPulse 1s ease-in-out infinite;
+  }
+  @keyframes formingPulse {
+    0%, 100% { transform: scale(0.85); opacity: 0.7; box-shadow: 0 0 0 0 rgba(245,180,0,0.5); }
+    50% { transform: scale(1.2); opacity: 1; box-shadow: 0 0 0 6px rgba(245,180,0,0); }
+  }
+
+  .legend-row {
+    display: flex; flex-wrap: wrap; gap: 10px; justify-content: center;
+    font-size: 0.68rem; color: var(--muted); margin: 3px 0 2px;
+  }
+  .legend-row span { display: inline-flex; align-items: center; gap: 4px; }
+  .legend-row .swatch { display: inline-block; width: 10px; height: 2px; }
+
+  /* ---------- timer ---------- */
+  .timer-bar-wrap {
+    height: 8px; background: var(--card2); border-radius: 5px;
+    margin: 7px 0 6px; overflow: hidden; border: 1px solid var(--border);
+  }
+  .timer-fill { height: 100%; width: 100%; background: var(--green); border-radius: 5px; }
+  .timer-fill.warn { background: var(--yellow); }
+  .timer-fill.danger { background: var(--red); animation: timerPulse 0.5s ease-in-out infinite; }
+  @keyframes timerPulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.55; } }
+
+  /* ---------- buttons ---------- */
+  .buttons-row { display: flex; gap: 10px; }
+  .btn {
+    flex: 1; padding: 18px 8px; font-size: 1.05rem; font-weight: 800;
+    border-radius: 16px; border: none; cursor: pointer; color: #fff;
+    letter-spacing: 0.3px; transition: transform 0.08s ease; min-height: 60px;
+  }
+  .btn:active { transform: scale(0.94); }
+  .btn.real { background: linear-gradient(180deg, #2fbf9f, #1e8f77); }
+  .btn.fake { background: linear-gradient(180deg, #f0563f, #c93a26); }
+  .btn:disabled { opacity: 0.45; cursor: default; }
+
+  .skip-message {
+    text-align: center; padding: 14px 10px; border-radius: 14px;
+    background: rgba(139, 149, 167, 0.12); border: 1px solid var(--border);
+    color: var(--muted); font-weight: 600; font-size: 0.95rem;
+  }
+
+  /* ---------- coach card ---------- */
+  .coach-card {
+    background: var(--card); border: 1px solid var(--border); border-radius: 16px;
+    padding: 14px; text-align: center; animation: coachIn 0.25s ease;
+  }
+  @keyframes coachIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+  .coach-outcome { font-size: 1.15rem; font-weight: 800; margin-bottom: 6px; }
+  .coach-outcome.correct { color: var(--green); }
+  .coach-outcome.wrong { color: var(--red); }
+  .coach-outcome.neutral { color: var(--muted); }
+  .coach-why { font-size: 0.88rem; color: var(--text); opacity: 0.9; margin-bottom: 4px; }
+  .coach-pnl { font-size: 0.95rem; font-weight: 700; margin-bottom: 10px; }
+  .coach-pnl.pos { color: var(--green); }
+  .coach-pnl.neg { color: var(--red); }
+  .next-btn {
+    width: 100%; padding: 14px; font-size: 1rem; font-weight: 800; border-radius: 14px;
+    border: 1px solid var(--border); background: var(--card2); color: var(--text); cursor: pointer;
+  }
+  .next-btn:active { transform: scale(0.97); }
+
+  .hidden { display: none !important; }
+
+  /* ---------- end of day ---------- */
+  .end-of-day { text-align: center; padding: 16px 10px; }
+  .end-of-day h2 { font-size: 1.5rem; margin: 4px 0 16px; }
+  .eod-pnl { font-size: 3rem; font-weight: 900; margin-bottom: 4px; }
+  .eod-pnl.pos { color: var(--green); }
+  .eod-pnl.neg { color: var(--red); }
+  .eod-grid { display: flex; gap: 8px; margin: 16px 0; }
+  .eod-grid .cell { flex: 1; background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 12px 6px; }
+  .eod-grid .cell .v { font-size: 1.3rem; font-weight: 800; }
+  .eod-grid .cell .l { font-size: 0.65rem; color: var(--muted); text-transform: uppercase; margin-top: 2px; }
+  .eod-verdict {
+    background: var(--card); border: 1px solid var(--border); border-radius: 14px;
+    padding: 14px; font-size: 0.95rem; margin-bottom: 16px; line-height: 1.4;
+  }
+  .trade-again-btn {
+    width: 100%; padding: 17px; font-size: 1.05rem; font-weight: 800; border-radius: 16px;
+    border: none; background: linear-gradient(180deg, #2fbf9f, #1e8f77); color: #fff; cursor: pointer;
+    margin-bottom: 10px;
+  }
+  .trade-again-btn:active { transform: scale(0.96); }
+  .share-btn {
+    width: 100%; padding: 15px; font-size: 0.95rem; font-weight: 800; border-radius: 14px;
+    border: 1px solid var(--border); background: var(--card2); color: var(--text); cursor: pointer;
+    margin-bottom: 10px;
+  }
+  .share-btn:active { transform: scale(0.97); }
+  .text-link-btn {
+    background: none; border: none; color: var(--muted); font-size: 0.85rem;
+    text-decoration: underline; cursor: pointer; padding: 8px;
+  }
+
+  .loading, .error { text-align: center; padding: 60px 12px; color: var(--muted); }
+  .error { color: var(--red); }
+
+  #confettiLayer { position: fixed; inset: 0; pointer-events: none; z-index: 999; overflow: hidden; }
+  .confetti-piece { position: absolute; top: -20px; width: 8px; height: 14px; opacity: 0.9; animation: confettiFall linear forwards; }
+  @keyframes confettiFall { to { transform: translateY(110vh) rotate(540deg); opacity: 0.3; } }
+
+  /* ---------- start screen ---------- */
+  .start-screen { text-align: center; padding: 30px 6px 10px; position: relative; }
+  .start-wordmark { font-size: 2rem; font-weight: 900; letter-spacing: -0.5px; }
+  .start-sub { color: var(--muted); font-size: 0.95rem; margin: 4px 0 22px; }
+  .start-daily-streak {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: var(--card); border: 1px solid var(--border); border-radius: 999px;
+    padding: 8px 18px; font-weight: 700; font-size: 0.95rem; margin-bottom: 22px;
+  }
+  .start-daily-streak .win-streak { color: var(--green); font-size: 0.85rem; font-weight: 600; }
+  .mode-btn {
+    width: 100%; padding: 20px; font-size: 1.05rem; font-weight: 800; border-radius: 16px;
+    border: none; cursor: pointer; color: #fff; margin-bottom: 12px; letter-spacing: 0.3px;
+  }
+  .mode-btn:active { transform: scale(0.97); }
+  .daily-btn { background: linear-gradient(135deg, #ffb020, #ff5e3a); color: #1a0a00; }
+  .daily-btn.done { background: var(--card2); color: var(--muted); border: 1px solid var(--border); }
+  .practice-btn { background: linear-gradient(180deg, #2fbf9f, #1e8f77); }
+  .start-stats-row { display: flex; gap: 8px; margin-top: 24px; }
+  .mini-stat {
+    flex: 1; background: var(--card); border: 1px solid var(--border); border-radius: 12px;
+    padding: 12px 4px; position: relative; cursor: default;
+  }
+  .mini-stat .v { font-size: 1.2rem; font-weight: 800; }
+  .mini-stat .l { font-size: 0.6rem; color: var(--muted); text-transform: uppercase; margin-top: 2px; letter-spacing: 0.4px; }
+  .mini-stat.freeze-teaser { cursor: pointer; opacity: 0.55; }
+  .freeze-badge {
+    position: absolute; top: -7px; right: -4px; background: var(--muted); color: var(--bg);
+    font-size: 0.5rem; font-weight: 800; padding: 2px 5px; border-radius: 6px; letter-spacing: 0.3px;
+  }
+  .freeze-tooltip {
+    margin-top: 10px; background: var(--card2); border: 1px solid var(--border); border-radius: 10px;
+    padding: 10px 12px; font-size: 0.78rem; color: var(--muted); text-align: center;
+  }
+
+  /* ---------- daily result ---------- */
+  .daily-result { text-align: center; padding: 20px 8px 10px; }
+  .daily-result-badge { font-size: 2.6rem; font-weight: 900; margin-bottom: 8px; }
+  .daily-result-badge.win { color: var(--green); }
+  .daily-result-badge.loss { color: var(--red); }
+  .daily-outcome-line { font-size: 1.05rem; font-weight: 700; margin-bottom: 6px; }
+  .daily-why { font-size: 0.9rem; color: var(--muted); margin-bottom: 18px; padding: 0 6px; }
+  .daily-streaks { display: flex; gap: 8px; margin-bottom: 16px; }
+  .daily-distribution {
+    background: var(--card); border: 1px solid var(--border); border-radius: 12px;
+    padding: 12px; font-size: 0.9rem; margin-bottom: 12px; color: var(--text);
+  }
+  .daily-countdown { font-size: 0.82rem; color: var(--muted); margin-bottom: 18px; }
+  .daily-countdown span { font-weight: 800; color: var(--text); font-variant-numeric: tabular-nums; }
+
+  /* ---------- tutorial ---------- */
+  .tutorial-callout {
+    position: absolute; left: 10px; right: 10px; z-index: 60;
+    background: var(--card2); border: 1px solid var(--yellow); border-radius: 12px;
+    padding: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+    animation: coachIn 0.2s ease;
+  }
+  .tutorial-callout.pos-upper { top: 40px; }
+  .tutorial-callout.pos-lower { bottom: 40px; }
+  .tutorial-callout.pos-right { top: 50%; transform: translateY(-50%); }
+  .callout-text { font-size: 0.88rem; margin-bottom: 8px; line-height: 1.35; }
+  .callout-next {
+    width: 100%; padding: 10px; font-size: 0.85rem; font-weight: 800; border-radius: 10px;
+    border: none; background: var(--yellow); color: #1a1200; cursor: pointer;
+  }
+  .skip-tutorial-link {
+    text-align: center; margin-top: 6px;
+  }
+  .tutorial-outro { text-align: center; padding: 60px 20px; }
+  .outro-emoji { font-size: 3rem; margin-bottom: 10px; }
+  .tutorial-outro h2 { margin: 0 0 6px; }
+  .tutorial-outro p { color: var(--muted); margin-bottom: 26px; }
+
+  @media (max-width: 400px) {
+    .bankroll-value { font-size: 1.7rem; }
+    .btn { font-size: 0.95rem; padding: 16px 6px; }
+    .chart-card { height: 46vh; }
+  }
+  @media (min-width: 600px) {
+    .chart-card { height: 44vh; max-height: 420px; }
+    .timer-bar-wrap { margin: 6px 0 6px; }
+  }
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="screenRoot">
+    <div class="loading" id="loading">Loading drills...</div>
+  </div>
+</div>
+
+<div id="confettiLayer"></div>
+
+<script>
+/* ============================= CONSTANTS ============================= */
+const DRILLS_PER_SESSION = 10;
+const DECISION_SECONDS = 10;
+const STARTING_BANKROLL = 10000;
+const POSITION_SIZE = 5000;
+const PNL_CAP_PCT = 0.03;
+const PLAYOUT_START_MS = 700;
+const PLAYOUT_END_MS = 250;
+const RANGE_PROXIMITY_PCT = 0.0015;
+const STORAGE_KEY = "tradeLeeState_v1";
+
+/* ============================= PERSISTED STATE ============================= */
+function defaultState() {
+  return {
+    hasSeenTutorial: false,
+    dailyPlayStreak: 0,
+    dailyWinStreak: 0,
+    lastDailyDate: null,
+    lastDailyResult: null,
+    lastDailyDrillId: null,
+    lastDailyOutcomeCorrect: null,
+    lastDailyIsFizzle: null,
+    bestSessionPnl: null,
+    bestStreakEver: 0,
+    totalDrillsAnswered: 0,
+    totalCorrect: 0,
+  };
+}
+function loadPersistedState() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return defaultState();
+    return Object.assign(defaultState(), JSON.parse(raw));
+  } catch (e) { return defaultState(); }
+}
+function saveState() {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(appState)); } catch (e) {}
+}
+let appState = loadPersistedState();
+
+/* ============================= APP STATE ============================= */
+let allDrills = [];
+let sessionDeck = [];
+let sessionIndex = 0;
+let sessionPnl = 0;
+let bankroll = STARTING_BANKROLL;
+let streak = 0;
+let bestStreak = 0;
+let multiplier = 1;
+let soundOn = true;
+let answered = false;
+let timerHandle = null;
+let timerDeadline = 0;
+let playoutHandle = null;
+let autoAdvanceHandle = null;
+let sessionResults = [];
+let currentMode = null; // 'practice' | 'daily' | 'tutorial'
+let currentDrill = null;
+let currentDrillMultiplier = 1;
+
+let chart = null, candleSeries = null, volumeSeries = null, vwapSeries = null;
+let priceLinesList = [];
+
+/* ============================= AUDIO ============================= */
+let audioCtx = null;
+function getAudioCtx() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  if (audioCtx.state === "suspended") audioCtx.resume();
+  return audioCtx;
+}
+function playTone(freq, duration, type, gainPeak, delay) {
+  if (!soundOn) return;
+  try {
+    const ctx = getAudioCtx();
+    const t0 = ctx.currentTime + (delay || 0);
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = type || "sine";
+    osc.frequency.setValueAtTime(freq, t0);
+    gain.gain.setValueAtTime(0.0001, t0);
+    gain.gain.linearRampToValueAtTime(gainPeak || 0.12, t0 + 0.012);
+    gain.gain.exponentialRampToValueAtTime(0.0001, t0 + duration);
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start(t0);
+    osc.stop(t0 + duration + 0.03);
+  } catch (e) {}
+}
+function playTick() { playTone(1150, 0.045, "square", 0.045); }
+function playClick() { playTone(500, 0.05, "sine", 0.08); }
+function playTimeout() { playTone(200, 0.35, "sawtooth", 0.1); }
+function playWin() {
+  playTone(880, 0.12, "triangle", 0.13, 0);
+  playTone(1108, 0.12, "triangle", 0.13, 0.09);
+  playTone(1318, 0.2, "triangle", 0.15, 0.18);
+}
+function playLoss() {
+  playTone(180, 0.28, "sawtooth", 0.11, 0);
+  playTone(130, 0.38, "sawtooth", 0.11, 0.09);
+}
+function playFizzle() { playTone(320, 0.3, "sine", 0.06); }
+function playMultiplier() {
+  playTone(1500, 0.14, "square", 0.09, 0);
+  playTone(2000, 0.2, "square", 0.09, 0.06);
+}
+
+/* ============================= TIME / DATE UTIL ============================= */
+function toEasternChartTime(unixSeconds) {
+  const d = new Date(unixSeconds * 1000);
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: "America/New_York",
+    year: "numeric", month: "2-digit", day: "2-digit",
+    hour: "2-digit", minute: "2-digit", second: "2-digit",
+    hour12: false,
+  }).formatToParts(d);
+  const map = {};
+  parts.forEach(p => map[p.type] = p.value);
+  let hour = parseInt(map.hour, 10);
+  if (hour === 24) hour = 0;
+  const fakeUtcMs = Date.UTC(
+    parseInt(map.year, 10), parseInt(map.month, 10) - 1, parseInt(map.day, 10),
+    hour, parseInt(map.minute, 10), parseInt(map.second, 10)
+  );
+  return Math.floor(fakeUtcMs / 1000);
+}
+function getEtDateString(offsetDays) {
+  const now = new Date(Date.now() + (offsetDays || 0) * 86400000);
+  return new Intl.DateTimeFormat("en-CA", { timeZone: "America/New_York", year: "numeric", month: "2-digit", day: "2-digit" }).format(now);
+}
+function getEtDateHuman() {
+  return new Intl.DateTimeFormat("en-US", { timeZone: "America/New_York", month: "short", day: "numeric", year: "numeric" }).format(new Date());
+}
+function getEtOffsetMinutes(date) {
+  const utcDate = new Date(date.toLocaleString("en-US", { timeZone: "UTC" }));
+  const etDate = new Date(date.toLocaleString("en-US", { timeZone: "America/New_York" }));
+  return (etDate - utcDate) / 60000;
+}
+function getNextEtMidnightMs() {
+  const etDateStr = getEtDateString(0);
+  const [y, m, d] = etDateStr.split("-").map(Number);
+  const candidate = Date.UTC(y, m - 1, d + 1, 0, 0, 0);
+  const offsetMinutes = getEtOffsetMinutes(new Date(candidate));
+  return candidate - offsetMinutes * 60000;
+}
+
+function hashString(s) {
+  let h = 0;
+  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
+  return h;
+}
+function getDailyDrill() {
+  const idx = hashString(getEtDateString(0)) % allDrills.length;
+  return allDrills[idx];
+}
+// Deterministic seeded placeholder — swap this one function for a real API call later.
+async function getDailyDistributionPct(dateStr) {
+  const h = hashString("dist-" + dateStr);
+  return 35 + (h % 51); // 35-85 inclusive
+}
+
+/* ============================= UTIL ============================= */
+function formatMoney(n) {
+  const sign = n < 0 ? "-" : "";
+  return sign + "$" + Math.abs(Math.round(n)).toLocaleString("en-US");
+}
+function shuffleArray(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+function animateNumber(fromVal, toVal, duration, onUpdate, onComplete) {
+  const start = performance.now();
+  function step(now) {
+    const elapsed = now - start;
+    const t = Math.min(1, elapsed / duration);
+    const eased = 1 - Math.pow(1 - t, 3);
+    onUpdate(fromVal + (toVal - fromVal) * eased);
+    if (t < 1) requestAnimationFrame(step);
+    else { onUpdate(toVal); if (onComplete) onComplete(); }
+  }
+  requestAnimationFrame(step);
+}
+
+/* ============================= PERSISTENCE HELPERS ============================= */
+function recordDailyResult(drill, isCorrect, isFizzle) {
+  const today = getEtDateString(0);
+  const yesterday = getEtDateString(-1);
+  if (appState.lastDailyDate === yesterday) appState.dailyPlayStreak = (appState.dailyPlayStreak || 0) + 1;
+  else if (appState.lastDailyDate !== today) appState.dailyPlayStreak = 1;
+
+  if (isCorrect) {
+    if (appState.lastDailyDate === yesterday && appState.lastDailyResult === "win") {
+      appState.dailyWinStreak = (appState.dailyWinStreak || 0) + 1;
+    } else {
+      appState.dailyWinStreak = 1;
+    }
+  } else {
+    appState.dailyWinStreak = 0;
+  }
+  appState.lastDailyDate = today;
+  appState.lastDailyResult = isCorrect ? "win" : "loss";
+  appState.lastDailyDrillId = drill.id;
+  appState.lastDailyOutcomeCorrect = isCorrect;
+  appState.lastDailyIsFizzle = isFizzle;
+  saveState();
+}
+function incrementGlobalStats(isCorrect) {
+  appState.totalDrillsAnswered = (appState.totalDrillsAnswered || 0) + 1;
+  if (isCorrect) appState.totalCorrect = (appState.totalCorrect || 0) + 1;
+  saveState();
+}
+function updateBestStreakEver(streakVal) {
+  if (streakVal > (appState.bestStreakEver || 0)) { appState.bestStreakEver = streakVal; saveState(); }
+}
+function updateBestSessionPnl(pnl) {
+  if (appState.bestSessionPnl === null || pnl > appState.bestSessionPnl) { appState.bestSessionPnl = pnl; saveState(); return true; }
+  return false;
+}
+
+/* ============================= DIFFICULTY RAMP ============================= */
+function buildSessionDeck() {
+  const pool = shuffleArray(allDrills.slice());
+  pool.sort((a, b) => Math.abs(b.volume_ratio - 1) - Math.abs(a.volume_ratio - 1));
+  const tercile = Math.floor(pool.length / 3);
+  const obvious = shuffleArray(pool.slice(0, tercile));
+  const hardest = shuffleArray(pool.slice(pool.length - tercile));
+  const middle = shuffleArray(pool.slice(tercile, pool.length - tercile));
+  return [...obvious.slice(0, 3), ...middle.slice(0, 4), ...hardest.slice(0, 3)];
+}
+
+/* ============================= CHART HELPERS ============================= */
+function addSeriesCompat(chartObj, seriesTypeName, options, paneIndex) {
+  const legacyMethod = "add" + seriesTypeName + "Series";
+  if (typeof chartObj[legacyMethod] === "function") return chartObj[legacyMethod](options);
+  return chartObj.addSeries(LightweightCharts[seriesTypeName + "Series"], options, paneIndex);
+}
+function initChart(container) {
+  chart = LightweightCharts.createChart(container, {
+    width: container.clientWidth,
+    height: container.clientHeight,
+    layout: { background: { type: "solid", color: "#141922" }, textColor: "#c9d1d9" },
+    grid: { vertLines: { color: "#1d2330" }, horzLines: { color: "#1d2330" } },
+    timeScale: { timeVisible: true, secondsVisible: false, borderColor: "#262b36", rightOffset: 8 },
+    rightPriceScale: { borderColor: "#262b36" },
+    crosshair: { mode: LightweightCharts.CrosshairMode.Normal },
+  });
+  candleSeries = addSeriesCompat(chart, "Candlestick", {
+    upColor: "#26a69a", downColor: "#ef5350", borderVisible: false,
+    wickUpColor: "#26a69a", wickDownColor: "#ef5350",
+  }, 0);
+  candleSeries.priceScale().applyOptions({ scaleMargins: { top: 0.06, bottom: 0.06 } });
+  volumeSeries = addSeriesCompat(chart, "Histogram", { priceFormat: { type: "volume" } }, 1);
+  vwapSeries = addSeriesCompat(chart, "Line", { color: "#c792ea", lineWidth: 2, priceLineVisible: false, lastValueVisible: false }, 0);
+  try {
+    const panes = chart.panes();
+    panes[1].setHeight(Math.round(container.clientHeight * 0.32));
+  } catch (e) {}
+}
+function clearPriceLines() {
+  for (const l of priceLinesList) { try { candleSeries.removePriceLine(l); } catch (e) {} }
+  priceLinesList = [];
+}
+function addPriceLine(price, color, title) {
+  if (price === null || price === undefined) return;
+  const l = candleSeries.createPriceLine({ price, color, lineWidth: 2, lineStyle: LightweightCharts.LineStyle.Dashed, axisLabelVisible: true, title });
+  priceLinesList.push(l);
+}
+function updateRangeZone(drill) {
+  const zone = document.getElementById("rangeZone");
+  if (!zone || !candleSeries) return;
+  const yHigh = candleSeries.priceToCoordinate(drill.range_high);
+  const yLow = candleSeries.priceToCoordinate(drill.range_low);
+  if (yHigh === null || yLow === null) return;
+  zone.style.top = Math.min(yHigh, yLow) + "px";
+  zone.style.height = Math.max(2, Math.abs(yLow - yHigh)) + "px";
+}
+function pulseRangeZone() {
+  const zone = document.getElementById("rangeZone");
+  if (!zone) return;
+  zone.classList.add("pulse");
+  clearTimeout(zone._pulseTimeout);
+  zone._pulseTimeout = setTimeout(() => zone.classList.remove("pulse"), 380);
+}
+function positionFormingMarker(drill) {
+  const marker = document.getElementById("formingMarker");
+  if (!marker || !candleSeries || !chart) return;
+  const lastCandle = drill.candles[drill.candles.length - 1];
+  const x = chart.timeScale().timeToCoordinate(toEasternChartTime(lastCandle.time));
+  const y = candleSeries.priceToCoordinate(lastCandle.high);
+  if (x === null || y === null) return;
+  marker.style.right = "auto";
+  marker.style.left = Math.max(4, x - marker.offsetWidth / 2) + "px";
+  marker.style.top = Math.max(4, y - marker.offsetHeight - 12) + "px";
+}
+
+/* ============================= P&L ============================= */
+function computePnl(drill, isCorrect, mult) {
+  const rangeMid = (drill.range_high + drill.range_low) / 2;
+  let magnitudePct;
+  if (drill.outcome === "real") {
+    magnitudePct = Math.abs((drill.resolved_price - drill.breakout_price) / drill.breakout_price);
+  } else {
+    magnitudePct = Math.abs((drill.breakout_price - rangeMid) / drill.breakout_price);
+  }
+  const capped = Math.min(magnitudePct, PNL_CAP_PCT);
+  return POSITION_SIZE * capped * (isCorrect ? 1 : -1) * mult;
+}
+
+/* ============================= GAME SCREEN CHROME ============================= */
+function renderGameScreen(mode) {
+  currentMode = mode;
+  const root = document.getElementById("screenRoot");
+  let headerHtml;
+  if (mode === "practice") {
+    headerHtml = `
+      <div class="topbar">
+        <div class="bankroll">
+          <div class="bankroll-label">Bankroll</div>
+          <div class="bankroll-value" id="bankrollValue">${formatMoney(bankroll)}</div>
+        </div>
+        <button class="icon-btn" id="soundToggle">${soundOn ? "🔊" : "🔇"}</button>
+      </div>
+      <div class="statsbar">
+        <div class="stat-chip"><span class="stat-value" id="pnlValue">$0</span><span class="stat-label">Session P&L</span></div>
+        <div class="stat-chip"><span class="stat-value" id="streakValue">0</span><span class="stat-label">Streak</span></div>
+        <div class="stat-chip"><span class="stat-value" id="bestStreakValue">0</span><span class="stat-label">Best</span></div>
+        <div class="stat-chip"><span class="stat-value" id="drillCounter">1/10</span><span class="stat-label">Drill</span></div>
+      </div>`;
+  } else {
+    const label = mode === "daily" ? "Daily Drill" : "Quick Tutorial";
+    const sub = mode === "daily" ? getEtDateHuman() : "Learn the basics";
+    headerHtml = `
+      <div class="topbar">
+        <div class="bankroll">
+          <div class="bankroll-label">${label}</div>
+          <div class="bankroll-value" style="font-size:1.25rem;">${sub}</div>
+        </div>
+        <button class="icon-btn" id="soundToggle">${soundOn ? "🔊" : "🔇"}</button>
+      </div>`;
+  }
+  root.innerHTML = `${headerHtml}<div id="multiplierBadge" class="multiplier-badge"></div><div id="content"></div>`;
+  document.getElementById("soundToggle").onclick = toggleSound;
+}
+function toggleSound() {
+  soundOn = !soundOn;
+  const btn = document.getElementById("soundToggle");
+  if (btn) btn.textContent = soundOn ? "🔊" : "🔇";
+  if (soundOn) { try { getAudioCtx(); } catch (e) {} }
+}
+
+/* ============================= DRILL SHELL / LOAD ============================= */
+function renderShell() {
+  const content = document.getElementById("content");
+  content.innerHTML = `
+    <div class="chart-card slide-in" id="chartCard">
+      <div id="chartContainer"></div>
+      <div class="range-zone" id="rangeZone"></div>
+      <div class="forming-marker hidden" id="formingMarker"><span class="dot"></span>Breakout forming</div>
+    </div>
+    <div class="legend-row">
+      <span><span class="swatch" style="background:#f5b400"></span>Range High/Low</span>
+      <span><span class="swatch" style="background:#c792ea"></span>VWAP</span>
+    </div>
+    <div class="timer-bar-wrap"><div class="timer-fill" id="timerFill"></div></div>
+    <div class="buttons-row" id="buttonsRow">
+      <button class="btn real" id="realBtn">REAL BREAKOUT</button>
+      <button class="btn fake" id="fakeBtn">FAKEOUT</button>
+    </div>
+    <div class="skip-message hidden" id="skipMessage">Too slow — the market doesn't wait</div>
+    <div class="coach-card hidden" id="coachCard">
+      <div class="coach-outcome" id="coachOutcome"></div>
+      <div class="coach-why" id="coachWhy"></div>
+      <div class="coach-pnl" id="coachPnl"></div>
+      <button class="next-btn" id="nextBtn">Next →</button>
+    </div>
+  `;
+  document.getElementById("realBtn").onclick = () => answer("real");
+  document.getElementById("fakeBtn").onclick = () => answer("fake");
+  document.getElementById("nextBtn").onclick = () => { clearTimeout(autoAdvanceHandle); advanceOrEnd(); };
+}
+
+function loadDrill(drill, opts) {
+  opts = opts || {};
+  currentDrill = drill;
+  answered = false;
+  currentDrillMultiplier = multiplier;
+  renderShell();
+  const counterEl = document.getElementById("drillCounter");
+  if (counterEl) counterEl.textContent = `${sessionIndex + 1}/${DRILLS_PER_SESSION}`;
+
+  if (chart) { try { chart.remove(); } catch (e) {} chart = null; }
+  const container = document.getElementById("chartContainer");
+  initChart(container);
+
+  const candleData = drill.candles.map(c => ({ time: toEasternChartTime(c.time), open: c.open, high: c.high, low: c.low, close: c.close }));
+  const volumeData = drill.candles.map(c => ({ time: toEasternChartTime(c.time), value: c.volume, color: c.close >= c.open ? "rgba(38,166,154,0.7)" : "rgba(239,83,80,0.7)" }));
+  candleSeries.setData(candleData);
+  volumeSeries.setData(volumeData);
+  vwapSeries.setData(drill.vwap.slice(0, drill.candles.length).map(v => ({ time: toEasternChartTime(v.time), value: v.value })));
+
+  clearPriceLines();
+  addPriceLine(drill.range_high, "#f5b400", "Range High");
+  addPriceLine(drill.range_low, "#f5b400", "Range Low");
+  const lastVol = drill.candles[drill.candles.length - 1].volume;
+  const avgVol = drill.volume_ratio > 0 ? lastVol / drill.volume_ratio : null;
+  if (avgVol) {
+    const avgLine = volumeSeries.createPriceLine({ price: avgVol, color: "#8b95a7", lineWidth: 1, lineStyle: LightweightCharts.LineStyle.Dashed, axisLabelVisible: true, title: "Avg volume" });
+    priceLinesList.push({ remove: () => volumeSeries.removePriceLine(avgLine) });
+  }
+
+  chart.timeScale().fitContent();
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    updateRangeZone(drill);
+    positionFormingMarker(drill);
+  }));
+
+  document.getElementById("formingMarker").classList.remove("hidden");
+
+  if (!opts.deferTimer) startTimer();
+}
+
+/* ============================= TIMER ============================= */
+function startTimer() {
+  clearTimer();
+  timerDeadline = performance.now() + DECISION_SECONDS * 1000;
+  const fill = document.getElementById("timerFill");
+  function tick() {
+    if (answered) return;
+    const remaining = timerDeadline - performance.now();
+    const pct = Math.max(0, remaining / (DECISION_SECONDS * 1000));
+    fill.style.width = (pct * 100) + "%";
+    fill.classList.toggle("warn", remaining <= 5000 && remaining > 3000);
+    fill.classList.toggle("danger", remaining <= 3000);
+    if (remaining <= 0) { handleTimeout(); return; }
+    timerHandle = requestAnimationFrame(tick);
+  }
+  timerHandle = requestAnimationFrame(tick);
+}
+function clearTimer() { if (timerHandle) cancelAnimationFrame(timerHandle); timerHandle = null; }
+function disableButtons() {
+  const r = document.getElementById("realBtn"), f = document.getElementById("fakeBtn");
+  if (r) r.disabled = true;
+  if (f) f.disabled = true;
+}
+function hideFormingMarker() {
+  const m = document.getElementById("formingMarker");
+  if (m) m.classList.add("hidden");
+}
+
+function handleTimeout() {
+  if (answered) return;
+  answered = true;
+  clearTimer();
+  hideFormingMarker();
+  disableButtons();
+  playTimeout();
+  if (currentMode === "practice") {
+    streak = 0; multiplier = 1;
+    updateStreakDisplay();
+    sessionResults.push({ pnl: 0, correct: null, skipped: true });
+  }
+  const skipMsg = document.getElementById("skipMessage");
+  if (skipMsg) skipMsg.classList.remove("hidden");
+  autoAdvanceHandle = setTimeout(() => {
+    if (currentMode === "practice") advanceOrEnd();
+    else if (currentMode === "daily") renderStartScreen();
+    else renderStartScreen();
+  }, 1500);
+}
+
+/* ============================= ANSWER + PLAYOUT ============================= */
+function answer(choice) {
+  if (answered) return;
+  answered = true;
+  clearTimer();
+  hideFormingMarker();
+  disableButtons();
+  playClick();
+  startPlayout(currentDrill, choice);
+}
+
+function startPlayout(drill, choice) {
+  const playoutCandles = drill.playout_candles || [];
+  const stopIndex = (drill.resolution_bar_index !== null && drill.resolution_bar_index !== undefined) ? drill.resolution_bar_index : playoutCandles.length - 1;
+  const totalSteps = Math.max(1, Math.min(stopIndex, playoutCandles.length - 1) + 1);
+  let i = 0;
+  function stepFn() {
+    if (i >= playoutCandles.length || i > stopIndex) { finishPlayout(drill, choice); return; }
+    const c = playoutCandles[i];
+    const vwapIdx = drill.candles.length + i;
+    candleSeries.update({ time: toEasternChartTime(c.time), open: c.open, high: c.high, low: c.low, close: c.close });
+    volumeSeries.update({ time: toEasternChartTime(c.time), value: c.volume, color: c.close >= c.open ? "rgba(38,166,154,0.7)" : "rgba(239,83,80,0.7)" });
+    if (vwapIdx < drill.vwap.length) vwapSeries.update({ time: toEasternChartTime(drill.vwap[vwapIdx].time), value: drill.vwap[vwapIdx].value });
+    playTick();
+
+    const distHigh = Math.abs(c.close - drill.range_high) / drill.range_high;
+    const distLow = Math.abs(c.close - drill.range_low) / drill.range_low;
+    if (Math.min(distHigh, distLow) <= RANGE_PROXIMITY_PCT) pulseRangeZone();
+
+    chart.timeScale().fitContent();
+    updateRangeZone(drill);
+
+    i++;
+    const progress = i / totalSteps;
+    const delay = PLAYOUT_START_MS - (PLAYOUT_START_MS - PLAYOUT_END_MS) * Math.min(1, progress);
+    playoutHandle = setTimeout(stepFn, delay);
+  }
+  stepFn();
+}
+
+/* ============================= STREAK / MULTIPLIER (practice) ============================= */
+function updateStreakDisplay() {
+  const el = document.getElementById("streakValue");
+  if (!el) return;
+  const flame = streak >= 5 ? " 🔥🔥" : streak >= 3 ? " 🔥" : "";
+  el.textContent = streak + flame;
+  const bEl = document.getElementById("bestStreakValue");
+  if (bEl) bEl.textContent = bestStreak;
+}
+function showMultiplierBadge(mult) {
+  const badge = document.getElementById("multiplierBadge");
+  if (!badge) return;
+  badge.textContent = `${mult}x MULTIPLIER`;
+  badge.classList.remove("show");
+  void badge.offsetWidth;
+  badge.classList.add("show");
+  playMultiplier();
+}
+function triggerStreakShatter() {
+  const el = document.getElementById("streakValue");
+  if (!el) return;
+  el.classList.remove("shatter");
+  void el.offsetWidth;
+  el.classList.add("shatter");
+}
+function updateStreakAndMultiplier(isCorrect) {
+  if (isCorrect) {
+    streak++;
+    if (streak > bestStreak) bestStreak = streak;
+    const newMult = streak >= 5 ? 3 : streak >= 3 ? 2 : 1;
+    if (newMult !== multiplier) {
+      multiplier = newMult;
+      if (multiplier > 1) showMultiplierBadge(multiplier);
+    }
+  } else {
+    triggerStreakShatter();
+    streak = 0;
+    multiplier = 1;
+  }
+  updateStreakDisplay();
+}
+
+function coachWhyText(drill) {
+  if (drill.context) return drill.context;
+  return "No standout signal here — this one came down to feel.";
+}
+
+function applyResultJuice(isCorrect, isFizzle) {
+  const chartCard = document.getElementById("chartCard");
+  const chartContainer = document.getElementById("chartContainer");
+  if (isFizzle) {
+    chartContainer.classList.add("fizzle-fade");
+    playFizzle();
+  } else if (isCorrect) {
+    chartCard.classList.add("zoom-pulse");
+    playWin();
+  } else {
+    chartCard.classList.add("shake");
+    chartContainer.classList.add("desaturate");
+    playLoss();
+    setTimeout(() => chartContainer.classList.remove("desaturate"), 450);
+  }
+}
+
+/* ============================= RESOLUTION ============================= */
+function finishPlayout(drill, choice) {
+  const isCorrect = choice === drill.outcome;
+  const isFizzle = drill.outcome === "fake" && drill.reversal_minutes === null && drill.resolution_bar_index === null;
+
+  applyResultJuice(isCorrect, isFizzle);
+
+  if (currentMode === "practice") {
+    updateStreakAndMultiplier(isCorrect);
+    const pnl = computePnl(drill, isCorrect, currentDrillMultiplier);
+    sessionResults.push({ pnl, correct: isCorrect, skipped: false });
+    incrementGlobalStats(isCorrect);
+
+    const prevBankroll = bankroll, prevSessionPnl = sessionPnl;
+    bankroll += pnl; sessionPnl += pnl;
+
+    const bankrollEl = document.getElementById("bankrollValue");
+    const pnlEl = document.getElementById("pnlValue");
+    animateNumber(prevBankroll, bankroll, 600, v => bankrollEl.textContent = formatMoney(v));
+    animateNumber(prevSessionPnl, sessionPnl, 600, v => {
+      pnlEl.textContent = formatMoney(v);
+      pnlEl.classList.toggle("pnl-up", v >= 0);
+      pnlEl.classList.toggle("pnl-down", v < 0);
+    });
+    bankrollEl.classList.add(pnl >= 0 ? "flash-green" : "flash-red");
+    setTimeout(() => bankrollEl.classList.remove("flash-green", "flash-red"), 700);
+
+    showCoachCard(drill, isCorrect, pnl, isFizzle);
+  } else if (currentMode === "daily") {
+    incrementGlobalStats(isCorrect);
+    recordDailyResult(drill, isCorrect, isFizzle);
+    setTimeout(() => renderDailyResultScreen(drill, isCorrect, isFizzle), 350);
+  } else if (currentMode === "tutorial") {
+    setTimeout(() => renderTutorialOutro(), 600);
+  }
+}
+
+function showCoachCard(drill, isCorrect, pnl, isFizzle) {
+  const card = document.getElementById("coachCard");
+  const outcomeEl = document.getElementById("coachOutcome");
+  const whyEl = document.getElementById("coachWhy");
+  const pnlEl = document.getElementById("coachPnl");
+
+  let outcomeText;
+  if (isFizzle) {
+    outcomeText = "No follow-through — sometimes the market just naps 😴";
+    outcomeEl.className = "coach-outcome neutral";
+  } else if (drill.outcome === "real") {
+    outcomeText = `Ran +${drill.extension_multiple}x the range ✅`;
+    outcomeEl.className = "coach-outcome " + (isCorrect ? "correct" : "wrong");
+  } else {
+    outcomeText = `Failed — back inside in ${drill.reversal_minutes} min ❌`;
+    outcomeEl.className = "coach-outcome " + (isCorrect ? "correct" : "wrong");
+  }
+  outcomeEl.textContent = outcomeText;
+  whyEl.textContent = coachWhyText(drill);
+  pnlEl.textContent = (pnl >= 0 ? "+" : "") + formatMoney(pnl);
+  pnlEl.className = "coach-pnl " + (pnl >= 0 ? "pos" : "neg");
+
+  card.classList.remove("hidden");
+  document.getElementById("buttonsRow").classList.add("hidden");
+  autoAdvanceHandle = setTimeout(() => advanceOrEnd(), 2500);
+}
+
+/* ============================= PRACTICE SESSION FLOW ============================= */
+function advanceOrEnd() {
+  clearTimeout(autoAdvanceHandle);
+  sessionIndex++;
+  if (sessionIndex >= sessionDeck.length) showEndOfDay();
+  else loadDrill(sessionDeck[sessionIndex]);
+}
+function verdictText(pnl, correctCount) {
+  if (pnl >= 400) return `🔥 Excellent session — that's a real edge. ${correctCount}/10 correct.`;
+  if (pnl >= 0) return `Profitable day — funded traders take ${correctCount}/10 setups like you did.`;
+  if (pnl >= -200) return `Rough day — even skilled traders have red days. ${correctCount}/10 correct.`;
+  return `Tough session — step back, review, come back sharper. ${correctCount}/10 correct.`;
+}
+function launchConfetti() {
+  const layer = document.getElementById("confettiLayer");
+  const colors = ["#22c55e", "#f5b400", "#c792ea", "#26a69a", "#ef4444", "#5c9eff"];
+  for (let i = 0; i < 60; i++) {
+    const piece = document.createElement("div");
+    piece.className = "confetti-piece";
+    piece.style.left = Math.random() * 100 + "vw";
+    piece.style.background = colors[Math.floor(Math.random() * colors.length)];
+    piece.style.animationDuration = (2 + Math.random() * 1.5) + "s";
+    piece.style.animationDelay = (Math.random() * 0.4) + "s";
+    layer.appendChild(piece);
+    setTimeout(() => piece.remove(), 4000);
+  }
+}
+function showEndOfDay() {
+  const content = document.getElementById("content");
+  const correctCount = sessionResults.filter(r => r.correct === true).length;
+  const bestWin = sessionResults.reduce((m, r) => Math.max(m, r.pnl), 0);
+  const isNewBest = updateBestSessionPnl(sessionPnl);
+  updateBestStreakEver(bestStreak);
+
+  content.innerHTML = `
+    <div class="end-of-day">
+      <h2>🏁 End of Trading Day</h2>
+      <div class="eod-pnl ${sessionPnl >= 0 ? "pos" : "neg"}">${(sessionPnl >= 0 ? "+" : "")}${formatMoney(sessionPnl)}</div>
+      <div style="color:var(--muted);font-size:0.85rem;margin-bottom:6px;">Session P&L</div>
+      <div class="eod-grid">
+        <div class="cell"><div class="v">${correctCount}/10</div><div class="l">Accuracy</div></div>
+        <div class="cell"><div class="v">${bestStreak}</div><div class="l">Best Streak</div></div>
+        <div class="cell"><div class="v">${formatMoney(bestWin)}</div><div class="l">Biggest Win</div></div>
+      </div>
+      <div class="eod-verdict">${verdictText(sessionPnl, correctCount)}</div>
+      <button class="trade-again-btn" id="tradeAgainBtn">TRADE ANOTHER DAY</button>
+      <button class="share-btn" id="shareBtnPractice">📤 SHARE</button>
+      <button class="text-link-btn" id="backToStartBtn2">← Back to start</button>
+    </div>
+  `;
+  document.getElementById("tradeAgainBtn").onclick = startNewPracticeSession;
+  document.getElementById("backToStartBtn2").onclick = renderStartScreen;
+  document.getElementById("shareBtnPractice").onclick = () =>
+    generateAndShareCard("practice", { sessionPnl, correctCount, bestStreak });
+
+  if (isNewBest && sessionPnl > 0) launchConfetti();
+}
+function startNewPracticeSession() {
+  renderGameScreen("practice");
+  startNewSession();
+}
+function startNewSession() {
+  sessionIndex = 0; sessionPnl = 0; bankroll = STARTING_BANKROLL;
+  streak = 0; bestStreak = 0; multiplier = 1; sessionResults = [];
+  sessionDeck = buildSessionDeck();
+  document.getElementById("bankrollValue").textContent = formatMoney(bankroll);
+  document.getElementById("pnlValue").textContent = "$0";
+  document.getElementById("pnlValue").className = "stat-value";
+  updateStreakDisplay();
+  loadDrill(sessionDeck[sessionIndex]);
+}
+
+/* ============================= DAILY MODE ============================= */
+function handleDailyButtonClick() {
+  const today = getEtDateString(0);
+  if (appState.lastDailyDate === today) {
+    showDailyResultRecap();
+  } else {
+    renderGameScreen("daily");
+    loadDrill(getDailyDrill());
+  }
+}
+function showDailyResultRecap() {
+  const drill = allDrills.find(d => d.id === appState.lastDailyDrillId) || getDailyDrill();
+  renderDailyResultScreen(drill, appState.lastDailyOutcomeCorrect, appState.lastDailyIsFizzle);
+}
+function renderDailyResultScreen(drill, isCorrect, isFizzle) {
+  currentMode = null;
+  clearInterval(window.__countdownInterval);
+  const outcomeText = isFizzle
+    ? "No follow-through — sometimes the market just naps 😴"
+    : drill.outcome === "real" ? `Ran +${drill.extension_multiple}x the range` : `Failed — back inside in ${drill.reversal_minutes} min`;
+
+  const root = document.getElementById("screenRoot");
+  root.innerHTML = `
+    <div class="topbar">
+      <div class="bankroll"><div class="bankroll-label">Daily Drill</div><div class="bankroll-value" style="font-size:1.25rem;">${getEtDateHuman()}</div></div>
+      <button class="icon-btn" id="soundToggle">${soundOn ? "🔊" : "🔇"}</button>
+    </div>
+    <div class="daily-result">
+      <div class="daily-result-badge ${isCorrect ? "win" : "loss"}">${isCorrect ? "WIN ✅" : "LOSS ❌"}</div>
+      <div class="daily-outcome-line">${outcomeText}</div>
+      <div class="daily-why">${coachWhyText(drill)}</div>
+      <div class="daily-streaks">
+        <div class="mini-stat"><div class="v">${appState.dailyPlayStreak}</div><div class="l">Day Streak</div></div>
+        <div class="mini-stat"><div class="v">${appState.dailyWinStreak}</div><div class="l">Win Streak</div></div>
+      </div>
+      <div class="daily-distribution" id="dailyDistribution">Loading today's stats…</div>
+      <div class="daily-countdown">Next daily in <span id="countdownText">--:--:--</span></div>
+      <button class="share-btn" id="shareBtnDaily">📤 SHARE</button>
+      <button class="trade-again-btn" id="dailyBackBtn" style="background:linear-gradient(180deg,#2fbf9f,#1e8f77);">BACK TO START</button>
+    </div>
+  `;
+  document.getElementById("soundToggle").onclick = toggleSound;
+  document.getElementById("dailyBackBtn").onclick = renderStartScreen;
+  document.getElementById("shareBtnDaily").onclick = () => generateAndShareCard("daily", { drill, isCorrect });
+
+  getDailyDistributionPct(getEtDateString(0)).then(pct => {
+    const el = document.getElementById("dailyDistribution");
+    if (el) el.textContent = `${pct}% of traders got this right today.`;
+  });
+
+  startCountdown();
+}
+function startCountdown() {
+  clearInterval(window.__countdownInterval);
+  function tick() {
+    const el = document.getElementById("countdownText");
+    if (!el) { clearInterval(window.__countdownInterval); return; }
+    const remaining = Math.max(0, getNextEtMidnightMs() - Date.now());
+    const h = Math.floor(remaining / 3600000);
+    const m = Math.floor((remaining % 3600000) / 60000);
+    const s = Math.floor((remaining % 60000) / 1000);
+    el.textContent = `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+  }
+  tick();
+  window.__countdownInterval = setInterval(tick, 1000);
+}
+
+/* ============================= TUTORIAL ============================= */
+const TUTORIAL_STEPS = [
+  { text: "Price is coiling in this zone — that's the consolidation range.", pos: "pos-upper" },
+  { text: "Real breakouts usually bring a volume surge. Watch this pane.", pos: "pos-lower" },
+  { text: "This candle just broke the range — your call.", pos: "pos-right" },
+];
+function renderTutorialIntro() {
+  const reals = allDrills.filter(d => d.outcome === "real").sort((a, b) => b.volume_ratio - a.volume_ratio);
+  const tutorialDrill = reals[0] || allDrills[0];
+  renderGameScreen("tutorial");
+  loadDrill(tutorialDrill, { deferTimer: true });
+
+  const skipWrap = document.createElement("div");
+  skipWrap.className = "skip-tutorial-link";
+  skipWrap.innerHTML = `<button class="text-link-btn" id="skipTutorialBtn">Skip tutorial</button>`;
+  document.getElementById("content").insertBefore(skipWrap, document.getElementById("content").firstChild);
+  document.getElementById("skipTutorialBtn").onclick = skipTutorial;
+
+  showTutorialStep(0);
+}
+function showTutorialStep(stepIndex) {
+  const existing = document.getElementById("tutorialCallout");
+  if (existing) existing.remove();
+  if (stepIndex >= TUTORIAL_STEPS.length) {
+    const skipLink = document.querySelector(".skip-tutorial-link");
+    if (skipLink) skipLink.remove();
+    startTimer();
+    return;
+  }
+  const step = TUTORIAL_STEPS[stepIndex];
+  const card = document.getElementById("chartCard");
+  const callout = document.createElement("div");
+  callout.id = "tutorialCallout";
+  callout.className = "tutorial-callout " + step.pos;
+  callout.innerHTML = `
+    <div class="callout-text">${step.text}</div>
+    <button class="callout-next" id="calloutNext">${stepIndex === TUTORIAL_STEPS.length - 1 ? "Your call →" : "Got it →"}</button>
+  `;
+  card.appendChild(callout);
+  document.getElementById("calloutNext").onclick = () => showTutorialStep(stepIndex + 1);
+}
+function skipTutorial() {
+  appState.hasSeenTutorial = true;
+  saveState();
+  clearTimer();
+  clearTimeout(playoutHandle);
+  clearTimeout(autoAdvanceHandle);
+  renderStartScreen();
+}
+function renderTutorialOutro() {
+  appState.hasSeenTutorial = true;
+  saveState();
+  const root = document.getElementById("screenRoot");
+  root.innerHTML = `
+    <div class="tutorial-outro">
+      <div class="outro-emoji">🎉</div>
+      <h2>That's the game.</h2>
+      <p>New drill every day.</p>
+      <button class="mode-btn practice-btn" id="outroContinue">LET'S GO</button>
+    </div>
+  `;
+  document.getElementById("outroContinue").onclick = renderStartScreen;
+}
+
+/* ============================= START SCREEN ============================= */
+function renderStartScreen() {
+  currentMode = null;
+  clearTimer();
+  clearTimeout(playoutHandle);
+  clearTimeout(autoAdvanceHandle);
+  clearInterval(window.__countdownInterval);
+
+  const today = getEtDateString(0);
+  const alreadyPlayedDaily = appState.lastDailyDate === today;
+  const accuracy = appState.totalDrillsAnswered ? Math.round(100 * appState.totalCorrect / appState.totalDrillsAnswered) : 0;
+
+  const root = document.getElementById("screenRoot");
+  root.innerHTML = `
+    <div class="start-screen">
+      <button class="icon-btn" id="soundToggle" style="top:6px;">${soundOn ? "🔊" : "🔇"}</button>
+      <div class="start-wordmark">📈 Trade Lee</div>
+      <div class="start-sub">Can you spot the real breakout?</div>
+
+      <div class="start-daily-streak">
+        <span>🔥</span> ${appState.dailyPlayStreak || 0} day streak
+        ${appState.dailyWinStreak > 0 ? `<span class="win-streak">· ${appState.dailyWinStreak} win streak</span>` : ""}
+      </div>
+
+      <button class="mode-btn daily-btn ${alreadyPlayedDaily ? "done" : ""}" id="dailyBtn">
+        ${alreadyPlayedDaily ? "DAILY DRILL ✓ DONE — VIEW RESULT" : "DAILY DRILL"}
+      </button>
+      <button class="mode-btn practice-btn" id="practiceBtn">PRACTICE — 10 DRILL SESSION</button>
+
+      <div class="start-stats-row">
+        <div class="mini-stat"><div class="v">${accuracy}%</div><div class="l">Accuracy</div></div>
+        <div class="mini-stat"><div class="v">${appState.bestStreakEver || 0}</div><div class="l">Best Streak</div></div>
+        <div class="mini-stat freeze-teaser" id="freezeTeaser">
+          <div class="v">❄️</div><div class="l">Streak Freeze</div>
+          <div class="freeze-badge">SOON</div>
+        </div>
+      </div>
+      <div class="freeze-tooltip hidden" id="freezeTooltip">Protect your streak on days you can't trade. Coming soon.</div>
+    </div>
+  `;
+  document.getElementById("soundToggle").onclick = toggleSound;
+  document.getElementById("dailyBtn").onclick = handleDailyButtonClick;
+  document.getElementById("practiceBtn").onclick = startNewPracticeSession;
+  document.getElementById("freezeTeaser").onclick = () => document.getElementById("freezeTooltip").classList.toggle("hidden");
+}
+
+/* ============================= SHARE CARD ============================= */
+function drawMiniChart(ctx, candles, x, y, w, h) {
+  if (!candles || !candles.length) return;
+  let min = Infinity, max = -Infinity;
+  candles.forEach(c => { min = Math.min(min, c.low); max = Math.max(max, c.high); });
+  const range = (max - min) || 1;
+  const n = candles.length;
+  const candleW = w / n;
+  ctx.save();
+  ctx.fillStyle = "rgba(255,255,255,0.04)";
+  ctx.fillRect(x, y, w, h);
+  candles.forEach((c, i) => {
+    const cx = x + i * candleW + candleW / 2;
+    const yHigh = y + h - ((c.high - min) / range) * h;
+    const yLow = y + h - ((c.low - min) / range) * h;
+    const yOpen = y + h - ((c.open - min) / range) * h;
+    const yClose = y + h - ((c.close - min) / range) * h;
+    const up = c.close >= c.open;
+    ctx.strokeStyle = up ? "#26a69a" : "#ef5350";
+    ctx.fillStyle = up ? "#26a69a" : "#ef5350";
+    ctx.lineWidth = Math.max(1, candleW * 0.15);
+    ctx.beginPath(); ctx.moveTo(cx, yHigh); ctx.lineTo(cx, yLow); ctx.stroke();
+    const bodyTop = Math.min(yOpen, yClose);
+    const bodyH = Math.max(2, Math.abs(yClose - yOpen));
+    ctx.fillRect(cx - candleW * 0.35, bodyTop, candleW * 0.7, bodyH);
+  });
+  ctx.restore();
+}
+function generateShareCanvas(mode, data) {
+  const canvas = document.createElement("canvas");
+  canvas.width = 1080; canvas.height = 1920;
+  const ctx = canvas.getContext("2d");
+  const grad = ctx.createLinearGradient(0, 0, 0, 1920);
+  grad.addColorStop(0, "#141922"); grad.addColorStop(1, "#0b0e14");
+  ctx.fillStyle = grad; ctx.fillRect(0, 0, 1080, 1920);
+
+  ctx.textAlign = "center";
+  ctx.fillStyle = "#e6e9ef";
+  ctx.font = "700 68px -apple-system, Arial, sans-serif";
+  ctx.fillText("📈 Trade Lee", 540, 170);
+  ctx.font = "400 32px Arial, sans-serif";
+  ctx.fillStyle = "#8b95a7";
+  ctx.fillText(getEtDateHuman(), 540, 220);
+
+  if (mode === "daily") {
+    ctx.font = "900 120px Arial, sans-serif";
+    ctx.fillStyle = data.isCorrect ? "#22c55e" : "#ef4444";
+    ctx.fillText(data.isCorrect ? "WIN ✅" : "LOSS ❌", 540, 440);
+    ctx.font = "700 52px Arial, sans-serif";
+    ctx.fillStyle = "#f5b400";
+    ctx.fillText(`🔥 ${appState.dailyPlayStreak} day streak`, 540, 530);
+    drawMiniChart(ctx, data.drill.candles, 140, 650, 800, 480);
+  } else {
+    ctx.font = "900 110px Arial, sans-serif";
+    ctx.fillStyle = data.sessionPnl >= 0 ? "#22c55e" : "#ef4444";
+    ctx.fillText((data.sessionPnl >= 0 ? "+" : "") + formatMoney(data.sessionPnl), 540, 440);
+    ctx.font = "400 32px Arial, sans-serif";
+    ctx.fillStyle = "#8b95a7";
+    ctx.fillText("Session P&L", 540, 490);
+    ctx.font = "700 50px Arial, sans-serif";
+    ctx.fillStyle = "#e6e9ef";
+    ctx.fillText(`${data.correctCount}/10 correct`, 540, 620);
+    ctx.fillText(`Best streak: ${data.bestStreak}`, 540, 700);
+  }
+
+  ctx.font = "400 30px Arial, sans-serif";
+  ctx.fillStyle = "#8b95a7";
+  ctx.fillText("Can you spot the real breakout?", 540, 1800);
+  return canvas;
+}
+function generateAndShareCard(mode, data) {
+  const canvas = generateShareCanvas(mode, data);
+  canvas.toBlob(async (blob) => {
+    const fileName = `trade-lee-${getEtDateString(0)}.png`;
+    try {
+      const file = new File([blob], fileName, { type: "image/png" });
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({ files: [file], title: "Trade Lee", text: "Can you spot the real breakout?" });
+        return;
+      }
+    } catch (e) {}
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = fileName;
+    document.body.appendChild(a); a.click(); a.remove();
+    URL.revokeObjectURL(url);
+  }, "image/png");
+}
+
+/* ============================= INIT ============================= */
+async function init() {
+  try {
+    const res = await fetch("drills/drills.json", { cache: "no-store" });
+    if (!res.ok) throw new Error("drills.json not found");
+    allDrills = await res.json();
+    if (!allDrills.length) throw new Error("No drills in drills.json");
+    if (!appState.hasSeenTutorial) renderTutorialIntro();
+    else renderStartScreen();
+  } catch (e) {
+    document.getElementById("screenRoot").innerHTML = `
+      <div class="error">
+        Failed to load drills: ${e.message}<br><br>
+        Make sure you're running a local server (not opening the file directly),
+        and that drills/drills.json exists.
+      </div>`;
+  }
+}
+init();
+</script>
+</body>
+</html>

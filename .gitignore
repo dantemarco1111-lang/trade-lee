@@ -1,0 +1,6 @@
+__pycache__/
+stock_config.json
+stock_portfolio.json
+stock_trades.json
+stock_terminal.py
+.claude/
