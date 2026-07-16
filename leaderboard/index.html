@@ -4,9 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Leaderboard — Trade Lee</title>
-<meta name="description" content="Your personal Trade Lee records — best session P&L, best streak, accuracy, and Ticks earned. Global rankings launch with accounts, coming soon.">
+<meta name="description" content="Your personal Trade Lee records plus the global leaderboard — top players ranked by best streak.">
 <meta property="og:title" content="Leaderboard — Trade Lee">
-<meta property="og:description" content="Your personal Trade Lee records. Global rankings launch with accounts, coming soon.">
+<meta property="og:description" content="Your personal Trade Lee records plus the global leaderboard — top players ranked by best streak.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://trade-lee.vercel.app/leaderboard/">
 <meta property="og:image" content="https://trade-lee.vercel.app/og-image.png">
@@ -14,7 +14,7 @@
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="Leaderboard — Trade Lee">
-<meta name="twitter:description" content="Your personal Trade Lee records. Global rankings launch with accounts, coming soon.">
+<meta name="twitter:description" content="Your personal records plus the global leaderboard.">
 <meta name="twitter:image" content="https://trade-lee.vercel.app/og-image.png">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230b0e14'/%3E%3Cline x1='11' y1='4' x2='11' y2='28' stroke='%2326a69a' stroke-width='2.2'/%3E%3Crect x='7' y='10' width='8' height='10' rx='1' fill='%2326a69a'/%3E%3Cline x1='23' y1='6' x2='23' y2='25' stroke='%23ef5350' stroke-width='2.2'/%3E%3Crect x='19' y='12' width='8' height='7' rx='1' fill='%23ef5350'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -50,11 +50,8 @@
     font-size: 0.68rem; color: var(--text-dim); text-transform: uppercase;
     letter-spacing: 0.4px; margin-top: 6px;
   }
-
-  .leaderboard-locked { opacity: 0.75; text-align: center; }
-  .leaderboard-locked h2 { justify-content: center; }
-  .leaderboard-locked h2 .card-num { background: var(--surface-2); color: var(--text-dim); }
-  .leaderboard-locked p { max-width: 480px; margin: 0 auto; }
+  .lb-row-you { background: rgba(34, 197, 94, 0.08); }
+  .lb-rank-1 { color: var(--gold); font-weight: 800; }
 </style>
 </head>
 <body>
@@ -105,7 +102,8 @@
   <div class="content-hero">
     <div class="badge">LEADERBOARD</div>
     <h1>Your Records</h1>
-    <p>Tracked locally on this device — no account needed yet.</p>
+    <p>Tracked on this device — sign in to sync across devices and appear on the global board.</p>
+    <div id="accountArea" style="margin-top:14px;"></div>
   </div>
 
   <section class="content-card card">
@@ -113,9 +111,11 @@
     <div class="records-grid" id="recordsGrid"></div>
   </section>
 
-  <section class="content-card card leaderboard-locked">
-    <h2><span class="card-num">🔒</span>Global Leaderboard</h2>
-    <p>Global rankings launch with accounts — coming soon. Your records are already being tracked locally, so your stats are ready when it goes live.</p>
+  <section class="content-card card">
+    <h2><span class="card-num">🌐</span>Global Leaderboard</h2>
+    <p style="color:var(--text-dim);font-size:0.85rem;margin-top:-8px;">Top 50, ranked by best streak (accuracy breaks ties). Minimum 10 drills answered to appear.</p>
+    <div id="globalLeaderboardBody"></div>
+    <div id="leaderboardSigninPrompt"></div>
   </section>
 </main>
 
@@ -134,6 +134,9 @@
 </footer>
 
 <script src="/social-links.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/supabase-config.js"></script>
+<script src="/auth.js"></script>
 <script>
 (function () {
   const overlay = document.getElementById("mobileMenuOverlay");
@@ -173,23 +176,132 @@ function formatMoney(n) {
   const sign = n < 0 ? "-" : "";
   return sign + "$" + Math.abs(Math.round(n)).toLocaleString("en-US");
 }
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+}
 
 const state = loadState();
-const accuracy = state.totalDrillsAnswered ? Math.round(100 * state.totalCorrect / state.totalDrillsAnswered) : 0;
-const records = [
-  { val: state.bestSessionPnl === null ? "—" : (state.bestSessionPnl >= 0 ? "+" : "") + formatMoney(state.bestSessionPnl), label: "Best Session P&L", cls: state.bestSessionPnl === null ? "neutral" : (state.bestSessionPnl >= 0 ? "" : "neg") },
-  { val: state.bestStreakEver || 0, label: "Best Streak Ever", cls: "neutral" },
-  { val: state.dailyWinStreak || 0, label: "Daily Win Streak", cls: "neutral" },
-  { val: state.totalDrillsAnswered || 0, label: "Total Drills", cls: "neutral" },
-  { val: accuracy + "%", label: "Overall Accuracy", cls: "neutral" },
-  { val: "⚡ " + (state.ticksEarnedAllTime || 0), label: "Ticks Earned All-Time", cls: "neutral" },
-];
-document.getElementById("recordsGrid").innerHTML = records.map(r => `
-  <div class="record-cell">
-    <div class="record-val ${r.cls}">${r.val}</div>
-    <div class="record-label">${r.label}</div>
-  </div>
-`).join("");
+function renderRecords() {
+  const accuracy = state.totalDrillsAnswered ? Math.round(100 * state.totalCorrect / state.totalDrillsAnswered) : 0;
+  const records = [
+    { val: state.bestSessionPnl === null ? "—" : (state.bestSessionPnl >= 0 ? "+" : "") + formatMoney(state.bestSessionPnl), label: "Best Session P&L", cls: state.bestSessionPnl === null ? "neutral" : (state.bestSessionPnl >= 0 ? "" : "neg") },
+    { val: state.bestStreakEver || 0, label: "Best Streak Ever", cls: "neutral" },
+    { val: state.dailyWinStreak || 0, label: "Daily Win Streak", cls: "neutral" },
+    { val: state.totalDrillsAnswered || 0, label: "Total Drills", cls: "neutral" },
+    { val: accuracy + "%", label: "Overall Accuracy", cls: "neutral" },
+    { val: "⚡ " + (state.ticksEarnedAllTime || 0), label: "Ticks Earned All-Time", cls: "neutral" },
+  ];
+  document.getElementById("recordsGrid").innerHTML = records.map(r => `
+    <div class="record-cell">
+      <div class="record-val ${r.cls}">${r.val}</div>
+      <div class="record-label">${r.label}</div>
+    </div>
+  `).join("");
+}
+renderRecords();
+
+function renderAccountArea() {
+  const el = document.getElementById("accountArea");
+  if (tlIsSignedIn() && tlProfile) {
+    el.innerHTML = `<div class="account-chip">Signed in as <strong>${escapeHtml(tlProfile.display_name)}</strong> <button class="link-btn" id="signOutBtn">Sign out</button></div>`;
+    document.getElementById("signOutBtn").onclick = async () => { await tlSignOut(); renderAccountArea(); renderLeaderboardSigninPrompt(); loadGlobalLeaderboard(); };
+  } else {
+    el.innerHTML = `<button class="btn btn-ghost" id="lbSignInBtn" style="padding:10px 18px;font-size:0.85rem;">Sign in to save your streak</button>`;
+    const btn = document.getElementById("lbSignInBtn");
+    if (btn) btn.onclick = tlOpenAuthModal;
+  }
+}
+
+function renderLeaderboardSigninPrompt() {
+  const el = document.getElementById("leaderboardSigninPrompt");
+  if (tlIsSignedIn()) { el.innerHTML = ""; return; }
+  el.innerHTML = `<div class="signin-prompt">Sign in to save your streak &amp; join the leaderboard — <button class="link-btn" id="lbSignInBtn2">sign in</button></div>`;
+  const btn = document.getElementById("lbSignInBtn2");
+  if (btn) btn.onclick = tlOpenAuthModal;
+}
+
+async function loadGlobalLeaderboard() {
+  const body = document.getElementById("globalLeaderboardBody");
+  body.innerHTML = `
+    <div class="skeleton-line" style="width:100%;margin-bottom:10px;"></div>
+    <div class="skeleton-line" style="width:100%;margin-bottom:10px;"></div>
+    <div class="skeleton-line" style="width:70%;"></div>
+  `;
+  const rows = await tlFetchLeaderboard();
+  if (rows === null) {
+    body.innerHTML = `<div class="offline-notice">Can't reach the global leaderboard right now — your personal records above are unaffected.</div>`;
+    return;
+  }
+  if (!rows.length) {
+    body.innerHTML = `<p style="text-align:center;color:var(--text-dim);padding:10px 0;">Be the first name on the board — answer at least 10 drills to qualify.</p>`;
+    return;
+  }
+  const myName = tlProfile ? tlProfile.display_name : null;
+  body.innerHTML = `
+    <table class="data-table">
+      <thead><tr><th>#</th><th>Player</th><th>Best Streak</th><th>Accuracy</th></tr></thead>
+      <tbody>
+        ${rows.map((r, i) => {
+          const acc = r.total_drills ? Math.round(100 * r.correct_drills / r.total_drills) : 0;
+          const isYou = myName && r.users.display_name === myName;
+          return `<tr class="${isYou ? "lb-row-you" : ""}"><td class="${i === 0 ? "lb-rank-1" : ""}">${i + 1}</td><td>${escapeHtml(r.users.display_name)}${isYou ? " (you)" : ""}</td><td>${r.best_streak}</td><td>${acc}%</td></tr>`;
+        }).join("")}
+      </tbody>
+    </table>
+  `;
+}
+
+async function initAccounts() {
+  await tlInitSession();
+  renderAccountArea();
+  renderLeaderboardSigninPrompt();
+  loadGlobalLeaderboard();
+
+  tlOnAuthChange(async (event) => {
+    if (event === "SIGNED_IN") {
+      await tlFetchMyProfile();
+      if (!tlProfile) {
+        tlOpenAuthModal();
+        tlRenderAuthModalStep("claim-name", {
+          onClaimed: async () => {
+            const result = await tlMergeLocalIntoCloud(state);
+            if (result) {
+              const recomputed = tlRecomputeStreaksFromHistory(result.history);
+              state.bestStreakEver = result.merged.best_streak;
+              state.totalDrillsAnswered = result.merged.total_drills;
+              state.totalCorrect = result.merged.correct_drills;
+              state.ticksEarnedAllTime = result.merged.ticks;
+              state.dailyWinStreak = recomputed.dailyWinStreak;
+              try {
+                const raw = localStorage.getItem(STORAGE_KEY);
+                const full = raw ? JSON.parse(raw) : {};
+                full.bestStreakEver = result.merged.best_streak;
+                full.totalDrillsAnswered = result.merged.total_drills;
+                full.totalCorrect = result.merged.correct_drills;
+                full.ticks = result.merged.ticks;
+                full.ticksEarnedAllTime = result.merged.ticks;
+                full.dailyPlayStreak = recomputed.dailyPlayStreak;
+                full.dailyWinStreak = recomputed.dailyWinStreak;
+                full.lastDailyDate = recomputed.lastDailyDate || full.lastDailyDate;
+                full.lastDailyResult = recomputed.lastDailyResult || full.lastDailyResult;
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(full));
+              } catch (e) {}
+            }
+            renderRecords();
+            renderAccountArea();
+            renderLeaderboardSigninPrompt();
+            loadGlobalLeaderboard();
+          },
+        });
+      } else {
+        renderAccountArea();
+        renderLeaderboardSigninPrompt();
+        loadGlobalLeaderboard();
+      }
+    }
+  });
+}
+initAccounts();
 </script>
 </body>
 </html>

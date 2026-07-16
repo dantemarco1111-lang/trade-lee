@@ -23,6 +23,9 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@500;700&display=swap">
 <link rel="stylesheet" href="/theme.css">
 <script src="https://unpkg.com/lightweight-charts/dist/lightweight-charts.standalone.production.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/supabase-config.js"></script>
+<script src="/auth.js"></script>
 <style>
   :root {
     --card: var(--surface);
@@ -111,6 +114,8 @@
   .nav-streak.hidden { display: none; }
   a.nav-streak.nav-ticks { text-decoration: none; cursor: pointer; transition: transform 0.15s cubic-bezier(.34,1.56,.64,1); }
   a.nav-streak.nav-ticks:active { transform: scale(0.93); }
+  button.nav-streak.nav-account { cursor: pointer; font-family: var(--font-body); transition: transform 0.15s cubic-bezier(.34,1.56,.64,1); }
+  button.nav-streak.nav-account:active { transform: scale(0.93); }
 
   /* ---------- top bar ---------- */
   .topbar {
@@ -602,6 +607,7 @@
   <div class="nav-right">
     <a class="nav-streak nav-ticks" id="navTicks" href="/powerups/"></a>
     <span class="nav-streak hidden" id="navStreakFlame"></span>
+    <button class="nav-streak nav-account hidden" id="navAccountChip"></button>
     <button class="icon-btn" id="soundToggle">🔊</button>
   </div>
 </nav>
@@ -794,10 +800,22 @@ function getDailyDrill() {
   const idx = hashString(getEtDateString(0)) % allDrills.length;
   return allDrills[idx];
 }
-// Deterministic seeded placeholder — swap this one function for a real API call later.
+// Deterministic seeded placeholder, used only if the real cloud percentile is unreachable.
 async function getDailyDistributionPct(dateStr) {
   const h = hashString("dist-" + dateStr);
   return 35 + (h % 51); // 35-85 inclusive
+}
+async function loadDailyDistribution(dateStr, isCorrect) {
+  let pct = null;
+  if (authReady()) {
+    try { pct = await tlFetchDailyPercentile(dateStr); } catch (e) { pct = null; }
+  }
+  if (pct === null || pct === undefined) pct = await getDailyDistributionPct(dateStr);
+  const el = document.getElementById("dailyDistribution");
+  if (!el) return;
+  el.textContent = isCorrect
+    ? `You beat ${Math.max(0, 100 - pct)}% of traders today.`
+    : `${pct}% of traders got this right today.`;
 }
 
 /* ============================= UTIL ============================= */
@@ -1357,6 +1375,7 @@ function finishPlayout(drill, choice) {
     incrementGlobalStats(isCorrect);
     recordDailyResult(drill, isCorrect, isFizzle);
     updateNavStreak();
+    if (authReady()) tlSyncDailyResult(isCorrect, appState, getEtDateString(0));
     setTimeout(() => renderDailyResultScreen(drill, isCorrect, isFizzle), 350);
   } else if (currentMode === "tutorial") {
     setTimeout(() => renderTutorialOutro(), 600);
@@ -1467,6 +1486,7 @@ function showEndOfDay() {
   const isNewBest = updateBestSessionPnl(sessionPnl);
   updateBestStreakEver(bestStreak);
   awardTicks(25);
+  if (authReady()) tlSyncStats(appState);
 
   content.innerHTML = `
     <div class="end-of-day">
@@ -1479,6 +1499,7 @@ function showEndOfDay() {
         <div class="cell"><div class="v">${formatMoney(bestWin)}</div><div class="l">Biggest Win</div></div>
       </div>
       <div class="eod-verdict">${verdictText(sessionPnl, correctCount)}</div>
+      <div id="eodSigninPrompt"></div>
       <button class="trade-again-btn" id="tradeAgainBtn">TRADE ANOTHER DAY</button>
       <button class="share-btn" id="shareBtnPractice">📤 SHARE</button>
       <button class="text-link-btn" id="backToStartBtn2">← Back to start</button>
@@ -1488,6 +1509,7 @@ function showEndOfDay() {
   document.getElementById("backToStartBtn2").onclick = renderStartScreen;
   document.getElementById("shareBtnPractice").onclick = () =>
     generateAndShareCard("practice", { sessionPnl, correctCount, bestStreak });
+  renderEodSigninPrompt();
 
   if (isNewBest && sessionPnl > 0) launchConfetti();
 }
@@ -1543,6 +1565,7 @@ function renderDailyResultScreen(drill, isCorrect, isFizzle) {
         <div class="mini-stat"><div class="v">${appState.dailyWinStreak}</div><div class="l">Win Streak</div></div>
       </div>
       <div class="daily-distribution" id="dailyDistribution">Loading today's stats…</div>
+      <div id="dailySigninPrompt"></div>
       <div class="daily-countdown">Next daily in <span id="countdownText">--:--:--</span></div>
       <button class="share-btn" id="shareBtnDaily">📤 SHARE</button>
       <button class="trade-again-btn" id="dailyBackBtn">BACK TO START</button>
@@ -1551,10 +1574,8 @@ function renderDailyResultScreen(drill, isCorrect, isFizzle) {
   document.getElementById("dailyBackBtn").onclick = renderStartScreen;
   document.getElementById("shareBtnDaily").onclick = () => generateAndShareCard("daily", { drill, isCorrect });
 
-  getDailyDistributionPct(getEtDateString(0)).then(pct => {
-    const el = document.getElementById("dailyDistribution");
-    if (el) el.textContent = `${pct}% of traders got this right today.`;
-  });
+  loadDailyDistribution(getEtDateString(0), isCorrect);
+  renderDailySigninPrompt();
 
   startCountdown();
 }
@@ -1772,6 +1793,85 @@ function generateAndShareCard(mode, data) {
   }, "image/png");
 }
 
+/* ============================= ACCOUNTS (Supabase, fails soft) ============================= */
+function authReady() {
+  return typeof tlInitSession === "function";
+}
+function renderNavAccountChip() {
+  const el = document.getElementById("navAccountChip");
+  if (!el || !authReady()) return;
+  el.classList.remove("hidden");
+  if (tlIsSignedIn() && tlProfile) {
+    el.textContent = "👤 " + tlProfile.display_name;
+    el.title = "Signed in — tap to sign out";
+    el.onclick = async () => { await tlSignOut(); renderNavAccountChip(); };
+  } else {
+    el.textContent = "Sign in";
+    el.title = "Save your streak & join the leaderboard";
+    el.onclick = () => tlOpenAuthModal();
+  }
+}
+function renderDailySigninPrompt() {
+  const el = document.getElementById("dailySigninPrompt");
+  if (!el) return;
+  if (!authReady() || tlIsSignedIn()) { el.innerHTML = ""; return; }
+  el.innerHTML = `<div class="signin-prompt">Sign in to save your streak &amp; join the leaderboard — <button class="link-btn" id="dailySignInLink">sign in</button></div>`;
+  const btn = document.getElementById("dailySignInLink");
+  if (btn) btn.onclick = () => tlOpenAuthModal();
+}
+function renderEodSigninPrompt() {
+  const el = document.getElementById("eodSigninPrompt");
+  if (!el) return;
+  if (!authReady() || tlIsSignedIn()) { el.innerHTML = ""; return; }
+  el.innerHTML = `<div class="signin-prompt">Sign in to save your streak &amp; join the leaderboard — <button class="link-btn" id="eodSignInLink">sign in</button></div>`;
+  const btn = document.getElementById("eodSignInLink");
+  if (btn) btn.onclick = () => tlOpenAuthModal();
+}
+async function initAccountSync() {
+  if (!authReady()) return;
+  try { await tlInitSession(); } catch (e) {}
+  renderNavAccountChip();
+
+  tlOnAuthChange(async (event) => {
+    if (event === "SIGNED_IN") {
+      await tlFetchMyProfile();
+      if (!tlProfile) {
+        tlOpenAuthModal();
+        tlRenderAuthModalStep("claim-name", {
+          onClaimed: async () => {
+            const result = await tlMergeLocalIntoCloud(appState);
+            if (result) {
+              const recomputed = tlRecomputeStreaksFromHistory(result.history);
+              appState.bestStreakEver = result.merged.best_streak;
+              appState.totalDrillsAnswered = result.merged.total_drills;
+              appState.totalCorrect = result.merged.correct_drills;
+              appState.ticks = result.merged.ticks;
+              appState.ticksEarnedAllTime = Math.max(appState.ticksEarnedAllTime || 0, result.merged.ticks);
+              appState.dailyPlayStreak = recomputed.dailyPlayStreak;
+              appState.dailyWinStreak = recomputed.dailyWinStreak;
+              if (recomputed.lastDailyDate) appState.lastDailyDate = recomputed.lastDailyDate;
+              if (recomputed.lastDailyResult) appState.lastDailyResult = recomputed.lastDailyResult;
+              saveState();
+              updateNavStreak();
+            }
+            renderNavAccountChip();
+            renderDailySigninPrompt();
+            renderEodSigninPrompt();
+          },
+        });
+      } else {
+        renderNavAccountChip();
+        renderDailySigninPrompt();
+        renderEodSigninPrompt();
+      }
+    } else if (event === "SIGNED_OUT") {
+      renderNavAccountChip();
+      renderDailySigninPrompt();
+      renderEodSigninPrompt();
+    }
+  });
+}
+
 /* ============================= NAV ============================= */
 function updateNavStreak() {
   const el = document.getElementById("navStreakFlame");
@@ -1840,6 +1940,7 @@ async function init() {
     if (!allDrills.length) throw new Error("No drills in drills.json");
     checkStreakFreeze();
     updateNavStreak();
+    initAccountSync();
     if (!appState.hasSeenTutorial) renderTutorialIntro();
     else goToStartOrDeepLink();
   } catch (e) {
