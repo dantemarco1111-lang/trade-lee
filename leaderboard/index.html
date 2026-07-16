@@ -282,6 +282,8 @@ async function initAccounts() {
                 full.totalCorrect = result.merged.correct_drills;
                 full.ticks = result.merged.ticks;
                 full.ticksEarnedAllTime = result.merged.ticks;
+                full.speedRunBestTimeMs = result.merged.best_speedrun_time_ms;
+                full.speedRunBestAccuracy = result.merged.best_speedrun_accuracy || 0;
                 full.dailyPlayStreak = recomputed.dailyPlayStreak;
                 full.dailyWinStreak = recomputed.dailyWinStreak;
                 full.lastDailyDate = recomputed.lastDailyDate || full.lastDailyDate;

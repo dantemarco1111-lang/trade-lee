@@ -522,6 +522,7 @@
   .daily-btn { background: linear-gradient(135deg, #ffb020, #ff5e3a); color: #1a0a00; box-shadow: 0 6px 20px rgba(255,130,0,0.25); }
   .daily-btn.done { background: var(--card2); color: var(--muted); border: 1px solid var(--border); box-shadow: none; }
   .practice-btn { background: linear-gradient(180deg, #2fbf9f, var(--green-dark)); box-shadow: 0 6px 20px rgba(34,197,94,0.2); }
+  .speedrun-btn { background: linear-gradient(135deg, #f5b400, #ff8a3d); color: #1a1200; box-shadow: 0 6px 20px rgba(245,180,0,0.25); }
   .start-stats-row { display: flex; gap: 8px; margin-top: 24px; }
   .mini-stat {
     flex: 1; background: var(--card); border: 1px solid var(--border); border-radius: 12px;
@@ -636,6 +637,8 @@
 /* ============================= CONSTANTS ============================= */
 const DRILLS_PER_SESSION = 10;
 const DECISION_SECONDS = 10;
+const SPEEDRUN_DRILLS = 5;
+const SPEEDRUN_SECONDS = 5;
 const STARTING_BANKROLL = 10000;
 const POSITION_SIZE = 5000;
 const PNL_CAP_PCT = 0.03;
@@ -667,6 +670,9 @@ function defaultState() {
     ownedSecondChances: 0,
     ownedDoubleDowns: 0,
     freezeConsumedPending: false,
+    // speed run
+    speedRunBestTimeMs: null,
+    speedRunBestAccuracy: 0,
   };
 }
 function loadPersistedState() {
@@ -697,7 +703,8 @@ let timerDeadline = 0;
 let playoutHandle = null;
 let autoAdvanceHandle = null;
 let sessionResults = [];
-let currentMode = null; // 'practice' | 'daily' | 'tutorial'
+let currentMode = null; // 'practice' | 'daily' | 'tutorial' | 'speedrun'
+let speedRunStartTime = 0;
 let currentDrill = null;
 let currentDrillMultiplier = 1;
 let drillInProgress = false;
@@ -882,6 +889,20 @@ function updateBestStreakEver(streakVal) {
 function updateBestSessionPnl(pnl) {
   if (appState.bestSessionPnl === null || pnl > appState.bestSessionPnl) { appState.bestSessionPnl = pnl; saveState(); return true; }
   return false;
+}
+// Only a clean (all-correct) run counts as a time PB — like a real speedrun, a
+// fast time with misses isn't the record.
+function updateSpeedRunBestTime(ms, wasClean) {
+  if (!wasClean) return false;
+  if (appState.speedRunBestTimeMs === null || appState.speedRunBestTimeMs === undefined || ms < appState.speedRunBestTimeMs) {
+    appState.speedRunBestTimeMs = ms;
+    saveState();
+    return true;
+  }
+  return false;
+}
+function updateSpeedRunBestAccuracy(pct) {
+  if (pct > (appState.speedRunBestAccuracy || 0)) { appState.speedRunBestAccuracy = pct; saveState(); }
 }
 
 /* ============================= TICKS / POWER-UPS ============================= */
@@ -1086,6 +1107,18 @@ function renderGameScreen(mode) {
         <div class="stat-chip"><span class="stat-value" id="bestStreakValue">0</span><span class="stat-label">Best</span></div>
         <div class="stat-chip"><span class="stat-value" id="drillCounter">1/10</span><span class="stat-label">Drill</span></div>
       </div>`;
+  } else if (mode === "speedrun") {
+    headerHtml = `
+      <div class="topbar">
+        <div class="bankroll">
+          <div class="bankroll-label">⚡ Speed Run</div>
+          <div class="bankroll-value" style="font-size:1.15rem;">${SPEEDRUN_DRILLS} drills · ${SPEEDRUN_SECONDS}s each</div>
+        </div>
+      </div>
+      <div class="statsbar">
+        <div class="stat-chip"><span class="stat-value" id="srCorrectValue">0</span><span class="stat-label">Correct</span></div>
+        <div class="stat-chip"><span class="stat-value" id="drillCounter">1/${SPEEDRUN_DRILLS}</span><span class="stat-label">Drill</span></div>
+      </div>`;
   } else {
     const label = mode === "daily" ? "Daily Drill" : "Quick Tutorial";
     const sub = mode === "daily" ? getEtDateHuman() : "Learn the basics";
@@ -1137,7 +1170,11 @@ function renderShell() {
   `;
   document.getElementById("realBtn").onclick = () => answer("real");
   document.getElementById("fakeBtn").onclick = () => answer("fake");
-  document.getElementById("nextBtn").onclick = () => { clearTimeout(autoAdvanceHandle); advanceOrEnd(); };
+  document.getElementById("nextBtn").onclick = () => {
+    clearTimeout(autoAdvanceHandle);
+    if (currentMode === "speedrun") advanceOrEndSpeedRun();
+    else advanceOrEnd();
+  };
 }
 
 function loadDrill(drill, opts) {
@@ -1152,7 +1189,7 @@ function loadDrill(drill, opts) {
   renderShell();
   renderPowerupBar();
   const counterEl = document.getElementById("drillCounter");
-  if (counterEl) counterEl.textContent = `${sessionIndex + 1}/${DRILLS_PER_SESSION}`;
+  if (counterEl) counterEl.textContent = `${sessionIndex + 1}/${sessionDeck.length}`;
 
   if (chart) { try { chart.remove(); } catch (e) {} chart = null; }
   const container = document.getElementById("chartContainer");
@@ -1191,12 +1228,13 @@ function loadDrill(drill, opts) {
 /* ============================= TIMER ============================= */
 function startTimer() {
   clearTimer();
-  timerDeadline = performance.now() + DECISION_SECONDS * 1000;
+  const decisionSeconds = currentMode === "speedrun" ? SPEEDRUN_SECONDS : DECISION_SECONDS;
+  timerDeadline = performance.now() + decisionSeconds * 1000;
   const fill = document.getElementById("timerFill");
   function tick() {
     if (answered) return;
     const remaining = timerDeadline - performance.now();
-    const pct = Math.max(0, remaining / (DECISION_SECONDS * 1000));
+    const pct = Math.max(0, remaining / (decisionSeconds * 1000));
     fill.style.width = (pct * 100) + "%";
     fill.classList.toggle("warn", remaining <= 5000 && remaining > 3000);
     fill.classList.toggle("danger", remaining <= 3000);
@@ -1227,11 +1265,14 @@ function handleTimeout() {
     streak = 0; multiplier = 1;
     updateStreakDisplay();
     sessionResults.push({ pnl: 0, correct: null, skipped: true });
+  } else if (currentMode === "speedrun") {
+    sessionResults.push({ pnl: 0, correct: null, skipped: true });
   }
   const skipMsg = document.getElementById("skipMessage");
   if (skipMsg) skipMsg.classList.remove("hidden");
   autoAdvanceHandle = setTimeout(() => {
     if (currentMode === "practice") advanceOrEnd();
+    else if (currentMode === "speedrun") advanceOrEndSpeedRun();
     else if (currentMode === "daily") renderStartScreen();
     else renderStartScreen();
   }, 1500);
@@ -1379,6 +1420,13 @@ function finishPlayout(drill, choice) {
     setTimeout(() => renderDailyResultScreen(drill, isCorrect, isFizzle), 350);
   } else if (currentMode === "tutorial") {
     setTimeout(() => renderTutorialOutro(), 600);
+  } else if (currentMode === "speedrun") {
+    sessionResults.push({ pnl: 0, correct: isCorrect, skipped: false });
+    incrementGlobalStats(isCorrect);
+    const correctSoFar = sessionResults.filter(r => r.correct === true).length;
+    const correctEl = document.getElementById("srCorrectValue");
+    if (correctEl) correctEl.textContent = correctSoFar;
+    showCoachCard(drill, isCorrect, null, isFizzle);
   }
 }
 
@@ -1401,8 +1449,13 @@ function showCoachCard(drill, isCorrect, pnl, isFizzle) {
   }
   outcomeEl.textContent = outcomeText;
   whyEl.textContent = coachWhyText(drill);
-  pnlEl.textContent = (pnl >= 0 ? "+" : "") + formatMoney(pnl);
-  pnlEl.className = "coach-pnl " + (pnl >= 0 ? "pos" : "neg");
+  if (pnl === null) {
+    pnlEl.classList.add("hidden");
+  } else {
+    pnlEl.classList.remove("hidden");
+    pnlEl.textContent = (pnl >= 0 ? "+" : "") + formatMoney(pnl);
+    pnlEl.className = "coach-pnl " + (pnl >= 0 ? "pos" : "neg");
+  }
 
   card.classList.remove("hidden");
   document.getElementById("buttonsRow").classList.add("hidden");
@@ -1419,7 +1472,11 @@ function showCoachCard(drill, isCorrect, pnl, isFizzle) {
     btn.onclick = useSecondChance;
     card.insertBefore(btn, document.getElementById("nextBtn"));
   } else {
-    autoAdvanceHandle = setTimeout(() => advanceOrEnd(), 2500);
+    const delay = currentMode === "speedrun" ? 900 : 2500;
+    autoAdvanceHandle = setTimeout(() => {
+      if (currentMode === "speedrun") advanceOrEndSpeedRun();
+      else advanceOrEnd();
+    }, delay);
   }
 }
 function useSecondChance() {
@@ -1527,6 +1584,75 @@ function startNewSession() {
   document.getElementById("pnlValue").className = "stat-value";
   updateStreakDisplay();
   loadDrill(sessionDeck[sessionIndex]);
+}
+
+/* ============================= SPEED RUN MODE ============================= */
+function startNewSpeedRun() {
+  renderGameScreen("speedrun");
+  sessionIndex = 0;
+  sessionResults = [];
+  speedRunStartTime = performance.now();
+  sessionDeck = buildSessionDeck().slice(0, SPEEDRUN_DRILLS);
+  loadDrill(sessionDeck[sessionIndex]);
+}
+function advanceOrEndSpeedRun() {
+  clearTimeout(autoAdvanceHandle);
+  sessionIndex++;
+  if (sessionIndex >= sessionDeck.length) showSpeedRunEnd();
+  else loadDrill(sessionDeck[sessionIndex]);
+}
+function speedRunVerdictText(accuracy, seconds) {
+  if (accuracy === 100) return `🔥 Perfect run in ${seconds.toFixed(1)}s — that's a real edge, fast.`;
+  if (accuracy >= 60) return `Solid pace — sharpen the misses and go again.`;
+  return `Speed comes after accuracy — slow down a notch and re-run it.`;
+}
+function renderSrSigninPrompt() {
+  const el = document.getElementById("srSigninPrompt");
+  if (!el) return;
+  if (!authReady() || tlIsSignedIn()) { el.innerHTML = ""; return; }
+  el.innerHTML = `<div class="signin-prompt">Sign in to save your streak &amp; join the leaderboard — <button class="link-btn" id="srSignInLink">sign in</button></div>`;
+  const btn = document.getElementById("srSignInLink");
+  if (btn) btn.onclick = () => tlOpenAuthModal();
+}
+function showSpeedRunEnd() {
+  setDrillInProgress(false);
+  const content = document.getElementById("content");
+  const correctCount = sessionResults.filter(r => r.correct === true).length;
+  const totalMs = performance.now() - speedRunStartTime;
+  const totalSeconds = totalMs / 1000;
+  const accuracy = Math.round(100 * correctCount / sessionDeck.length);
+
+  const isNewBestTime = updateSpeedRunBestTime(totalMs, correctCount === sessionDeck.length);
+  updateSpeedRunBestAccuracy(accuracy);
+  awardTicks(15);
+  if (authReady()) tlSyncStats(appState);
+
+  const bestTimeText = appState.speedRunBestTimeMs ? (appState.speedRunBestTimeMs / 1000).toFixed(1) + "s" : "—";
+
+  content.innerHTML = `
+    <div class="end-of-day">
+      <h2>⚡ Speed Run Complete</h2>
+      <div class="eod-pnl pos">${totalSeconds.toFixed(1)}s</div>
+      <div style="color:var(--muted);font-size:0.85rem;margin-bottom:6px;">Total Time</div>
+      <div class="eod-grid">
+        <div class="cell"><div class="v">${correctCount}/${sessionDeck.length}</div><div class="l">Correct</div></div>
+        <div class="cell"><div class="v">${accuracy}%</div><div class="l">Accuracy</div></div>
+        <div class="cell"><div class="v">${bestTimeText}</div><div class="l">Best Time</div></div>
+      </div>
+      <div class="eod-verdict">${speedRunVerdictText(accuracy, totalSeconds)}</div>
+      <div id="srSigninPrompt"></div>
+      <button class="trade-again-btn" id="srAgainBtn">RUN IT BACK</button>
+      <button class="share-btn" id="shareBtnSpeedRun">📤 SHARE</button>
+      <button class="text-link-btn" id="backToStartBtn3">← Back to start</button>
+    </div>
+  `;
+  document.getElementById("srAgainBtn").onclick = startNewSpeedRun;
+  document.getElementById("backToStartBtn3").onclick = renderStartScreen;
+  document.getElementById("shareBtnSpeedRun").onclick = () =>
+    generateAndShareCard("speedrun", { totalSeconds, accuracy, correctCount, total: sessionDeck.length });
+  renderSrSigninPrompt();
+
+  if (isNewBestTime) launchConfetti();
 }
 
 /* ============================= DAILY MODE ============================= */
@@ -1692,6 +1818,7 @@ function renderStartScreen() {
         ${alreadyPlayedDaily ? "DAILY DRILL ✓ DONE — VIEW RESULT" : "DAILY DRILL"}
       </button>
       <button class="mode-btn practice-btn" id="practiceBtn">PRACTICE — 10 DRILL SESSION</button>
+      <button class="mode-btn speedrun-btn" id="speedRunBtn">⚡ SPEED RUN — 5 DRILLS, 5s EACH</button>
 
       <div class="start-stats-row">
         <div class="mini-stat"><div class="v">${accuracy}%</div><div class="l">Accuracy</div></div>
@@ -1702,6 +1829,7 @@ function renderStartScreen() {
   `;
   document.getElementById("dailyBtn").onclick = handleDailyButtonClick;
   document.getElementById("practiceBtn").onclick = startNewPracticeSession;
+  document.getElementById("speedRunBtn").onclick = startNewSpeedRun;
 }
 
 /* ============================= SHARE CARD ============================= */
@@ -1756,6 +1884,16 @@ function generateShareCanvas(mode, data) {
     ctx.fillStyle = "#f5b400";
     ctx.fillText(`🔥 ${appState.dailyPlayStreak} day streak`, 540, 530);
     drawMiniChart(ctx, data.drill.candles, 140, 650, 800, 480);
+  } else if (mode === "speedrun") {
+    ctx.font = "900 110px Arial, sans-serif";
+    ctx.fillStyle = "#f5b400";
+    ctx.fillText(`${data.totalSeconds.toFixed(1)}s`, 540, 440);
+    ctx.font = "400 32px Arial, sans-serif";
+    ctx.fillStyle = "#8b95a7";
+    ctx.fillText("⚡ Speed Run", 540, 490);
+    ctx.font = "700 50px Arial, sans-serif";
+    ctx.fillStyle = "#e6e9ef";
+    ctx.fillText(`${data.correctCount}/${data.total} correct (${data.accuracy}%)`, 540, 620);
   } else {
     ctx.font = "900 110px Arial, sans-serif";
     ctx.fillStyle = data.sessionPnl >= 0 ? "#22c55e" : "#ef4444";
@@ -1847,6 +1985,8 @@ async function initAccountSync() {
               appState.totalCorrect = result.merged.correct_drills;
               appState.ticks = result.merged.ticks;
               appState.ticksEarnedAllTime = Math.max(appState.ticksEarnedAllTime || 0, result.merged.ticks);
+              appState.speedRunBestTimeMs = result.merged.best_speedrun_time_ms;
+              appState.speedRunBestAccuracy = result.merged.best_speedrun_accuracy || 0;
               appState.dailyPlayStreak = recomputed.dailyPlayStreak;
               appState.dailyWinStreak = recomputed.dailyWinStreak;
               if (recomputed.lastDailyDate) appState.lastDailyDate = recomputed.lastDailyDate;

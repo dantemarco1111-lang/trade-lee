@@ -116,12 +116,21 @@ async function tlMergeLocalIntoCloud(appState) {
   try {
     const { data: existingStats } = await sbClient.from("stats").select("*").eq("user_id", uid).maybeSingle();
 
+    const localSrTime = appState.speedRunBestTimeMs;
+    const cloudSrTime = existingStats ? existingStats.best_speedrun_time_ms : null;
+    let mergedSrTime;
+    if (localSrTime == null) mergedSrTime = cloudSrTime;
+    else if (cloudSrTime == null) mergedSrTime = localSrTime;
+    else mergedSrTime = Math.min(localSrTime, cloudSrTime);
+
     const merged = {
       user_id: uid,
       best_streak: Math.max(appState.bestStreakEver || 0, existingStats ? existingStats.best_streak : 0),
       total_drills: Math.max(appState.totalDrillsAnswered || 0, existingStats ? existingStats.total_drills : 0),
       correct_drills: Math.max(appState.totalCorrect || 0, existingStats ? existingStats.correct_drills : 0),
       ticks: Math.max(appState.ticks || 0, existingStats ? existingStats.ticks : 0),
+      best_speedrun_time_ms: mergedSrTime,
+      best_speedrun_accuracy: Math.max(appState.speedRunBestAccuracy || 0, existingStats ? existingStats.best_speedrun_accuracy : 0),
     };
     await sbClient.from("stats").upsert(merged);
 
@@ -182,6 +191,8 @@ async function tlSyncStats(appState) {
       total_drills: appState.totalDrillsAnswered || 0,
       correct_drills: appState.totalCorrect || 0,
       ticks: appState.ticks || 0,
+      best_speedrun_time_ms: appState.speedRunBestTimeMs ?? null,
+      best_speedrun_accuracy: appState.speedRunBestAccuracy || 0,
     });
   } catch (e) {}
 }
