@@ -585,6 +585,42 @@
   .daily-btn.done { background: var(--card2); color: var(--muted); border: 1px solid var(--border); box-shadow: none; }
   .practice-btn { background: linear-gradient(180deg, #2fbf9f, var(--green-dark)); box-shadow: 0 6px 20px rgba(34,197,94,0.2); }
   .speedrun-btn { background: linear-gradient(135deg, #f5b400, #ff8a3d); color: #1a1200; box-shadow: 0 6px 20px rgba(245,180,0,0.25); }
+
+  /* ---------- customize-drills panel ---------- */
+  .customize-panel { margin-bottom: 14px; text-align: left; }
+  .customize-toggle {
+    width: 100%; display: flex; align-items: center; justify-content: space-between;
+    background: var(--card); border: 1px solid var(--border); border-radius: 12px;
+    padding: 12px 14px; color: var(--text-dim); font-family: var(--font-body); font-weight: 600;
+    font-size: 0.88rem; cursor: pointer;
+  }
+  .customize-caret { transition: transform 0.2s ease; }
+  .customize-toggle.open .customize-caret { transform: rotate(180deg); }
+  .customize-body {
+    background: var(--card); border: 1px solid var(--border); border-top: none;
+    border-radius: 0 0 12px 12px; padding: 14px; margin-top: -1px;
+  }
+  .customize-group { margin-bottom: 14px; }
+  .customize-group:last-of-type { margin-bottom: 8px; }
+  .customize-label {
+    font-size: 0.68rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 7px;
+  }
+  .customize-pills { display: flex; flex-wrap: wrap; gap: 6px; }
+  .pill-btn {
+    background: var(--card2); border: 1px solid var(--border-strong); color: var(--text-dim);
+    font-family: var(--font-body); font-size: 0.78rem; font-weight: 600; padding: 7px 12px;
+    border-radius: 999px; cursor: pointer; transition: transform 0.15s cubic-bezier(.34,1.56,.64,1);
+  }
+  .pill-btn:active { transform: scale(0.94); }
+  .pill-btn.active { background: rgba(34,197,94,0.14); border-color: var(--green); color: var(--text); }
+  .pill-btn.disabled { opacity: 0.5; cursor: default; }
+  .pill-btn .soon-tag { margin-left: 4px; }
+  .which-pick-explainer {
+    font-size: 0.82rem; color: var(--text-dim); line-height: 1.5; background: var(--card2);
+    border-radius: 10px; padding: 10px 12px; margin-top: 8px;
+  }
+  .which-pick-explainer p { margin: 0 0 8px; }
+  .which-pick-explainer p:last-child { margin-bottom: 0; }
   .start-stats-row { display: flex; gap: 8px; margin-top: 24px; }
   .mini-stat {
     flex: 1; background: var(--card); border: 1px solid var(--border); border-radius: 12px;
@@ -748,6 +784,10 @@ function defaultState() {
     practiceTimerSeconds: PRACTICE_TIMER_START,
     practiceDrillsSinceAdjust: 0,
     practiceCorrectSinceAdjust: 0,
+    // practice drill customization
+    practiceMarket: "stocks",
+    practiceSession: null,
+    practiceTimeframe: "5m",
   };
 }
 function loadPersistedState() {
@@ -1083,8 +1123,8 @@ function useDoubleDown() {
 }
 
 /* ============================= DIFFICULTY RAMP ============================= */
-function buildSessionDeck() {
-  const pool = shuffleArray(allDrills.slice());
+function buildSessionDeck(sourcePool) {
+  const pool = shuffleArray((sourcePool || allDrills).slice());
   pool.sort((a, b) => Math.abs(b.volume_ratio - 1) - Math.abs(a.volume_ratio - 1));
   const tercile = Math.floor(pool.length / 3);
   const obvious = shuffleArray(pool.slice(0, tercile));
@@ -1701,15 +1741,18 @@ function showEndOfDay() {
 
   if (isNewBest && sessionPnl > 0) launchConfetti();
 }
-function startNewPracticeSession() {
+async function startNewPracticeSession() {
   renderGameScreen("practice");
-  startNewSession();
+  const content = document.getElementById("content");
+  if (content) content.innerHTML = `<div class="loading">Loading drills…</div>`;
+  const pool = await resolvePracticePool();
+  startNewSession(null, pool);
 }
-function startNewSession(fixedDeck) {
+function startNewSession(fixedDeck, sourcePool) {
   sessionIndex = 0; sessionPnl = 0; bankroll = STARTING_BANKROLL;
   streak = 0; bestStreak = 0; multiplier = 1; sessionResults = [];
   secondChanceUsedThisSession = false;
-  sessionDeck = fixedDeck || buildSessionDeck();
+  sessionDeck = fixedDeck || buildSessionDeck(sourcePool);
   document.getElementById("bankrollValue").textContent = formatMoney(bankroll);
   document.getElementById("pnlValue").textContent = "$0";
   document.getElementById("pnlValue").className = "stat-value";
@@ -2126,6 +2169,133 @@ function renderTutorialOutro() {
   document.getElementById("outroContinue").onclick = goToStartOrDeepLink;
 }
 
+/* ============================= DRILL CUSTOMIZATION (Stage 4) ============================= */
+const MARKET_OPTIONS = [
+  ["stocks", "Stocks"],
+  ["futures", "Futures"],
+  ["forex", "Forex"],
+  ["crypto", "Crypto"],
+];
+const SESSION_OPTIONS = {
+  stocks: [["open", "Open (9:30-11)"], ["midday", "Midday (11-2)"], ["power_hour", "Power Hour (2-4)"]],
+  futures: [["open", "Open (9:30-11)"], ["midday", "Midday (11-2)"], ["power_hour", "Power Hour (2-4)"], ["overnight", "Overnight"]],
+  forex: [["asian", "Asian"], ["london", "London"], ["new_york", "New York"]],
+  crypto: [["us_hours", "US Hours"], ["overnight", "Overnight"]],
+};
+const MIN_SESSION_COMBO_DRILLS = 12;
+
+function drillPackUrl(market, timeframe) {
+  const base = market === "stocks" ? "drills" : `drills-${market}`;
+  const suffix = timeframe === "15m" ? "-15m" : "";
+  return `../drills/${base}${suffix}.json`;
+}
+const drillPackCache = {};
+async function loadDrillPack(market, timeframe) {
+  const key = market + "-" + timeframe;
+  if (drillPackCache[key]) return drillPackCache[key];
+  try {
+    const res = await fetch(drillPackUrl(market, timeframe), { cache: "no-store" });
+    if (!res.ok) throw new Error("not found");
+    const data = await res.json();
+    if (!data.length) throw new Error("empty");
+    drillPackCache[key] = data;
+    return data;
+  } catch (e) {
+    return null;
+  }
+}
+
+// Resolves the practice pool for the current customization, gracefully
+// widening (dropping the session filter) if the exact combo is too thin —
+// the game should never show the player an empty deck.
+async function resolvePracticePool() {
+  const market = appState.practiceMarket || "stocks";
+  const timeframe = appState.practiceTimeframe || "5m";
+  const session = appState.practiceSession || null;
+
+  let pool;
+  if (market === "stocks" && timeframe === "5m") {
+    pool = allDrills; // already loaded at init — zero extra fetch for the default, unchanged path
+  } else {
+    pool = await loadDrillPack(market, timeframe);
+    if (!pool) {
+      showToast("Couldn't load that pack — using Stocks instead.");
+      return allDrills;
+    }
+  }
+
+  if (session) {
+    const filtered = pool.filter(d => d.session === session);
+    if (filtered.length >= MIN_SESSION_COMBO_DRILLS) return filtered;
+    showToast("Not enough drills for that exact combo yet — widened to all sessions.");
+    return pool;
+  }
+  return pool;
+}
+
+function renderMarketPills() {
+  const wrap = document.getElementById("marketPills");
+  if (!wrap) return;
+  wrap.innerHTML = MARKET_OPTIONS.map(([key, label]) =>
+    `<button class="pill-btn ${appState.practiceMarket === key ? "active" : ""}" data-market="${key}">${label}</button>`
+  ).join("");
+  wrap.querySelectorAll(".pill-btn").forEach(btn => {
+    btn.onclick = () => {
+      appState.practiceMarket = btn.dataset.market;
+      appState.practiceSession = null; // sessions differ per market — reset to "Any"
+      saveState();
+      renderMarketPills();
+      renderSessionPills();
+    };
+  });
+}
+function renderSessionPills() {
+  const wrap = document.getElementById("sessionPills");
+  if (!wrap) return;
+  const opts = SESSION_OPTIONS[appState.practiceMarket || "stocks"] || [];
+  wrap.innerHTML = `<button class="pill-btn ${!appState.practiceSession ? "active" : ""}" data-session="">Any</button>` +
+    opts.map(([key, label]) =>
+      `<button class="pill-btn ${appState.practiceSession === key ? "active" : ""}" data-session="${key}">${label}</button>`
+    ).join("");
+  wrap.querySelectorAll(".pill-btn").forEach(btn => {
+    btn.onclick = () => {
+      appState.practiceSession = btn.dataset.session || null;
+      saveState();
+      renderSessionPills();
+    };
+  });
+}
+function renderTimeframePills() {
+  const wrap = document.getElementById("timeframePills");
+  if (!wrap) return;
+  wrap.innerHTML = `
+    <button class="pill-btn ${appState.practiceTimeframe === "5m" ? "active" : ""}" data-timeframe="5m">5m</button>
+    <button class="pill-btn ${appState.practiceTimeframe === "15m" ? "active" : ""}" data-timeframe="15m">15m</button>
+    <button class="pill-btn disabled" data-timeframe="1m" title="Coming soon — our data source only holds about 7 days of 1-minute history, not enough for a solid practice deck yet.">1m <span class="soon-tag">SOON</span></button>
+  `;
+  wrap.querySelectorAll(".pill-btn:not(.disabled)").forEach(btn => {
+    btn.onclick = () => {
+      appState.practiceTimeframe = btn.dataset.timeframe;
+      saveState();
+      renderTimeframePills();
+    };
+  });
+}
+function initCustomizePanel() {
+  renderMarketPills();
+  renderSessionPills();
+  renderTimeframePills();
+  const toggle = document.getElementById("customizeToggle");
+  const body = document.getElementById("customizeBody");
+  toggle.onclick = () => {
+    const isOpen = toggle.classList.toggle("open");
+    body.classList.toggle("hidden", !isOpen);
+  };
+  const whichBtn = document.getElementById("whichPickToggle");
+  const explainer = document.getElementById("whichPickExplainer");
+  whichBtn.onclick = () => explainer.classList.toggle("hidden");
+}
+
 /* ============================= START SCREEN ============================= */
 function renderStartScreen() {
   currentMode = null;
@@ -2159,6 +2329,31 @@ function renderStartScreen() {
       <button class="mode-btn daily-btn ${alreadyPlayedDaily ? "done" : ""}" id="dailyBtn">
         ${alreadyPlayedDaily ? "DAILY DRILL ✓ DONE — VIEW RESULT" : "DAILY DRILL"}
       </button>
+
+      <div class="customize-panel">
+        <button class="customize-toggle" id="customizeToggle">⚙ Customize your drills <span class="customize-caret">▾</span></button>
+        <div class="customize-body hidden" id="customizeBody">
+          <div class="customize-group">
+            <div class="customize-label">Market</div>
+            <div class="customize-pills" id="marketPills"></div>
+          </div>
+          <div class="customize-group">
+            <div class="customize-label">Session</div>
+            <div class="customize-pills" id="sessionPills"></div>
+          </div>
+          <div class="customize-group">
+            <div class="customize-label">Timeframe</div>
+            <div class="customize-pills" id="timeframePills"></div>
+          </div>
+          <button class="text-link-btn" id="whichPickToggle" style="padding:4px 0;">Which should I pick?</button>
+          <div class="which-pick-explainer hidden" id="whichPickExplainer">
+            <p><strong>Sessions:</strong> the open (or London/NY/US-hours open) is usually choppiest — big moves, more fakeouts. Midday tends to be quieter. Power hour/close builds into the next session.</p>
+            <p><strong>Pick one you can actually trade.</strong> Work nights? The Asian forex session or crypto overnight happen while you're awake — practicing during hours you'll never actually trade doesn't build a usable edge.</p>
+            <p><strong>Timeframe:</strong> 15m bars cover more time per candle — patterns play out slower, useful if you trade a higher timeframe yourself.</p>
+          </div>
+        </div>
+      </div>
+
       <button class="mode-btn practice-btn" id="practiceBtn">PRACTICE — 10 DRILL SESSION</button>
       <button class="mode-btn speedrun-btn" id="speedRunBtn">⚡ SPEED RUN — 5 DRILLS, 5s EACH</button>
 
@@ -2172,6 +2367,7 @@ function renderStartScreen() {
   document.getElementById("dailyBtn").onclick = handleDailyButtonClick;
   document.getElementById("practiceBtn").onclick = startNewPracticeSession;
   document.getElementById("speedRunBtn").onclick = () => startNewSpeedRun();
+  initCustomizePanel();
 }
 
 /* ============================= SHARE CARD ============================= */

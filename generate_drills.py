@@ -54,7 +54,7 @@ MARKET_PACKS = {
         "label": "Stocks & Indices",
         "tickers": ["QQQ", "SPY", "IWM", "DIA"],
         "has_volume": True,
-        "sessions": [("regular", "09:30", "16:00")],
+        "sessions": [("open", "09:30", "11:00"), ("midday", "11:00", "14:00"), ("power_hour", "14:00", "16:00")],
         "outcome_window_min": 60,
         "output_file": "drills.json",  # unchanged filename — keeps the live game working as-is
     },
@@ -62,7 +62,8 @@ MARKET_PACKS = {
         "label": "Futures",
         "tickers": ["NQ=F", "ES=F", "GC=F", "CL=F", "SI=F"],
         "has_volume": True,
-        "sessions": [("regular", "09:30", "16:00"), ("overnight", "18:00", "09:30")],
+        "sessions": [("open", "09:30", "11:00"), ("midday", "11:00", "14:00"), ("power_hour", "14:00", "16:00"),
+                     ("overnight", "18:00", "09:30")],
         "outcome_window_min": 60,
         "output_file": "drills-futures.json",
     },
@@ -78,19 +79,19 @@ MARKET_PACKS = {
         "label": "Crypto",
         "tickers": ["BTC-USD", "ETH-USD", "SOL-USD"],
         "has_volume": True,
-        "sessions": [("any", "00:00", "23:59")],
+        "sessions": [("us_hours", "09:30", "16:00"), ("overnight", "16:00", "09:30")],
         "outcome_window_min": 60,
         "output_file": "drills-crypto.json",
     },
 }
 
 
-def download_data(symbol):
-    print(f"  Downloading 5m data for {symbol}...")
+def download_data(symbol, interval="5m"):
+    print(f"  Downloading {interval} data for {symbol}...")
     df = yf.download(
         symbol,
         period="60d",
-        interval="5m",
+        interval=interval,
         prepost=False,
         auto_adjust=False,
         progress=False,
@@ -177,9 +178,8 @@ def compute_outcome(direction, range_high, range_low, range_height, breakout_idx
     return "fake", None, None, None, None  # fizzled: never resolved either way within the window
 
 
-def find_breakouts_in_pack(df, symbol, pack_key, pack_cfg):
+def find_breakouts_in_pack(df, symbol, pack_key, pack_cfg, outcome_window_bars):
     breakouts = []
-    outcome_window_bars = pack_cfg["outcome_window_min"] // 5
 
     for session_key, start_str, end_str in pack_cfg["sessions"]:
         instances = split_into_session_instances(df, start_str, end_str)
@@ -363,17 +363,22 @@ def build_candle_payload(b, has_volume):
     return candles, playout_candles, vwap
 
 
-def build_pack(pack_key, pack_cfg):
-    print(f"\n=== PACK: {pack_cfg['label']} ===")
+def build_pack(pack_key, pack_cfg, timeframe, interval, output_file):
+    print(f"\n=== PACK: {pack_cfg['label']} ({timeframe}) ===")
     all_breakouts = []
     skipped_symbols = []
+    # Bar-count windows stay fixed across timeframes on purpose: at 15m each
+    # window covers 3x the wall-clock time of 5m ("longer lookback"), and the
+    # coarser bars surface a different, complementary set of patterns from
+    # the same 60 days of history.
+    outcome_window_bars = pack_cfg["outcome_window_min"] // 5
 
     for symbol in pack_cfg["tickers"]:
-        df = download_data(symbol)
+        df = download_data(symbol, interval)
         if df is None:
             skipped_symbols.append((symbol, "no data returned"))
             continue
-        found = find_breakouts_in_pack(df, symbol, pack_key, pack_cfg)
+        found = find_breakouts_in_pack(df, symbol, pack_key, pack_cfg, outcome_window_bars)
         if len(found) < 4:
             print(f"    SKIP {symbol}: only {len(found)} qualifying breakouts — too thin for a balanced deck.")
             skipped_symbols.append((symbol, f"only {len(found)} breakouts found"))
@@ -399,8 +404,8 @@ def build_pack(pack_key, pack_cfg):
     print(f"  Real pool: {len(real_pool)}  Fake pool: {len(fake_pool)}  Balanced deck: {len(deck)}")
 
     if len(deck) < MIN_SHIPPABLE_DECK_SIZE:
-        print(f"  SKIPPING PACK '{pack_key}': deck size {len(deck)} is below the shippable floor "
-              f"({MIN_SHIPPABLE_DECK_SIZE}). Not writing {pack_cfg['output_file']}.")
+        print(f"  SKIPPING PACK '{pack_key}' ({timeframe}): deck size {len(deck)} is below the shippable floor "
+              f"({MIN_SHIPPABLE_DECK_SIZE}). Not writing {output_file}.")
         return None
     if len(deck) < MIN_HEALTHY_DECK_SIZE:
         print(f"  WARNING: pack '{pack_key}' deck size {len(deck)} is below the {MIN_HEALTHY_DECK_SIZE}-drill "
@@ -423,7 +428,7 @@ def build_pack(pack_key, pack_cfg):
             "ticker": b["symbol"],
             "market": pack_key,
             "session": b["session"],
-            "timeframe": "5m",
+            "timeframe": timeframe,
             "has_volume": pack_cfg["has_volume"],
             "date": b["period_label"],
             "direction": b["direction"],
@@ -444,7 +449,7 @@ def build_pack(pack_key, pack_cfg):
             "vwap": vwap,
         })
 
-    out_path = os.path.join(DRILLS_DIR, pack_cfg["output_file"])
+    out_path = os.path.join(DRILLS_DIR, output_file)
     with open(out_path, "w", encoding="utf-8") as f:
         json.dump(records, f, indent=2, ensure_ascii=False)
 
@@ -468,6 +473,12 @@ def build_pack(pack_key, pack_cfg):
     return records
 
 
+TIMEFRAMES = {
+    "5m": {"interval": "5m", "filename_suffix": ""},
+    "15m": {"interval": "15m", "filename_suffix": "-15m"},
+}
+
+
 def main():
     if os.path.exists(DRILLS_DIR):
         shutil.rmtree(DRILLS_DIR)
@@ -475,14 +486,21 @@ def main():
 
     results = {}
     for pack_key, pack_cfg in MARKET_PACKS.items():
-        results[pack_key] = build_pack(pack_key, pack_cfg)
+        for timeframe, tf_cfg in TIMEFRAMES.items():
+            base_name, ext = os.path.splitext(pack_cfg["output_file"])
+            output_file = f"{base_name}{tf_cfg['filename_suffix']}{ext}"
+            results[(pack_key, timeframe)] = build_pack(
+                pack_key, pack_cfg, timeframe, tf_cfg["interval"], output_file
+            )
 
     print("\n=== SUMMARY ===")
-    for pack_key, records in results.items():
+    for (pack_key, timeframe), records in results.items():
+        base_name, ext = os.path.splitext(MARKET_PACKS[pack_key]["output_file"])
+        output_file = f"{base_name}{TIMEFRAMES[timeframe]['filename_suffix']}{ext}"
         if records is None:
-            print(f"  {pack_key}: SKIPPED (not enough data)")
+            print(f"  {pack_key} ({timeframe}): SKIPPED (not enough data)")
         else:
-            print(f"  {pack_key}: {len(records)} drills -> {MARKET_PACKS[pack_key]['output_file']}")
+            print(f"  {pack_key} ({timeframe}): {len(records)} drills -> {output_file}")
 
 
 if __name__ == "__main__":

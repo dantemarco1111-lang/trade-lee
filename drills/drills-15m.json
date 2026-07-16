@@ -1,0 +1,2455 @@
+[
+  {
+    "id": "stocks_001",
+    "ticker": "IWM",
+    "market": "stocks",
+    "session": "midday",
+    "timeframe": "15m",
+    "has_volume": true,
+    "date": "2026-05-21",
+    "direction": "long",
+    "outcome": "real",
+    "extension_multiple": 1.56,
+    "reversal_minutes": null,
+    "resolution_bar_index": 1,
+    "resolved_price": 283.679993,
+    "breakout_price": 282.049988,
+    "volume_ratio": 3.045,
+    "context": "Breakout volume 3.0x the consolidation average",
+    "context_all": [
+      "Breakout volume 3.0x the consolidation average",
+      "Price was above the day's average price (VWAP) at the breakout"
+    ],
+    "range_high": 281.130005,
+    "range_low": 279.5,
+    "breakout_time": 1779383700,
+    "candles": [
+      {
+        "time": 1779375600,
+        "open": 280.244995,
+        "high": 280.809998,
+        "low": 279.5,
+        "close": 280.36499,
+        "volume": 997746
+      },
+      {
+        "time": 1779376500,
+        "open": 280.359985,
+        "high": 280.619995,
+        "low": 280.119995,
+        "close": 280.23999,
+        "volume": 563441
+      },
+      {
+        "time": 1779377400,
+        "open": 280.23999,
+        "high": 280.329987,
+        "low": 279.600006,
+        "close": 280.079987,
+        "volume": 389161
+      },
+      {
+        "time": 1779378300,
+        "open": 280.070007,
+        "high": 280.195007,
+        "low": 279.904999,
+        "close": 279.910004,
+        "volume": 457594
+      },
+      {
+        "time": 1779379200,
+        "open": 279.940002,
+        "high": 280.785004,
+        "low": 279.929993,
+        "close": 280.445007,
+        "volume": 725855
+      },
+      {
+        "time": 1779380100,
+        "open": 280.440002,
+        "high": 280.480011,
+        "low": 279.970001,
+        "close": 280.140015,
+        "volume": 1062544
+      },
+      {
+        "time": 1779381000,
+        "open": 280.119995,
+        "high": 280.339996,
+        "low": 279.730011,
+        "close": 280.049988,
+        "volume": 495649
+      },
+      {
+        "time": 1779381900,
+        "open": 280.054993,
+        "high": 280.207489,
+        "low": 279.619995,
+        "close": 280.019989,
+        "volume": 836159
+      },
+      {
+        "time": 1779382800,
+        "open": 280.029999,
+        "high": 281.130005,
+        "low": 279.910004,
+        "close": 280.859985,
+        "volume": 719835
+      },
+      {
+        "time": 1779383700,
+        "open": 280.890015,
+        "high": 282.480011,
+        "low": 280.829987,
+        "close": 282.049988,
+        "volume": 2113977
+      }
+    ],
+    "playout_candles": [
+      {
+        "time": 1779384600,
+        "open": 282.040009,
+        "high": 282.75,
+        "low": 282.0,
+        "close": 282.75,
+        "volume": 845169
+      },
+      {
+        "time": 1779385500,
+        "open": 282.73999,
+        "high": 283.679993,
+        "low": 282.609985,
+        "close": 282.839996,
+        "volume": 1238325
+      }
+    ],
+    "vwap": [
+      {
+        "time": 1779375600,
+        "value": 280.224996
+      },
+      {
+        "time": 1779376500,
+        "value": 280.261687
+      },
+      {
+        "time": 1779377400,
+        "value": 280.210135
+      },
+      {
+        "time": 1779378300,
+        "value": 280.170836
+      },
+      {
+        "time": 1779379200,
+        "value": 280.220828
+      },
+      {
+        "time": 1779380100,
+        "value": 280.214712
+      },
+      {
+        "time": 1779381000,
+        "value": 280.196256
+      },
+      {
+        "time": 1779381900,
+        "value": 280.158881
+      },
+      {
+        "time": 1779382800,
+        "value": 280.213543
+      },
+      {
+        "time": 1779383700,
+        "value": 280.611241
+      },
+      {
+        "time": 1779384600,
+        "value": 280.78462
+      },
+      {
+        "time": 1779385500,
+        "value": 281.052393
+      }
+    ]
+  },
+  {
+    "id": "stocks_002",
+    "ticker": "DIA",
+    "market": "stocks",
+    "session": "midday",
+    "timeframe": "15m",
+    "has_volume": true,
+    "date": "2026-05-21",
+    "direction": "long",
+    "outcome": "real",
+    "extension_multiple": 1.4,
+    "reversal_minutes": null,
+    "resolution_bar_index": 1,
+    "resolved_price": 503.809998,
+    "breakout_price": 501.959991,
+    "volume_ratio": 8.57,
+    "context": "Breakout volume 8.6x the consolidation average",
+    "context_all": [
+      "Breakout volume 8.6x the consolidation average",
+      "Price was above the day's average price (VWAP) at the breakout"
+    ],
+    "range_high": 500.809998,
+    "range_low": 498.660004,
+    "breakout_time": 1779383700,
+    "candles": [
+      {
+        "time": 1779375600,
+        "open": 499.790009,
+        "high": 500.0,
+        "low": 498.820007,
+        "close": 499.700012,
+        "volume": 119159
+      },
+      {
+        "time": 1779376500,
+        "open": 499.75,
+        "high": 499.799988,
+        "low": 499.130005,
+        "close": 499.184998,
+        "volume": 76077
+      },
+      {
+        "time": 1779377400,
+        "open": 499.209991,
+        "high": 499.299988,
+        "low": 498.660004,
+        "close": 499.149994,
+        "volume": 69112
+      },
+      {
+        "time": 1779378300,
+        "open": 499.230011,
+        "high": 499.649994,
+        "low": 499.160614,
+        "close": 499.51001,
+        "volume": 55593
+      },
+      {
+        "time": 1779379200,
+        "open": 499.540009,
+        "high": 500.029999,
+        "low": 499.529999,
+        "close": 499.769989,
+        "volume": 166765
+      },
+      {
+        "time": 1779380100,
+        "open": 499.790009,
+        "high": 499.790009,
+        "low": 499.0,
+        "close": 499.089996,
+        "volume": 37364
+      },
+      {
+        "time": 1779381000,
+        "open": 499.089996,
+        "high": 499.459991,
+        "low": 498.834991,
+        "close": 499.444214,
+        "volume": 26703
+      },
+      {
+        "time": 1779381900,
+        "open": 499.459991,
+        "high": 499.559998,
+        "low": 499.109985,
+        "close": 499.450012,
+        "volume": 25893
+      },
+      {
+        "time": 1779382800,
+        "open": 499.429993,
+        "high": 500.809998,
+        "low": 499.309998,
+        "close": 500.309998,
+        "volume": 130656
+      },
+      {
+        "time": 1779383700,
+        "open": 500.325012,
+        "high": 502.079987,
+        "low": 500.279999,
+        "close": 501.959991,
+        "volume": 673491
+      }
+    ],
+    "playout_candles": [
+      {
+        "time": 1779384600,
+        "open": 501.920013,
+        "high": 502.849091,
+        "low": 501.640015,
+        "close": 502.73999,
+        "volume": 278449
+      },
+      {
+        "time": 1779385500,
+        "open": 502.845001,
+        "high": 503.809998,
+        "low": 502.600006,
+        "close": 503.195007,
+        "volume": 217227
+      }
+    ],
+    "vwap": [
+      {
+        "time": 1779375600,
+        "value": 499.506673
+      },
+      {
+        "time": 1779376500,
+        "value": 499.454064
+      },
+      {
+        "time": 1779377400,
+        "value": 499.344937
+      },
+      {
+        "time": 1779378300,
+        "value": 499.361491
+      },
+      {
+        "time": 1779379200,
+        "value": 499.503745
+      },
+      {
+        "time": 1779380100,
+        "value": 499.488744
+      },
+      {
+        "time": 1779381000,
+        "value": 499.476994
+      },
+      {
+        "time": 1779381900,
+        "value": 499.47234
+      },
+      {
+        "time": 1779382800,
+        "value": 499.596285
+      },
+      {
+        "time": 1779383700,
+        "value": 500.495552
+      },
+      {
+        "time": 1779384600,
+        "value": 500.816775
+      },
+      {
+        "time": 1779385500,
+        "value": 501.092856
+      }
+    ]
+  },
+  {
+    "id": "stocks_003",
+    "ticker": "SPY",
+    "market": "stocks",
+    "session": "midday",
+    "timeframe": "15m",
+    "has_volume": true,
+    "date": "2026-06-11",
+    "direction": "long",
+    "outcome": "real",
+    "extension_multiple": 1.07,
+    "reversal_minutes": null,
+    "resolution_bar_index": 0,
+    "resolved_price": 736.619995,
+    "breakout_price": 732.52002,
+    "volume_ratio": 2.495,
+    "context": "Breakout volume 2.5x the consolidation average",
+    "context_all": [
+      "Breakout volume 2.5x the consolidation average",
+      "Price was above the day's average price (VWAP) at the breakout"
+    ],
+    "range_high": 730.309998,
+    "range_low": 724.405029,
+    "breakout_time": 1781198100,
+    "candles": [
+      {
+        "time": 1781190000,
+        "open": 725.570007,
+        "high": 727.880005,
+        "low": 724.405029,
+        "close": 727.380005,
+        "volume": 2381170
+      },
+      {
+        "time": 1781190900,
+        "open": 727.369995,
+        "high": 728.780029,
+        "low": 726.719971,
+        "close": 727.179993,
+        "volume": 1279199
+      },
+      {
+        "time": 1781191800,
+        "open": 727.179993,
+        "high": 729.460022,
+        "low": 726.72998,
+        "close": 727.859985,
+        "volume": 1627605
+      },
+      {
+        "time": 1781192700,
+        "open": 727.890015,
+        "high": 728.460022,
+        "low": 726.840027,
+        "close": 728.099976,
+        "volume": 1694064
+      },
+      {
+        "time": 1781193600,
+        "open": 728.080017,
+        "high": 730.150024,
+        "low": 727.570007,
+        "close": 729.88501,
+        "volume": 997917
+      },
+      {
+        "time": 1781194500,
+        "open": 729.950012,
+        "high": 730.309998,
+        "low": 727.809998,
+        "close": 727.880005,
+        "volume": 1489952
+      },
+      {
+        "time": 1781195400,
+        "open": 727.880005,
+        "high": 729.950012,
+        "low": 727.429993,
+        "close": 728.630005,
+        "volume": 1633198
+      },
+      {
+        "time": 1781196300,
+        "open": 728.599976,
+        "high": 728.940002,
+        "low": 726.5,
+        "close": 726.520081,
+        "volume": 1153465
+      },
+      {
+        "time": 1781197200,
+        "open": 726.539978,
+        "high": 727.26001,
+        "low": 725.570007,
+        "close": 726.349915,
+        "volume": 2021793
+      },
+      {
+        "time": 1781198100,
+        "open": 726.299988,
+        "high": 732.679993,
+        "low": 725.26001,
+        "close": 732.52002,
+        "volume": 3958339
+      }
+    ],
+    "playout_candles": [
+      {
+        "time": 1781199000,
+        "open": 732.539978,
+        "high": 736.619995,
+        "low": 732.224976,
+        "close": 736.210022,
+        "volume": 5472944
+      },
+      {
+        "time": 1781199900,
+        "open": 736.275024,
+        "high": 736.570007,
+        "low": 733.409973,
+        "close": 734.950012,
+        "volume": 2966618
+      }
+    ],
+    "vwap": [
+      {
+        "time": 1781190000,
+        "value": 726.555013
+      },
+      {
+        "time": 1781190900,
+        "value": 726.906228
+      },
+      {
+        "time": 1781191800,
+        "value": 727.248013
+      },
+      {
+        "time": 1781192700,
+        "value": 727.381944
+      },
+      {
+        "time": 1781193600,
+        "value": 727.609508
+      },
+      {
+        "time": 1781194500,
+        "value": 727.775836
+      },
+      {
+        "time": 1781195400,
+        "value": 727.907363
+      },
+      {
+        "time": 1781196300,
+        "value": 727.852089
+      },
+      {
+        "time": 1781197200,
+        "value": 727.645528
+      },
+      {
+        "time": 1781198100,
+        "value": 728.189857
+      },
+      {
+        "time": 1781199000,
+        "value": 729.766087
+      },
+      {
+        "time": 1781199900,
+        "value": 730.345546
+      }
+    ]
+  },
+  {
+    "id": "stocks_004",
+    "ticker": "IWM",
+    "market": "stocks",
+    "session": "midday",
+    "timeframe": "15m",
+    "has_volume": true,
+    "date": "2026-06-11",
+    "direction": "long",
+    "outcome": "real",
+    "extension_multiple": 1.56,
+    "reversal_minutes": null,
+    "resolution_bar_index": 0,
+    "resolved_price": 290.26001,
+    "breakout_price": 287.73999,
+    "volume_ratio": 1.336,
+    "context": "Breakout volume 1.3x the consolidation average",
+    "context_all": [
+      "Breakout volume 1.3x the consolidation average",
+      "Price was above the day's average price (VWAP) at the breakout"
+    ],
+    "range_high": 286.690002,
+    "range_low": 284.399994,
+    "breakout_time": 1781198100,
+    "candles": [
+      {
+        "time": 1781190000,
+        "open": 285.019989,
+        "high": 286.480011,
+        "low": 284.399994,
+        "close": 286.119995,
+        "volume": 1351875
+      },
+      {
+        "time": 1781190900,
+        "open": 286.109985,
+        "high": 286.690002,
+        "low": 285.609985,
+        "close": 286.049988,
+        "volume": 889573
+      },
+      {
+        "time": 1781191800,
+        "open": 286.029999,
+        "high": 286.679993,
+        "low": 285.649994,
+        "close": 285.920013,
+        "volume": 2279829
+      },
+      {
+        "time": 1781192700,
+        "open": 285.940002,
+        "high": 286.200012,
+        "low": 285.279999,
+        "close": 285.890015,
+        "volume": 733314
+      },
+      {
+        "time": 1781193600,
+        "open": 285.899994,
+        "high": 286.519989,
+        "low": 285.549988,
+        "close": 286.380005,
+        "volume": 1630423
+      },
+      {
+        "time": 1781194500,
+        "open": 286.380005,
+        "high": 286.5,
+        "low": 285.440002,
+        "close": 285.470001,
+        "volume": 1080730
+      },
+      {
+        "time": 1781195400,
+        "open": 285.459991,
+        "high": 286.390015,
+        "low": 285.140015,
+        "close": 285.795013,
+        "volume": 1003681
+      },
+      {
+        "time": 1781196300,
+        "open": 285.779999,
+        "high": 285.929993,
+        "low": 284.799988,
+        "close": 284.799988,
+        "volume": 434499
+      },
+      {
+        "time": 1781197200,
+        "open": 284.829987,
+        "high": 285.450012,
+        "low": 284.529999,
+        "close": 284.859985,
+        "volume": 636546
+      },
+      {
+        "time": 1781198100,
+        "open": 284.859985,
+        "high": 288.019989,
+        "low": 284.230011,
+        "close": 287.73999,
+        "volume": 1490746
+      }
+    ],
+    "playout_candles": [
+      {
+        "time": 1781199000,
+        "open": 287.765015,
+        "high": 290.26001,
+        "low": 287.619995,
+        "close": 289.934998,
+        "volume": 3243001
+      },
+      {
+        "time": 1781199900,
+        "open": 289.899994,
+        "high": 290.019989,
+        "low": 288.399994,
+        "close": 289.369995,
+        "volume": 1958500
+      }
+    ],
+    "vwap": [
+      {
+        "time": 1781190000,
+        "value": 285.666667
+      },
+      {
+        "time": 1781190900,
+        "value": 285.845257
+      },
+      {
+        "time": 1781191800,
+        "value": 285.965306
+      },
+      {
+        "time": 1781192700,
+        "value": 285.940842
+      },
+      {
+        "time": 1781193600,
+        "value": 285.990371
+      },
+      {
+        "time": 1781194500,
+        "value": 285.964995
+      },
+      {
+        "time": 1781195400,
+        "value": 285.943736
+      },
+      {
+        "time": 1781196300,
+        "value": 285.908294
+      },
+      {
+        "time": 1781197200,
+        "value": 285.847329
+      },
+      {
+        "time": 1781198100,
+        "value": 285.952821
+      },
+      {
+        "time": 1781199000,
+        "value": 286.681321
+      },
+      {
+        "time": 1781199900,
+        "value": 286.983535
+      }
+    ]
+  },
+  {
+    "id": "stocks_005",
+    "ticker": "QQQ",
+    "market": "stocks",
+    "session": "midday",
+    "timeframe": "15m",
+    "has_volume": true,
+    "date": "2026-05-05",
+    "direction": "long",
+    "outcome": "fake",
+    "extension_multiple": null,
+    "reversal_minutes": null,
+    "resolution_bar_index": null,
+    "resolved_price": null,
+    "breakout_price": 682.099976,
+    "volume_ratio": 25.976,
+    "context": "Breakout volume 26.0x the consolidation average",
+    "context_all": [
+      "Breakout volume 26.0x the consolidation average",
+      "Price was above the day's average price (VWAP) at the breakout"
+    ],
+    "range_high": 681.940002,
+    "range_low": 680.419983,
+    "breakout_time": 1778003100,
+    "candles": [
+      {
+        "time": 1777993200,
+        "open": 680.549927,
+        "high": 681.47998,
+        "low": 680.340027,
+        "close": 681.424988,
+        "volume": 2812608
+      },
+      {
+        "time": 1777994100,
+        "open": 681.445007,
+        "high": 681.609985,
+        "low": 681.039978,
+        "close": 681.340027,
+        "volume": 863345
+      },
+      {
+        "time": 1777995000,
+        "open": 681.400024,
+        "high": 681.642212,
+        "low": 680.900024,
+        "close": 681.51001,
+        "volume": 1151430
+      },
+      {
+        "time": 1777995900,
+        "open": 681.52002,
+        "high": 681.809998,
+        "low": 681.164978,
+        "close": 681.309998,
+        "volume": 814257
+      },
+      {
+        "time": 1777996800,
+        "open": 681.315002,
+        "high": 681.940002,
+        "low": 681.159973,
+        "close": 681.844971,
+        "volume": 611753
+      },
+      {
+        "time": 1777997700,
+        "open": 681.859985,
+        "high": 681.890015,
+        "low": 680.419983,
+        "close": 681.025024,
+        "volume": 783051
+      },
+      {
+        "time": 1777998600,
+        "open": 681.030029,
+        "high": 681.369995,
+        "low": 680.47998,
+        "close": 680.840027,
+        "volume": 641947
+      },
+      {
+        "time": 1777999500,
+        "open": 680.840027,
+        "high": 681.517517,
+        "low": 680.72998,
+        "close": 681.270081,
+        "volume": 495347
+      },
+      {
+        "time": 1778000400,
+        "open": 681.281982,
+        "high": 681.5,
+        "low": 680.869995,
+        "close": 681.179993,
+        "volume": 2129243
+      },
+      {
+        "time": 1778001300,
+        "open": 681.369995,
+        "high": 681.76001,
+        "low": 681.190002,
+        "close": 681.744995,
+        "volume": 649991
+      },
+      {
+        "time": 1778002200,
+        "open": 681.75,
+        "high": 681.919983,
+        "low": 681.52002,
+        "close": 681.840027,
+        "volume": 1263618
+      },
+      {
+        "time": 1778003100,
+        "open": 681.840027,
+        "high": 682.289978,
+        "low": 681.789978,
+        "close": 682.099976,
+        "volume": 24650322
+      }
+    ],
+    "playout_candles": [],
+    "vwap": [
+      {
+        "time": 1777993200,
+        "value": 681.081665
+      },
+      {
+        "time": 1777994100,
+        "value": 681.139989
+      },
+      {
+        "time": 1777995000,
+        "value": 681.190259
+      },
+      {
+        "time": 1777995900,
+        "value": 681.224619
+      },
+      {
+        "time": 1777996800,
+        "value": 681.266068
+      },
+      {
+        "time": 1777997700,
+        "value": 681.248887
+      },
+      {
+        "time": 1777998600,
+        "value": 681.21944
+      },
+      {
+        "time": 1777999500,
+        "value": 681.216597
+      },
+      {
+        "time": 1778000400,
+        "value": 681.209721
+      },
+      {
+        "time": 1778001300,
+        "value": 681.230805
+      },
+      {
+        "time": 1778002200,
+        "value": 681.285543
+      },
+      {
+        "time": 1778003100,
+        "value": 681.803353
+      }
+    ]
+  },
+  {
+    "id": "stocks_006",
+    "ticker": "QQQ",
+    "market": "stocks",
+    "session": "midday",
+    "timeframe": "15m",
+    "has_volume": true,
+    "date": "2026-06-24",
+    "direction": "short",
+    "outcome": "fake",
+    "extension_multiple": null,
+    "reversal_minutes": null,
+    "resolution_bar_index": null,
+    "resolved_price": null,
+    "breakout_price": 708.030029,
+    "volume_ratio": 1.785,
+    "context": "Breakout volume 1.8x the consolidation average",
+    "context_all": [
+      "Breakout volume 1.8x the consolidation average",
+      "Price was below the day's average price (VWAP) at the breakout"
+    ],
+    "range_high": 719.929993,
+    "range_low": 711.132019,
+    "breakout_time": 1782321300,
+    "candles": [
+      {
+        "time": 1782313200,
+        "open": 719.570007,
+        "high": 719.929993,
+        "low": 716.179993,
+        "close": 716.97998,
+        "volume": 1111131
+      },
+      {
+        "time": 1782314100,
+        "open": 716.960022,
+        "high": 717.879883,
+        "low": 715.099976,
+        "close": 717.419983,
+        "volume": 1146104
+      },
+      {
+        "time": 1782315000,
+        "open": 717.409973,
+        "high": 718.049988,
+        "low": 715.299988,
+        "close": 716.048096,
+        "volume": 782849
+      },
+      {
+        "time": 1782315900,
+        "open": 716.010986,
+        "high": 717.640015,
+        "low": 714.960022,
+        "close": 716.299988,
+        "volume": 846213
+      },
+      {
+        "time": 1782316800,
+        "open": 716.340027,
+        "high": 717.5,
+        "low": 715.690002,
+        "close": 716.710022,
+        "volume": 574581
+      },
+      {
+        "time": 1782317700,
+        "open": 716.799988,
+        "high": 717.390015,
+        "low": 715.950073,
+        "close": 716.27002,
+        "volume": 497803
+      },
+      {
+        "time": 1782318600,
+        "open": 716.265015,
+        "high": 716.265015,
+        "low": 712.880005,
+        "close": 713.575012,
+        "volume": 1029285
+      },
+      {
+        "time": 1782319500,
+        "open": 713.570007,
+        "high": 714.289429,
+        "low": 712.52002,
+        "close": 712.780029,
+        "volume": 1144360
+      },
+      {
+        "time": 1782320400,
+        "open": 712.719971,
+        "high": 714.059998,
+        "low": 711.132019,
+        "close": 711.309998,
+        "volume": 918541
+      },
+      {
+        "time": 1782321300,
+        "open": 711.330017,
+        "high": 711.900024,
+        "low": 707.869995,
+        "close": 708.030029,
+        "volume": 1596913
+      }
+    ],
+    "playout_candles": [
+      {
+        "time": 1782322200,
+        "open": 708.059998,
+        "high": 709.380005,
+        "low": 706.966187,
+        "close": 708.080017,
+        "volume": 1639446
+      },
+      {
+        "time": 1782323100,
+        "open": 708.039978,
+        "high": 709.280029,
+        "low": 707.0,
+        "close": 707.460022,
+        "volume": 1277031
+      }
+    ],
+    "vwap": [
+      {
+        "time": 1782313200,
+        "value": 717.696655
+      },
+      {
+        "time": 1782314100,
+        "value": 717.241355
+      },
+      {
+        "time": 1782315000,
+        "value": 717.0417
+      },
+      {
+        "time": 1782315900,
+        "value": 716.880202
+      },
+      {
+        "time": 1782316800,
+        "value": 716.848405
+      },
+      {
+        "time": 1782317700,
+        "value": 716.817113
+      },
+      {
+        "time": 1782318600,
+        "value": 716.374129
+      },
+      {
+        "time": 1782319500,
+        "value": 715.864287
+      },
+      {
+        "time": 1782320400,
+        "value": 715.442494
+      },
+      {
+        "time": 1782321300,
+        "value": 714.420266
+      },
+      {
+        "time": 1782322200,
+        "value": 713.508371
+      },
+      {
+        "time": 1782323100,
+        "value": 712.939693
+      }
+    ]
+  },
+  {
+    "id": "stocks_007",
+    "ticker": "DIA",
+    "market": "stocks",
+    "session": "midday",
+    "timeframe": "15m",
+    "has_volume": true,
+    "date": "2026-07-16",
+    "direction": "short",
+    "outcome": "fake",
+    "extension_multiple": null,
+    "reversal_minutes": null,
+    "resolution_bar_index": null,
+    "resolved_price": null,
+    "breakout_price": 525.109985,
+    "volume_ratio": 1.317,
+    "context": "Breakout volume 1.3x the consolidation average",
+    "context_all": [
+      "Breakout volume 1.3x the consolidation average",
+      "Price was below the day's average price (VWAP) at the breakout"
+    ],
+    "range_high": 527.929993,
+    "range_low": 525.195007,
+    "breakout_time": 1784223000,
+    "candles": [
+      {
+        "time": 1784214000,
+        "open": 527.380005,
+        "high": 527.63501,
+        "low": 527.02002,
+        "close": 527.5,
+        "volume": 63036
+      },
+      {
+        "time": 1784214900,
+        "open": 527.619019,
+        "high": 527.929993,
+        "low": 527.159973,
+        "close": 527.294983,
+        "volume": 101068
+      },
+      {
+        "time": 1784215800,
+        "open": 527.280029,
+        "high": 527.719971,
+        "low": 526.97998,
+        "close": 527.179993,
+        "volume": 115178
+      },
+      {
+        "time": 1784216700,
+        "open": 527.159973,
+        "high": 527.340027,
+        "low": 526.780029,
+        "close": 527.01001,
+        "volume": 69925
+      },
+      {
+        "time": 1784217600,
+        "open": 526.940002,
+        "high": 527.02002,
+        "low": 525.809998,
+        "close": 525.850098,
+        "volume": 159233
+      },
+      {
+        "time": 1784218500,
+        "open": 525.859985,
+        "high": 526.340027,
+        "low": 525.195007,
+        "close": 525.469971,
+        "volume": 73357
+      },
+      {
+        "time": 1784219400,
+        "open": 525.539978,
+        "high": 525.835022,
+        "low": 525.299988,
+        "close": 525.75,
+        "volume": 63558
+      },
+      {
+        "time": 1784220300,
+        "open": 525.73999,
+        "high": 526.52002,
+        "low": 525.440002,
+        "close": 526.52002,
+        "volume": 33281
+      },
+      {
+        "time": 1784221200,
+        "open": 526.530029,
+        "high": 526.684998,
+        "low": 526.159973,
+        "close": 526.299988,
+        "volume": 51875
+      },
+      {
+        "time": 1784222100,
+        "open": 526.340027,
+        "high": 526.440002,
+        "low": 525.669983,
+        "close": 525.77002,
+        "volume": 32172
+      },
+      {
+        "time": 1784223000,
+        "open": 525.77002,
+        "high": 525.945007,
+        "low": 524.809998,
+        "close": 525.109985,
+        "volume": 102362
+      }
+    ],
+    "playout_candles": [
+      {
+        "time": 1784223900,
+        "open": 525.11499,
+        "high": 525.349976,
+        "low": 524.664978,
+        "close": 524.72998,
+        "volume": 34018
+      }
+    ],
+    "vwap": [
+      {
+        "time": 1784214000,
+        "value": 527.38501
+      },
+      {
+        "time": 1784214900,
+        "value": 527.432211
+      },
+      {
+        "time": 1784215800,
+        "value": 527.374929
+      },
+      {
+        "time": 1784216700,
+        "value": 527.308535
+      },
+      {
+        "time": 1784217600,
+        "value": 526.969728
+      },
+      {
+        "time": 1784218500,
+        "value": 526.805639
+      },
+      {
+        "time": 1784219400,
+        "value": 526.689692
+      },
+      {
+        "time": 1784220300,
+        "value": 526.663716
+      },
+      {
+        "time": 1784221200,
+        "value": 526.643686
+      },
+      {
+        "time": 1784222100,
+        "value": 526.614847
+      },
+      {
+        "time": 1784223000,
+        "value": 526.457878
+      },
+      {
+        "time": 1784223900,
+        "value": 526.399499
+      }
+    ]
+  },
+  {
+    "id": "stocks_008",
+    "ticker": "QQQ",
+    "market": "stocks",
+    "session": "midday",
+    "timeframe": "15m",
+    "has_volume": true,
+    "date": "2026-04-23",
+    "direction": "short",
+    "outcome": "real",
+    "extension_multiple": 1.04,
+    "reversal_minutes": null,
+    "resolution_bar_index": 1,
+    "resolved_price": 645.525024,
+    "breakout_price": 650.065002,
+    "volume_ratio": 2.592,
+    "context": "Broke out into yesterday's low — heavy buyers there",
+    "context_all": [
+      "Broke out into yesterday's low — heavy buyers there",
+      "Breakout volume 2.6x the consolidation average",
+      "Price was below the day's average price (VWAP) at the breakout"
+    ],
+    "range_high": 656.919983,
+    "range_low": 651.344971,
+    "breakout_time": 1776964500,
+    "candles": [
+      {
+        "time": 1776956400,
+        "open": 655.419983,
+        "high": 656.32959,
+        "low": 655.419983,
+        "close": 656.034973,
+        "volume": 881596
+      },
+      {
+        "time": 1776957300,
+        "open": 656.0401,
+        "high": 656.780029,
+        "low": 655.765015,
+        "close": 656.330017,
+        "volume": 792842
+      },
+      {
+        "time": 1776958200,
+        "open": 656.299988,
+        "high": 656.919983,
+        "low": 655.969971,
+        "close": 656.075012,
+        "volume": 691618
+      },
+      {
+        "time": 1776959100,
+        "open": 656.080017,
+        "high": 656.090027,
+        "low": 654.650024,
+        "close": 655.407471,
+        "volume": 950944
+      },
+      {
+        "time": 1776960000,
+        "open": 655.419983,
+        "high": 655.578979,
+        "low": 654.119995,
+        "close": 655.159607,
+        "volume": 568647
+      },
+      {
+        "time": 1776960900,
+        "open": 655.140015,
+        "high": 655.690002,
+        "low": 654.809998,
+        "close": 655.309998,
+        "volume": 575874
+      },
+      {
+        "time": 1776961800,
+        "open": 655.309998,
+        "high": 656.02002,
+        "low": 655.200012,
+        "close": 655.599976,
+        "volume": 742428
+      },
+      {
+        "time": 1776962700,
+        "open": 655.599976,
+        "high": 655.890015,
+        "low": 654.969971,
+        "close": 655.230103,
+        "volume": 523221
+      },
+      {
+        "time": 1776963600,
+        "open": 655.280029,
+        "high": 655.530029,
+        "low": 651.344971,
+        "close": 651.859985,
+        "volume": 2373383
+      },
+      {
+        "time": 1776964500,
+        "open": 651.869995,
+        "high": 651.869995,
+        "low": 649.799988,
+        "close": 650.065002,
+        "volume": 2333254
+      }
+    ],
+    "playout_candles": [
+      {
+        "time": 1776965400,
+        "open": 650.080017,
+        "high": 651.969971,
+        "low": 647.000122,
+        "close": 647.40509,
+        "volume": 2749574
+      },
+      {
+        "time": 1776966300,
+        "open": 647.440002,
+        "high": 650.599976,
+        "low": 645.525024,
+        "close": 650.289978,
+        "volume": 4134212
+      }
+    ],
+    "vwap": [
+      {
+        "time": 1776956400,
+        "value": 655.928182
+      },
+      {
+        "time": 1776957300,
+        "value": 656.100301
+      },
+      {
+        "time": 1776958200,
+        "value": 656.165004
+      },
+      {
+        "time": 1776959100,
+        "value": 655.940672
+      },
+      {
+        "time": 1776960000,
+        "value": 655.79611
+      },
+      {
+        "time": 1776960900,
+        "value": 655.728202
+      },
+      {
+        "time": 1776961800,
+        "value": 655.710863
+      },
+      {
+        "time": 1776962700,
+        "value": 655.679117
+      },
+      {
+        "time": 1776963600,
+        "value": 654.868279
+      },
+      {
+        "time": 1776964500,
+        "value": 653.908942
+      },
+      {
+        "time": 1776965400,
+        "value": 652.841677
+      },
+      {
+        "time": 1776966300,
+        "value": 651.878003
+      }
+    ]
+  },
+  {
+    "id": "stocks_009",
+    "ticker": "DIA",
+    "market": "stocks",
+    "session": "midday",
+    "timeframe": "15m",
+    "has_volume": true,
+    "date": "2026-06-11",
+    "direction": "long",
+    "outcome": "real",
+    "extension_multiple": 1.44,
+    "reversal_minutes": null,
+    "resolution_bar_index": 0,
+    "resolved_price": 509.266388,
+    "breakout_price": 506.959991,
+    "volume_ratio": 2.965,
+    "context": "Broke out into yesterday's high — heavy sellers there",
+    "context_all": [
+      "Broke out into yesterday's high — heavy sellers there",
+      "Breakout volume 3.0x the consolidation average",
+      "Price was above the day's average price (VWAP) at the breakout"
+    ],
+    "range_high": 504.720001,
+    "range_low": 501.570007,
+    "breakout_time": 1781198100,
+    "candles": [
+      {
+        "time": 1781190000,
+        "open": 502.25,
+        "high": 503.5,
+        "low": 501.570007,
+        "close": 503.179993,
+        "volume": 210241
+      },
+      {
+        "time": 1781190900,
+        "open": 503.279999,
+        "high": 503.98999,
+        "low": 502.600006,
+        "close": 503.380005,
+        "volume": 79945
+      },
+      {
+        "time": 1781191800,
+        "open": 503.339996,
+        "high": 504.25,
+        "low": 502.839996,
+        "close": 503.359985,
+        "volume": 103809
+      },
+      {
+        "time": 1781192700,
+        "open": 503.399994,
+        "high": 503.600006,
+        "low": 502.630005,
+        "close": 503.410004,
+        "volume": 89979
+      },
+      {
+        "time": 1781193600,
+        "open": 503.399994,
+        "high": 504.619904,
+        "low": 503.179993,
+        "close": 504.5,
+        "volume": 44283
+      },
+      {
+        "time": 1781194500,
+        "open": 504.579987,
+        "high": 504.720001,
+        "low": 503.390015,
+        "close": 503.390015,
+        "volume": 185962
+      },
+      {
+        "time": 1781195400,
+        "open": 503.380005,
+        "high": 504.529999,
+        "low": 503.029999,
+        "close": 503.869995,
+        "volume": 140476
+      },
+      {
+        "time": 1781196300,
+        "open": 503.920013,
+        "high": 504.059998,
+        "low": 502.970001,
+        "close": 502.970001,
+        "volume": 160779
+      },
+      {
+        "time": 1781197200,
+        "open": 502.859985,
+        "high": 503.420013,
+        "low": 502.459991,
+        "close": 502.890015,
+        "volume": 118049
+      },
+      {
+        "time": 1781198100,
+        "open": 502.890015,
+        "high": 507.0,
+        "low": 502.209991,
+        "close": 506.959991,
+        "volume": 373458
+      }
+    ],
+    "playout_candles": [
+      {
+        "time": 1781199000,
+        "open": 507.160004,
+        "high": 509.266388,
+        "low": 506.5,
+        "close": 509.049988,
+        "volume": 369106
+      },
+      {
+        "time": 1781199900,
+        "open": 509.070007,
+        "high": 509.149994,
+        "low": 507.420013,
+        "close": 508.269989,
+        "volume": 314496
+      }
+    ],
+    "vwap": [
+      {
+        "time": 1781190000,
+        "value": 502.75
+      },
+      {
+        "time": 1781190900,
+        "value": 502.907951
+      },
+      {
+        "time": 1781191800,
+        "value": 503.05955
+      },
+      {
+        "time": 1781192700,
+        "value": 503.088142
+      },
+      {
+        "time": 1781193600,
+        "value": 503.172961
+      },
+      {
+        "time": 1781194500,
+        "value": 503.344906
+      },
+      {
+        "time": 1781195400,
+        "value": 503.421347
+      },
+      {
+        "time": 1781196300,
+        "value": 503.407412
+      },
+      {
+        "time": 1781197200,
+        "value": 503.356999
+      },
+      {
+        "time": 1781198100,
+        "value": 503.860813
+      },
+      {
+        "time": 1781199000,
+        "value": 504.728706
+      },
+      {
+        "time": 1781199900,
+        "value": 505.238555
+      }
+    ]
+  },
+  {
+    "id": "stocks_010",
+    "ticker": "SPY",
+    "market": "stocks",
+    "session": "midday",
+    "timeframe": "15m",
+    "has_volume": true,
+    "date": "2026-05-12",
+    "direction": "long",
+    "outcome": "fake",
+    "extension_multiple": null,
+    "reversal_minutes": null,
+    "resolution_bar_index": null,
+    "resolved_price": null,
+    "breakout_price": 734.349976,
+    "volume_ratio": 18.088,
+    "context": "Breakout volume 18.1x the consolidation average",
+    "context_all": [
+      "Breakout volume 18.1x the consolidation average",
+      "Price was above the day's average price (VWAP) at the breakout"
+    ],
+    "range_high": 734.049988,
+    "range_low": 731.830017,
+    "breakout_time": 1778606100,
+    "candles": [
+      {
+        "time": 1778598000,
+        "open": 733.690002,
+        "high": 734.049988,
+        "low": 733.119995,
+        "close": 733.23999,
+        "volume": 1954431
+      },
+      {
+        "time": 1778598900,
+        "open": 733.23999,
+        "high": 733.27002,
+        "low": 731.840027,
+        "close": 732.320007,
+        "volume": 2216082
+      },
+      {
+        "time": 1778599800,
+        "open": 732.340027,
+        "high": 733.549988,
+        "low": 732.119995,
+        "close": 733.530029,
+        "volume": 1367304
+      },
+      {
+        "time": 1778600700,
+        "open": 733.530029,
+        "high": 733.72998,
+        "low": 732.370972,
+        "close": 732.48999,
+        "volume": 1322871
+      },
+      {
+        "time": 1778601600,
+        "open": 732.48999,
+        "high": 733.47998,
+        "low": 732.109985,
+        "close": 733.349976,
+        "volume": 1360242
+      },
+      {
+        "time": 1778602500,
+        "open": 733.330017,
+        "high": 733.429993,
+        "low": 732.549988,
+        "close": 732.73999,
+        "volume": 1253268
+      },
+      {
+        "time": 1778603400,
+        "open": 732.72998,
+        "high": 733.039978,
+        "low": 732.190002,
+        "close": 732.419983,
+        "volume": 1309401
+      },
+      {
+        "time": 1778604300,
+        "open": 732.419983,
+        "high": 732.590027,
+        "low": 731.830017,
+        "close": 732.10498,
+        "volume": 1291232
+      },
+      {
+        "time": 1778605200,
+        "open": 732.119995,
+        "high": 733.390015,
+        "low": 732.01001,
+        "close": 733.299988,
+        "volume": 1351566
+      },
+      {
+        "time": 1778606100,
+        "open": 733.289978,
+        "high": 735.01001,
+        "low": 733.289978,
+        "close": 734.349976,
+        "volume": 26984028
+      }
+    ],
+    "playout_candles": [
+      {
+        "time": 1778607000,
+        "open": 734.440002,
+        "high": 734.984985,
+        "low": 734.130005,
+        "close": 734.765015,
+        "volume": 1172822
+      },
+      {
+        "time": 1778607900,
+        "open": 734.77002,
+        "high": 735.200012,
+        "low": 734.400024,
+        "close": 735.059998,
+        "volume": 1347068
+      }
+    ],
+    "vwap": [
+      {
+        "time": 1778598000,
+        "value": 733.469991
+      },
+      {
+        "time": 1778598900,
+        "value": 732.942179
+      },
+      {
+        "time": 1778599800,
+        "value": 732.972916
+      },
+      {
+        "time": 1778600700,
+        "value": 732.951847
+      },
+      {
+        "time": 1778601600,
+        "value": 732.956502
+      },
+      {
+        "time": 1778602500,
+        "value": 732.949908
+      },
+      {
+        "time": 1778603400,
+        "value": 732.901348
+      },
+      {
+        "time": 1778604300,
+        "value": 732.823676
+      },
+      {
+        "time": 1778605200,
+        "value": 732.83136
+      },
+      {
+        "time": 1778606100,
+        "value": 733.756389
+      },
+      {
+        "time": 1778607000,
+        "value": 733.780935
+      },
+      {
+        "time": 1778607900,
+        "value": 733.815631
+      }
+    ]
+  },
+  {
+    "id": "stocks_011",
+    "ticker": "QQQ",
+    "market": "stocks",
+    "session": "midday",
+    "timeframe": "15m",
+    "has_volume": true,
+    "date": "2026-06-10",
+    "direction": "short",
+    "outcome": "fake",
+    "extension_multiple": null,
+    "reversal_minutes": 15,
+    "resolution_bar_index": 0,
+    "resolved_price": null,
+    "breakout_price": 695.969971,
+    "volume_ratio": 0.552,
+    "context": "Breakout volume 0.6x the consolidation average",
+    "context_all": [
+      "Breakout volume 0.6x the consolidation average",
+      "Price was below the day's average price (VWAP) at the breakout"
+    ],
+    "range_high": 702.640015,
+    "range_low": 696.130005,
+    "breakout_time": 1781112600,
+    "candles": [
+      {
+        "time": 1781103600,
+        "open": 702.799988,
+        "high": 704.877991,
+        "low": 699.059998,
+        "close": 699.080017,
+        "volume": 2678163
+      },
+      {
+        "time": 1781104500,
+        "open": 699.0,
+        "high": 702.179993,
+        "low": 697.094971,
+        "close": 700.099976,
+        "volume": 2873515
+      },
+      {
+        "time": 1781105400,
+        "open": 700.140015,
+        "high": 702.109985,
+        "low": 698.460022,
+        "close": 701.669983,
+        "volume": 2192039
+      },
+      {
+        "time": 1781106300,
+        "open": 701.630005,
+        "high": 702.150024,
+        "low": 696.190002,
+        "close": 701.690002,
+        "volume": 3314295
+      },
+      {
+        "time": 1781107200,
+        "open": 701.835022,
+        "high": 702.640015,
+        "low": 698.179993,
+        "close": 698.539978,
+        "volume": 1672151
+      },
+      {
+        "time": 1781108100,
+        "open": 698.549988,
+        "high": 699.679993,
+        "low": 697.98999,
+        "close": 698.849976,
+        "volume": 1339596
+      },
+      {
+        "time": 1781109000,
+        "open": 698.700012,
+        "high": 701.549988,
+        "low": 697.990479,
+        "close": 699.169983,
+        "volume": 1478197
+      },
+      {
+        "time": 1781109900,
+        "open": 699.080017,
+        "high": 699.359985,
+        "low": 697.030029,
+        "close": 698.299988,
+        "volume": 1260314
+      },
+      {
+        "time": 1781110800,
+        "open": 698.340027,
+        "high": 699.830017,
+        "low": 696.130005,
+        "close": 696.597107,
+        "volume": 1144309
+      },
+      {
+        "time": 1781111700,
+        "open": 696.599976,
+        "high": 697.809998,
+        "low": 696.150024,
+        "close": 697.570007,
+        "volume": 1214494
+      },
+      {
+        "time": 1781112600,
+        "open": 697.549988,
+        "high": 697.700012,
+        "low": 695.880005,
+        "close": 695.969971,
+        "volume": 1010867
+      }
+    ],
+    "playout_candles": [
+      {
+        "time": 1781113500,
+        "open": 695.969971,
+        "high": 700.150024,
+        "low": 695.869995,
+        "close": 699.820007,
+        "volume": 1913738
+      }
+    ],
+    "vwap": [
+      {
+        "time": 1781103600,
+        "value": 701.006002
+      },
+      {
+        "time": 1781104500,
+        "value": 700.377459
+      },
+      {
+        "time": 1781105400,
+        "value": 700.481971
+      },
+      {
+        "time": 1781106300,
+        "value": 700.340515
+      },
+      {
+        "time": 1781107200,
+        "value": 700.267765
+      },
+      {
+        "time": 1781108100,
+        "value": 700.131824
+      },
+      {
+        "time": 1781109000,
+        "value": 700.078424
+      },
+      {
+        "time": 1781109900,
+        "value": 699.939826
+      },
+      {
+        "time": 1781110800,
+        "value": 699.785524
+      },
+      {
+        "time": 1781111700,
+        "value": 699.620218
+      },
+      {
+        "time": 1781112600,
+        "value": 699.464737
+      },
+      {
+        "time": 1781113500,
+        "value": 699.390983
+      }
+    ]
+  },
+  {
+    "id": "stocks_012",
+    "ticker": "SPY",
+    "market": "stocks",
+    "session": "midday",
+    "timeframe": "15m",
+    "has_volume": true,
+    "date": "2026-06-04",
+    "direction": "long",
+    "outcome": "fake",
+    "extension_multiple": null,
+    "reversal_minutes": null,
+    "resolution_bar_index": null,
+    "resolved_price": null,
+    "breakout_price": 757.26062,
+    "volume_ratio": 1.015,
+    "context": "Broke out into yesterday's high — heavy sellers there",
+    "context_all": [
+      "Broke out into yesterday's high — heavy sellers there",
+      "Breakout volume 1.0x the consolidation average",
+      "Price was above the day's average price (VWAP) at the breakout"
+    ],
+    "range_high": 757.179993,
+    "range_low": 754.799988,
+    "breakout_time": 1780594200,
+    "candles": [
+      {
+        "time": 1780585200,
+        "open": 754.215027,
+        "high": 755.619995,
+        "low": 754.200012,
+        "close": 755.565002,
+        "volume": 3615996
+      },
+      {
+        "time": 1780586100,
+        "open": 755.570007,
+        "high": 755.969971,
+        "low": 755.340027,
+        "close": 755.86499,
+        "volume": 1249735
+      },
+      {
+        "time": 1780587000,
+        "open": 755.859985,
+        "high": 755.950012,
+        "low": 755.169983,
+        "close": 755.280029,
+        "volume": 805397
+      },
+      {
+        "time": 1780587900,
+        "open": 755.280029,
+        "high": 755.47998,
+        "low": 754.799988,
+        "close": 755.340027,
+        "volume": 1061199
+      },
+      {
+        "time": 1780588800,
+        "open": 755.349976,
+        "high": 756.399902,
+        "low": 755.200012,
+        "close": 756.210022,
+        "volume": 1028387
+      },
+      {
+        "time": 1780589700,
+        "open": 756.219971,
+        "high": 756.669983,
+        "low": 756.210022,
+        "close": 756.5,
+        "volume": 1231950
+      },
+      {
+        "time": 1780590600,
+        "open": 756.52002,
+        "high": 756.869995,
+        "low": 756.049988,
+        "close": 756.780029,
+        "volume": 1002463
+      },
+      {
+        "time": 1780591500,
+        "open": 756.780029,
+        "high": 756.929993,
+        "low": 756.559998,
+        "close": 756.794983,
+        "volume": 803189
+      },
+      {
+        "time": 1780592400,
+        "open": 756.789978,
+        "high": 756.98999,
+        "low": 756.590027,
+        "close": 756.840027,
+        "volume": 595815
+      },
+      {
+        "time": 1780593300,
+        "open": 756.849976,
+        "high": 757.179993,
+        "low": 756.619995,
+        "close": 757.109985,
+        "volume": 932812
+      },
+      {
+        "time": 1780594200,
+        "open": 757.109985,
+        "high": 757.429993,
+        "low": 757.02002,
+        "close": 757.26062,
+        "volume": 982534
+      }
+    ],
+    "playout_candles": [
+      {
+        "time": 1780595100,
+        "open": 757.260071,
+        "high": 757.73999,
+        "low": 757.130005,
+        "close": 757.684998,
+        "volume": 820918
+      }
+    ],
+    "vwap": [
+      {
+        "time": 1780585200,
+        "value": 755.128337
+      },
+      {
+        "time": 1780586100,
+        "value": 755.281585
+      },
+      {
+        "time": 1780587000,
+        "value": 755.307871
+      },
+      {
+        "time": 1780587900,
+        "value": 755.291918
+      },
+      {
+        "time": 1780588800,
+        "value": 755.377352
+      },
+      {
+        "time": 1780589700,
+        "value": 755.52567
+      },
+      {
+        "time": 1780590600,
+        "value": 755.630077
+      },
+      {
+        "time": 1780591500,
+        "value": 755.714245
+      },
+      {
+        "time": 1780592400,
+        "value": 755.77137
+      },
+      {
+        "time": 1780593300,
+        "value": 755.862073
+      },
+      {
+        "time": 1780594200,
+        "value": 755.963564
+      },
+      {
+        "time": 1780595100,
+        "value": 756.05389
+      }
+    ]
+  },
+  {
+    "id": "stocks_013",
+    "ticker": "SPY",
+    "market": "stocks",
+    "session": "midday",
+    "timeframe": "15m",
+    "has_volume": true,
+    "date": "2026-04-23",
+    "direction": "short",
+    "outcome": "real",
+    "extension_multiple": 1.0,
+    "reversal_minutes": null,
+    "resolution_bar_index": 1,
+    "resolved_price": 702.280273,
+    "breakout_price": 706.049988,
+    "volume_ratio": 3.254,
+    "context": "Breakout volume 3.3x the consolidation average",
+    "context_all": [
+      "Breakout volume 3.3x the consolidation average",
+      "Price was below the day's average price (VWAP) at the breakout"
+    ],
+    "range_high": 712.359802,
+    "range_low": 707.330017,
+    "breakout_time": 1776964500,
+    "candles": [
+      {
+        "time": 1776956400,
+        "open": 711.700012,
+        "high": 711.98999,
+        "low": 711.44989,
+        "close": 711.63501,
+        "volume": 926170
+      },
+      {
+        "time": 1776957300,
+        "open": 711.640015,
+        "high": 712.280029,
+        "low": 711.51001,
+        "close": 711.98999,
+        "volume": 962105
+      },
+      {
+        "time": 1776958200,
+        "open": 711.98999,
+        "high": 712.359802,
+        "low": 711.494995,
+        "close": 711.575012,
+        "volume": 942264
+      },
+      {
+        "time": 1776959100,
+        "open": 711.590027,
+        "high": 711.619995,
+        "low": 710.700012,
+        "close": 711.10498,
+        "volume": 1377856
+      },
+      {
+        "time": 1776960000,
+        "open": 711.10498,
+        "high": 711.23999,
+        "low": 710.304993,
+        "close": 710.900024,
+        "volume": 949131
+      },
+      {
+        "time": 1776960900,
+        "open": 710.900024,
+        "high": 711.090027,
+        "low": 710.400024,
+        "close": 710.72998,
+        "volume": 615220
+      },
+      {
+        "time": 1776961800,
+        "open": 710.748901,
+        "high": 711.27002,
+        "low": 710.625,
+        "close": 710.950012,
+        "volume": 678367
+      },
+      {
+        "time": 1776962700,
+        "open": 710.950012,
+        "high": 711.179993,
+        "low": 710.580017,
+        "close": 710.869995,
+        "volume": 374223
+      },
+      {
+        "time": 1776963600,
+        "open": 710.880005,
+        "high": 711.080017,
+        "low": 707.330017,
+        "close": 707.73999,
+        "volume": 3329231
+      },
+      {
+        "time": 1776964500,
+        "open": 707.75,
+        "high": 707.75,
+        "low": 705.880005,
+        "close": 706.049988,
+        "volume": 3671939
+      }
+    ],
+    "playout_candles": [
+      {
+        "time": 1776965400,
+        "open": 706.040588,
+        "high": 707.700012,
+        "low": 703.309998,
+        "close": 703.76001,
+        "volume": 3688131
+      },
+      {
+        "time": 1776966300,
+        "open": 703.76001,
+        "high": 707.049988,
+        "low": 702.280273,
+        "close": 706.63501,
+        "volume": 6595759
+      }
+    ],
+    "vwap": [
+      {
+        "time": 1776956400,
+        "value": 711.69163
+      },
+      {
+        "time": 1776957300,
+        "value": 711.81139
+      },
+      {
+        "time": 1776958200,
+        "value": 711.810906
+      },
+      {
+        "time": 1776959100,
+        "value": 711.591791
+      },
+      {
+        "time": 1776960000,
+        "value": 711.44884
+      },
+      {
+        "time": 1776960900,
+        "value": 711.373298
+      },
+      {
+        "time": 1776961800,
+        "value": 711.328612
+      },
+      {
+        "time": 1776962700,
+        "value": 711.303832
+      },
+      {
+        "time": 1776963600,
+        "value": 710.455619
+      },
+      {
+        "time": 1776964500,
+        "value": 709.421049
+      },
+      {
+        "time": 1776965400,
+        "value": 708.473947
+      },
+      {
+        "time": 1776966300,
+        "value": 707.611619
+      }
+    ]
+  },
+  {
+    "id": "stocks_014",
+    "ticker": "SPY",
+    "market": "stocks",
+    "session": "midday",
+    "timeframe": "15m",
+    "has_volume": true,
+    "date": "2026-05-21",
+    "direction": "long",
+    "outcome": "fake",
+    "extension_multiple": null,
+    "reversal_minutes": null,
+    "resolution_bar_index": null,
+    "resolved_price": null,
+    "breakout_price": 742.150024,
+    "volume_ratio": 2.713,
+    "context": "Broke out into yesterday's high — heavy sellers there",
+    "context_all": [
+      "Broke out into yesterday's high — heavy sellers there",
+      "Breakout volume 2.7x the consolidation average",
+      "Price was above the day's average price (VWAP) at the breakout"
+    ],
+    "range_high": 741.150024,
+    "range_low": 737.030029,
+    "breakout_time": 1779383700,
+    "candles": [
+      {
+        "time": 1779375600,
+        "open": 738.960022,
+        "high": 739.330017,
+        "low": 737.030029,
+        "close": 738.934998,
+        "volume": 1398031
+      },
+      {
+        "time": 1779376500,
+        "open": 738.950012,
+        "high": 739.369995,
+        "low": 738.630005,
+        "close": 738.799988,
+        "volume": 1106572
+      },
+      {
+        "time": 1779377400,
+        "open": 738.809998,
+        "high": 739.349976,
+        "low": 737.820007,
+        "close": 739.119995,
+        "volume": 887046
+      },
+      {
+        "time": 1779378300,
+        "open": 739.128174,
+        "high": 739.809998,
+        "low": 739.109985,
+        "close": 739.299988,
+        "volume": 831466
+      },
+      {
+        "time": 1779379200,
+        "open": 739.299988,
+        "high": 739.960022,
+        "low": 739.200012,
+        "close": 739.440002,
+        "volume": 828550
+      },
+      {
+        "time": 1779380100,
+        "open": 739.44043,
+        "high": 739.52002,
+        "low": 738.380005,
+        "close": 738.799988,
+        "volume": 732431
+      },
+      {
+        "time": 1779381000,
+        "open": 738.809998,
+        "high": 739.179993,
+        "low": 738.400024,
+        "close": 738.900024,
+        "volume": 770226
+      },
+      {
+        "time": 1779381900,
+        "open": 738.929993,
+        "high": 739.169983,
+        "low": 738.090027,
+        "close": 738.900024,
+        "volume": 744791
+      },
+      {
+        "time": 1779382800,
+        "open": 738.929993,
+        "high": 741.150024,
+        "low": 738.929993,
+        "close": 740.450012,
+        "volume": 1550253
+      },
+      {
+        "time": 1779383700,
+        "open": 740.460022,
+        "high": 743.049988,
+        "low": 740.330017,
+        "close": 742.150024,
+        "volume": 2667222
+      }
+    ],
+    "playout_candles": [
+      {
+        "time": 1779384600,
+        "open": 742.159973,
+        "high": 743.629883,
+        "low": 741.969971,
+        "close": 743.549988,
+        "volume": 1311463
+      },
+      {
+        "time": 1779385500,
+        "open": 743.544983,
+        "high": 744.869995,
+        "low": 743.150024,
+        "close": 743.679993,
+        "volume": 1632877
+      }
+    ],
+    "vwap": [
+      {
+        "time": 1779375600,
+        "value": 738.431681
+      },
+      {
+        "time": 1779376500,
+        "value": 738.653317
+      },
+      {
+        "time": 1779377400,
+        "value": 738.682089
+      },
+      {
+        "time": 1779378300,
+        "value": 738.824745
+      },
+      {
+        "time": 1779379200,
+        "value": 738.940966
+      },
+      {
+        "time": 1779380100,
+        "value": 738.935779
+      },
+      {
+        "time": 1779381000,
+        "value": 738.922959
+      },
+      {
+        "time": 1779381900,
+        "value": 738.90225
+      },
+      {
+        "time": 1779382800,
+        "value": 739.125507
+      },
+      {
+        "time": 1779383700,
+        "value": 739.754953
+      },
+      {
+        "time": 1779384600,
+        "value": 740.091814
+      },
+      {
+        "time": 1779385500,
+        "value": 740.521821
+      }
+    ]
+  }
+]
