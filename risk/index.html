@@ -79,7 +79,7 @@
         <div class="nav-dropdown-menu">
           <a href="/risk/">Risk</a>
           <a href="/strategies/">Strategies</a>
-          <span class="nav-disabled-item">Learn <span class="soon-tag">SOON</span></span>
+          <a href="/learn/">Lessons</a>
         </div>
       </div>
       <a href="/funded/">Get Funded</a>
@@ -99,7 +99,7 @@
   <div class="mobile-menu-label">Learn</div>
   <a href="/risk/">Risk</a>
   <a href="/strategies/">Strategies</a>
-  <span class="nav-disabled-mobile">Learn <span class="soon-tag">SOON</span></span>
+  <a href="/learn/">Lessons</a>
   <div class="mobile-menu-label">More</div>
   <a href="/funded/">Get Funded</a>
   <a href="/leaderboard/">Leaderboard</a>
@@ -204,14 +204,16 @@
     <div class="footer-wordmark">📈 Trade Lee</div>
     <div class="footer-tagline">Trade Lee — train your eye. © 2026</div>
     <div class="footer-links">
-      <a href="#" rel="noopener">TikTok</a>
-      <a href="#" rel="noopener">X</a>
-      <a href="#" rel="noopener">Instagram</a>
+      <a href="#" data-social="tiktok">TikTok</a>
+      <a href="#" data-social="x">X</a>
+      <a href="#" data-social="instagram">Instagram</a>
+      <a href="#" data-social="youtube">YouTube</a>
     </div>
     <div class="footer-disclaimer">Educational content, not financial advice.</div>
   </div>
 </footer>
 
+<script src="/social-links.js"></script>
 <script>
 (function () {
   const overlay = document.getElementById("mobileMenuOverlay");

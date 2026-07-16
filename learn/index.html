@@ -4,9 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Learn — Trade Lee</title>
-<meta name="description" content="Chart-reading lessons, one concept at a time. Coming soon to Trade Lee.">
+<meta name="description" content="Five beginner lessons on reading charts: candlesticks, volume, support & resistance, breakouts, and VWAP.">
 <meta property="og:title" content="Learn — Trade Lee">
-<meta property="og:description" content="Chart-reading lessons, one concept at a time. Coming soon to Trade Lee.">
+<meta property="og:description" content="Five beginner lessons on reading charts: candlesticks, volume, support & resistance, breakouts, and VWAP.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://trade-lee.vercel.app/learn/">
 <meta property="og:image" content="https://trade-lee.vercel.app/og-image.png">
@@ -14,7 +14,7 @@
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="Learn — Trade Lee">
-<meta name="twitter:description" content="Chart-reading lessons, one concept at a time. Coming soon to Trade Lee.">
+<meta name="twitter:description" content="Five beginner lessons on reading charts, one concept at a time.">
 <meta name="twitter:image" content="https://trade-lee.vercel.app/og-image.png">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230b0e14'/%3E%3Cline x1='11' y1='4' x2='11' y2='28' stroke='%2326a69a' stroke-width='2.2'/%3E%3Crect x='7' y='10' width='8' height='10' rx='1' fill='%2326a69a'/%3E%3Cline x1='23' y1='6' x2='23' y2='25' stroke='%23ef5350' stroke-width='2.2'/%3E%3Crect x='19' y='12' width='8' height='7' rx='1' fill='%23ef5350'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -33,6 +33,8 @@
   }
   a { color: inherit; }
   .wrap { max-width: 1100px; margin: 0 auto; padding: 0 20px; }
+  .lesson-icon { margin-bottom: 14px; }
+  .content-card h2 { align-items: flex-start; }
 </style>
 </head>
 <body>
@@ -53,7 +55,7 @@
         <div class="nav-dropdown-menu">
           <a href="/risk/">Risk</a>
           <a href="/strategies/">Strategies</a>
-          <span class="nav-disabled-item">Learn <span class="soon-tag">SOON</span></span>
+          <a href="/learn/">Lessons</a>
         </div>
       </div>
       <a href="/funded/">Get Funded</a>
@@ -73,23 +75,98 @@
   <div class="mobile-menu-label">Learn</div>
   <a href="/risk/">Risk</a>
   <a href="/strategies/">Strategies</a>
-  <span class="nav-disabled-mobile">Learn <span class="soon-tag">SOON</span></span>
+  <a href="/learn/">Lessons</a>
   <div class="mobile-menu-label">More</div>
   <a href="/funded/">Get Funded</a>
   <a href="/leaderboard/">Leaderboard</a>
 </div>
 
-<main class="wrap">
-  <div class="coming-soon">
-    <div class="badge">COMING SOON</div>
-    <h1>Learn</h1>
-    <p class="teaser">Chart-reading lessons, one concept at a time.</p>
-    <form class="notify-form" id="notifyForm">
-      <input type="email" placeholder="you@email.com" required id="notifyEmail">
-      <button type="submit" class="btn btn-primary" id="notifyBtn">Notify me</button>
-    </form>
-    <div class="notify-note">No spam. We'll email you when this is live.</div>
+<main class="content-page">
+  <div class="content-hero">
+    <div class="badge">LEARN</div>
+    <h1>Five things to know first</h1>
+    <p>No jargon left unexplained. Read these, then go test your eye on the daily drill.</p>
   </div>
+
+  <section class="content-card card">
+    <div class="lesson-icon">
+      <svg width="44" height="44" viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <line x1="12" y1="4" x2="12" y2="18" stroke="#22c55e" stroke-width="2.5"/>
+        <rect x="7" y="18" width="10" height="14" rx="1.5" fill="#22c55e"/>
+        <line x1="30" y1="10" x2="30" y2="38" stroke="#ef4444" stroke-width="2.5"/>
+        <rect x="25" y="14" width="10" height="12" rx="1.5" fill="#ef4444"/>
+      </svg>
+    </div>
+    <h2><span class="card-num">1</span>How to Read a Candlestick</h2>
+    <p>Each candlestick shows four prices for one time period: open, high, low, and close. The thick part is the "body" — it spans from the open price to the close price. The thin lines above and below are "wicks" (or "shadows") — they show the highest and lowest prices reached, even if price didn't close there.</p>
+    <p>Color tells you direction: a green candle means the close was HIGHER than the open — buyers won that period. A red candle means the close was LOWER than the open — sellers won.</p>
+    <p>A long wick tells a story too. A long lower wick means price dropped hard, but buyers stepped in and pushed it back up before the period closed — often a sign of rejection at that level. A long upper wick is the opposite: an attempt higher that got sold back down.</p>
+    <p>Once you can read a single candle at a glance — direction, body size, wick length — you're reading the market's mood, not just a shape on a chart.</p>
+    <a class="content-cta" href="/play/?mode=daily">Train this → Play the daily drill</a>
+  </section>
+
+  <section class="content-card card">
+    <div class="lesson-icon">
+      <svg width="44" height="44" viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect x="4" y="26" width="7" height="14" fill="#22c55e"/>
+        <rect x="14" y="18" width="7" height="22" fill="#22c55e"/>
+        <rect x="24" y="30" width="7" height="10" fill="#ef4444"/>
+        <rect x="34" y="10" width="7" height="30" fill="#22c55e"/>
+      </svg>
+    </div>
+    <h2><span class="card-num">2</span>What Volume Actually Tells You</h2>
+    <p>Volume is simply how many shares (or contracts) traded during a given period — shown as the bars beneath a price chart. On its own, volume doesn't tell you direction. It tells you conviction.</p>
+    <p>A big price move on HIGH volume means a lot of participants agreed and acted — that move is more likely to hold. The same size move on LOW volume is thinner, easier to reverse, and often just noise: a few traders pushing price around with little real interest behind it.</p>
+    <p>This is exactly why the breakout drill cares about volume: a breakout candle that closes beyond a range on 2x average volume has real buyers or sellers behind it. The identical-looking breakout on weak volume is a common fakeout — it often snaps back into the range once the initial push fades.</p>
+    <p>Rule of thumb: don't just ask "did price move?" Ask "did volume confirm it?" Volume is the market showing its hand.</p>
+    <a class="content-cta" href="/play/?mode=daily">Train this → Play the daily drill</a>
+  </section>
+
+  <section class="content-card card">
+    <div class="lesson-icon">
+      <svg width="44" height="44" viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <line x1="2" y1="10" x2="42" y2="10" stroke="#f5b400" stroke-width="2" stroke-dasharray="4 3"/>
+        <line x1="2" y1="34" x2="42" y2="34" stroke="#f5b400" stroke-width="2" stroke-dasharray="4 3"/>
+        <path d="M4 22 L14 30 L22 16 L32 28 L40 14" stroke="#c792ea" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </div>
+    <h2><span class="card-num">3</span>Support &amp; Resistance Basics</h2>
+    <p>Support is a price level where a stock has repeatedly stopped falling and bounced back up — think of it as a floor. Resistance is the opposite: a level where price has repeatedly stopped rising and turned back down — a ceiling.</p>
+    <p>These levels form because traders remember them. If a stock bounced hard off $50 twice before, buyers start watching for a third bounce there, and sellers who regret not buying earlier may jump in too — the level becomes self-fulfilling.</p>
+    <p>Support and resistance aren't exact lines — think of them as zones. Price often pokes slightly through before reversing, which is why many traders wait for a candle to CLOSE beyond a level, not just touch it, before believing it broke.</p>
+    <p>Once resistance finally breaks with real volume, it often flips roles and becomes NEW support on the next pullback — and vice versa for broken support. Watching this flip is one of the most reliable tools in a trader's kit.</p>
+    <a class="content-cta" href="/play/?mode=daily">Train this → Play the daily drill</a>
+  </section>
+
+  <section class="content-card card">
+    <div class="lesson-icon">
+      <svg width="44" height="44" viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect x="6" y="16" width="24" height="16" fill="none" stroke="#f5b400" stroke-width="2" stroke-dasharray="4 3"/>
+        <path d="M18 16 L18 4 M12 10 L18 4 L24 10" stroke="#22c55e" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </div>
+    <h2><span class="card-num">4</span>What a Breakout Is (and Why Most Fail)</h2>
+    <p>A breakout happens when price pushes beyond a level it had been struggling to clear — the top or bottom of a consolidation range, a prior high, or a well-known support/resistance zone. The idea is simple: once price clears an obstacle, it should be free to run further in that direction.</p>
+    <p>In reality, most breakouts fail. Price pokes through the level, traders pile in expecting a big move, and then it reverses right back inside the range — leaving late entries stuck. This is called a "fakeout," and it's common enough that skilled traders build entire strategies around fading weak breakouts.</p>
+    <p>What separates a real breakout from a fakeout? Usually volume (a real breakout brings a surge of participation) and the CLOSE of the breakout candle (closing solidly beyond the level, not just wicking through it). This exact judgment call — real or fake — is what the daily drill trains you to make quickly, using the same signals professional traders check.</p>
+    <a class="content-cta" href="/play/?mode=daily">Train this → Play the daily drill</a>
+  </section>
+
+  <section class="content-card card">
+    <div class="lesson-icon">
+      <svg width="44" height="44" viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M2 28 Q 12 12, 22 20 T 42 14" stroke="#c792ea" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+        <line x1="8" y1="20" x2="8" y2="34" stroke="#22c55e" stroke-width="2"/>
+        <line x1="22" y1="16" x2="22" y2="30" stroke="#ef4444" stroke-width="2"/>
+        <line x1="36" y1="10" x2="36" y2="24" stroke="#22c55e" stroke-width="2"/>
+      </svg>
+    </div>
+    <h2><span class="card-num">5</span>What VWAP Is (and Why Traders Watch It)</h2>
+    <p>VWAP stands for Volume-Weighted Average Price. It's the average price a stock has traded at during the day SO FAR, weighted by how much volume traded at each price. Unlike a simple moving average, VWAP gives more weight to price levels where more shares actually changed hands.</p>
+    <p>Institutions care about VWAP because it's often used to judge trade quality — a fund that buys below VWAP or sells above it got a "good" fill relative to the day's average participant. Because so many large players benchmark against it, VWAP often acts like a magnet or a trampoline: stocks trending strongly tend to pull back TO VWAP and bounce, rather than crash through it.</p>
+    <p>For an intraday trader, VWAP is a quick gut-check: price above VWAP generally favors buyers for the day; price below favors sellers. Watching how price reacts AT VWAP — does it bounce, or slice right through — tells you a lot about whether the day's trend still has strength behind it.</p>
+    <a class="content-cta" href="/play/?mode=daily">Train this → Play the daily drill</a>
+  </section>
 </main>
 
 <footer class="site-footer">
@@ -97,14 +174,16 @@
     <div class="footer-wordmark">📈 Trade Lee</div>
     <div class="footer-tagline">Trade Lee — train your eye. © 2026</div>
     <div class="footer-links">
-      <a href="#" rel="noopener">TikTok</a>
-      <a href="#" rel="noopener">X</a>
-      <a href="#" rel="noopener">Instagram</a>
+      <a href="#" data-social="tiktok">TikTok</a>
+      <a href="#" data-social="x">X</a>
+      <a href="#" data-social="instagram">Instagram</a>
+      <a href="#" data-social="youtube">YouTube</a>
     </div>
-    <div class="footer-disclaimer">Educational game. Not financial advice.</div>
+    <div class="footer-disclaimer">Educational content, not financial advice.</div>
   </div>
 </footer>
 
+<script src="/social-links.js"></script>
 <script>
 (function () {
   const overlay = document.getElementById("mobileMenuOverlay");
@@ -125,15 +204,6 @@
     document.querySelectorAll(".nav-dropdown.open").forEach(o => o.classList.remove("open"));
   });
 })();
-
-/* placeholder only — no data is captured or sent anywhere */
-document.getElementById("notifyForm").addEventListener("submit", function (e) {
-  e.preventDefault();
-  document.getElementById("notifyEmail").disabled = true;
-  const btn = document.getElementById("notifyBtn");
-  btn.textContent = "You're on the list ✓";
-  btn.disabled = true;
-});
 </script>
 </body>
 </html>
