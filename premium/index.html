@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Trade Lee Pro — $9/mo</title>
+<meta name="description" content="Trade Lee Pro: unlimited practice sessions, exclusive Speed Run stats, 2x Ticks earning, and an AI Trade Coach coming first to Pro. Join the waitlist for founding pricing.">
+<meta property="og:title" content="Trade Lee Pro — $9/mo">
+<meta property="og:description" content="Unlimited practice, exclusive Speed Run stats, 2x Ticks, and an AI Trade Coach coming first to Pro. Join the waitlist for founding pricing.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://trade-lee.vercel.app/premium/">
+<meta property="og:image" content="https://trade-lee.vercel.app/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Trade Lee Pro — $9/mo">
+<meta name="twitter:description" content="Unlimited practice, exclusive Speed Run stats, 2x Ticks, and an AI Trade Coach coming first to Pro.">
+<meta name="twitter:image" content="https://trade-lee.vercel.app/og-image.png">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230b0e14'/%3E%3Cline x1='11' y1='4' x2='11' y2='28' stroke='%2326a69a' stroke-width='2.2'/%3E%3Crect x='7' y='10' width='8' height='10' rx='1' fill='%2326a69a'/%3E%3Cline x1='23' y1='6' x2='23' y2='25' stroke='%23ef5350' stroke-width='2.2'/%3E%3Crect x='19' y='12' width='8' height='7' rx='1' fill='%23ef5350'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@500;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@500;700&display=swap">
+<link rel="stylesheet" href="/theme.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/supabase-config.js"></script>
+<script src="/auth.js"></script>
+<style>
+  html, body {
+    margin: 0; padding: 0;
+    color: var(--text);
+    font-family: var(--font-body);
+    overflow-x: hidden;
+    -webkit-tap-highlight-color: transparent;
+    min-height: 100vh;
+  }
+  a { color: inherit; }
+  .wrap { max-width: 1100px; margin: 0 auto; padding: 0 20px; }
+
+  .pro-launch-banner {
+    background: linear-gradient(135deg, rgba(255,176,32,0.12), rgba(255,94,58,0.08));
+    border: 1px solid rgba(245, 180, 0, 0.35);
+    border-radius: 12px;
+    padding: 12px 16px;
+    text-align: center;
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: var(--gold);
+    margin: 8px auto 0;
+    max-width: 760px;
+  }
+
+  .content-hero .badge.pro-badge {
+    color: var(--gold);
+    border-color: rgba(245, 180, 0, 0.4);
+  }
+  .pro-price {
+    font-family: var(--font-display);
+    font-weight: 700;
+    color: var(--gold);
+  }
+  .pro-price-period {
+    font-size: 0.5em;
+    font-weight: 600;
+    color: var(--text-dim);
+  }
+
+  .pro-card { padding: 30px 26px; }
+  .pro-features {
+    list-style: none;
+    margin: 0 0 26px;
+    padding: 0;
+  }
+  .pro-features li {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 13px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 0.97rem;
+  }
+  .pro-features li:last-child { border-bottom: none; }
+  .pro-check {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px; height: 26px;
+    border-radius: 50%;
+    background: rgba(34, 197, 94, 0.14);
+    color: var(--green);
+    font-size: 0.85rem;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+  .pro-features li .soon-tag { margin-left: auto; white-space: nowrap; }
+
+  .waitlist-form {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  @media (min-width: 480px) {
+    .waitlist-form { flex-direction: row; }
+  }
+  .waitlist-form input[type="email"] {
+    flex: 1;
+    background: var(--surface-2);
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius-md);
+    color: var(--text);
+    font-family: var(--font-body);
+    font-size: 0.95rem;
+    padding: 14px 16px;
+    outline: none;
+  }
+  .waitlist-form input[type="email"]:focus { border-color: var(--gold); }
+  .waitlist-form .btn { white-space: nowrap; }
+  .waitlist-msg {
+    margin-top: 14px;
+    font-size: 0.88rem;
+    line-height: 1.5;
+  }
+  .waitlist-msg.success { color: var(--green); }
+  .waitlist-msg.error { color: var(--red); }
+  .pro-fineprint {
+    text-align: center;
+    color: var(--text-dim);
+    font-size: 0.82rem;
+    margin-top: 18px;
+  }
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="wrap site-header-inner">
+    <a class="nav-wordmark" href="/">📈 Trade Lee</a>
+    <nav class="nav-links-desktop">
+      <div class="nav-dropdown" id="playDropdown">
+        <button class="nav-dropdown-trigger" type="button">Play <span class="caret">▾</span></button>
+        <div class="nav-dropdown-menu">
+          <a href="/play/?mode=daily">Daily Drill</a>
+          <a href="/play/?mode=practice">Practice</a>
+        </div>
+      </div>
+      <div class="nav-dropdown" id="learnDropdown">
+        <button class="nav-dropdown-trigger" type="button">Learn <span class="caret">▾</span></button>
+        <div class="nav-dropdown-menu">
+          <a href="/risk/">Risk</a>
+          <a href="/strategies/">Strategies</a>
+          <a href="/learn/">Lessons</a>
+        </div>
+      </div>
+      <a href="/funded/">Get Funded</a>
+      <a href="/leaderboard/">Leaderboard</a>
+      <a href="/premium/">Premium <span class="soon-tag">PRO</span></a>
+    </nav>
+    <button class="hamburger-btn" id="hamburgerBtn" aria-label="Open menu">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</header>
+
+<div class="mobile-menu-overlay" id="mobileMenuOverlay">
+  <button class="mobile-menu-close" id="mobileMenuClose" aria-label="Close menu">✕</button>
+  <div class="mobile-menu-label">Play</div>
+  <a href="/play/?mode=daily">Daily Drill</a>
+  <a href="/play/?mode=practice">Practice</a>
+  <div class="mobile-menu-label">Learn</div>
+  <a href="/risk/">Risk</a>
+  <a href="/strategies/">Strategies</a>
+  <a href="/learn/">Lessons</a>
+  <div class="mobile-menu-label">More</div>
+  <a href="/funded/">Get Funded</a>
+  <a href="/leaderboard/">Leaderboard</a>
+  <a href="/premium/">Premium <span class="soon-tag">PRO</span></a>
+</div>
+
+<main class="content-page">
+  <div class="pro-launch-banner">🚀 Pro launches soon — waitlist members get founding pricing.</div>
+
+  <div class="content-hero">
+    <div class="badge pro-badge">TRADE LEE PRO</div>
+    <h1>Trade Lee Pro — <span class="pro-price">$9<span class="pro-price-period">/mo</span></span></h1>
+    <p>Everything in the free game, plus the tools serious traders want to actually build an edge.</p>
+  </div>
+
+  <section class="content-card card pro-card">
+    <ul class="pro-features">
+      <li><span class="pro-check">✓</span> Unlimited practice sessions — no daily cap</li>
+      <li><span class="pro-check">✓</span> Exclusive Speed Run stats &amp; leaderboards</li>
+      <li><span class="pro-check">✓</span> 2x Ticks earning on every drill you play</li>
+      <li><span class="pro-check">✓</span> AI Trade Coach <span class="soon-tag">COMING FIRST TO PRO</span></li>
+      <li><span class="pro-check">✓</span> Priority access to new modes &amp; features</li>
+    </ul>
+
+    <form class="waitlist-form" id="waitlistForm">
+      <input type="email" id="waitlistEmail" placeholder="you@email.com" autocomplete="email" required>
+      <button type="submit" class="btn btn-gold" id="waitlistBtn">Join the Pro waitlist</button>
+    </form>
+    <div class="waitlist-msg hidden" id="waitlistMsg"></div>
+    <div class="pro-fineprint">No payment required to join the waitlist. We'll email you when Pro launches.</div>
+  </section>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <div class="footer-wordmark">📈 Trade Lee</div>
+    <div class="footer-tagline">Trade Lee — train your eye. © 2026</div>
+    <div class="footer-links">
+      <a href="#" data-social="tiktok">TikTok</a>
+      <a href="#" data-social="x">X</a>
+      <a href="#" data-social="instagram">Instagram</a>
+      <a href="#" data-social="youtube">YouTube</a>
+    </div>
+    <div class="footer-disclaimer">Educational content, not financial advice. Trading involves substantial risk of loss.</div>
+  </div>
+</footer>
+
+<script src="/social-links.js"></script>
+<script>
+(function () {
+  const overlay = document.getElementById("mobileMenuOverlay");
+  document.getElementById("hamburgerBtn").onclick = () => overlay.classList.add("open");
+  document.getElementById("mobileMenuClose").onclick = () => overlay.classList.remove("open");
+  overlay.querySelectorAll("a").forEach(a => a.addEventListener("click", () => overlay.classList.remove("open")));
+
+  document.querySelectorAll(".nav-dropdown").forEach(dd => {
+    const trigger = dd.querySelector(".nav-dropdown-trigger");
+    trigger.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const isOpen = dd.classList.contains("open");
+      document.querySelectorAll(".nav-dropdown.open").forEach(o => o.classList.remove("open"));
+      if (!isOpen) dd.classList.add("open");
+    });
+  });
+  document.addEventListener("click", () => {
+    document.querySelectorAll(".nav-dropdown.open").forEach(o => o.classList.remove("open"));
+  });
+})();
+
+(async function () {
+  if (typeof tlInitSession === "function") {
+    await tlInitSession();
+    if (tlIsSignedIn() && tlSession.user.email) {
+      document.getElementById("waitlistEmail").value = tlSession.user.email;
+    }
+  }
+
+  document.getElementById("waitlistForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const emailInput = document.getElementById("waitlistEmail");
+    const btn = document.getElementById("waitlistBtn");
+    const msgEl = document.getElementById("waitlistMsg");
+    msgEl.classList.add("hidden");
+    btn.disabled = true;
+    btn.textContent = "Joining…";
+    try {
+      if (typeof tlJoinWaitlist !== "function") throw new Error("offline");
+      await tlJoinWaitlist(emailInput.value);
+      msgEl.textContent = "You're on the list — we'll email you when Pro launches.";
+      msgEl.className = "waitlist-msg success";
+      emailInput.value = "";
+      btn.textContent = "Joined ✓";
+    } catch (err) {
+      msgEl.textContent = err.message === "offline"
+        ? "Can't reach the waitlist right now — please try again in a moment."
+        : (err.message || "Something went wrong — please try again.");
+      msgEl.className = "waitlist-msg error";
+      btn.disabled = false;
+      btn.textContent = "Join the Pro waitlist";
+    }
+    msgEl.classList.remove("hidden");
+  });
+})();
+</script>
+</body>
+</html>

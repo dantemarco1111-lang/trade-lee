@@ -197,6 +197,20 @@ async function tlFetchDailyPercentile(dateStr) {
   }
 }
 
+// Works whether the visitor is signed in or anonymous — attaches user_id when available.
+async function tlJoinWaitlist(email) {
+  if (!sbClient) throw new Error("offline");
+  const clean = (email || "").trim();
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(clean)) {
+    throw new Error("Enter a valid email address.");
+  }
+  const { error } = await sbClient.from("waitlist").insert({
+    email: clean,
+    user_id: tlSession ? tlSession.user.id : null,
+  });
+  if (error) throw error;
+}
+
 async function tlFetchLeaderboard() {
   if (!sbClient) return null; // null = "couldn't reach it" (vs [] = "reached it, nobody qualifies yet")
   try {
