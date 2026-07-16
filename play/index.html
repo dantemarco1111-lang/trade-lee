@@ -1325,7 +1325,8 @@ function loadDrill(drill, opts) {
   const lastVol = drill.candles[drill.candles.length - 1].volume;
   const avgVol = drill.volume_ratio > 0 ? lastVol / drill.volume_ratio : null;
   if (avgVol) {
-    const avgLine = volumeSeries.createPriceLine({ price: avgVol, color: "#8b95a7", lineWidth: 1, lineStyle: LightweightCharts.LineStyle.Dashed, axisLabelVisible: true, title: "Avg volume" });
+    const activityLabel = drill.has_volume === false ? "Avg activity" : "Avg volume";
+    const avgLine = volumeSeries.createPriceLine({ price: avgVol, color: "#8b95a7", lineWidth: 1, lineStyle: LightweightCharts.LineStyle.Dashed, axisLabelVisible: true, title: activityLabel });
     priceLinesList.push({ remove: () => volumeSeries.removePriceLine(avgLine) });
   }
 
