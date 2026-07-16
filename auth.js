@@ -222,6 +222,45 @@ async function tlJoinWaitlist(email) {
   if (error) throw error;
 }
 
+// Creates a "challenge a friend" link. Works whether the creator is signed
+// in or anonymous (anonymous creators just supply a display name to show).
+async function tlCreateChallenge({ mode, drillIds, creatorName, pnl, timeMs, accuracy, correctCount, totalDrills }) {
+  if (!sbClient) throw new Error("offline");
+  const clean = (creatorName || "").trim().slice(0, 24);
+  if (!clean) throw new Error("Enter a name so your friend knows who to beat.");
+  const { data, error } = await sbClient
+    .from("challenges")
+    .insert({
+      creator_user_id: tlSession ? tlSession.user.id : null,
+      creator_name: clean,
+      mode,
+      drill_ids: drillIds,
+      pnl: pnl === undefined ? null : pnl,
+      time_ms: timeMs === undefined ? null : timeMs,
+      accuracy,
+      correct_count: correctCount,
+      total_drills: totalDrills,
+    })
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+// Returns the challenge row, or null if unreachable/not found. Expiry is
+// checked client-side against expires_at so a stale link degrades to a
+// friendly "expired" message instead of a broken replay.
+async function tlFetchChallenge(id) {
+  if (!sbClient) return null;
+  try {
+    const { data, error } = await sbClient.from("challenges").select("*").eq("id", id).maybeSingle();
+    if (error) throw error;
+    return data;
+  } catch (e) {
+    return null;
+  }
+}
+
 async function tlFetchLeaderboard() {
   if (!sbClient) return null; // null = "couldn't reach it" (vs [] = "reached it, nobody qualifies yet")
   try {

@@ -382,14 +382,27 @@
   /* ---------- coach card ---------- */
   .coach-card {
     background: var(--card); border: 1px solid var(--border); border-radius: 16px;
-    padding: 14px; text-align: center; animation: coachIn 0.25s ease;
+    padding: 16px 14px; text-align: center; animation: coachIn 0.3s cubic-bezier(.22,1,.36,1);
   }
-  @keyframes coachIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
-  .coach-outcome { font-family: var(--font-display); font-size: 1.15rem; font-weight: 700; margin-bottom: 6px; }
+  @keyframes coachIn { from { opacity: 0; transform: translateY(22px); } to { opacity: 1; transform: translateY(0); } }
+  .coach-outcome {
+    font-family: var(--font-display); font-size: 1.3rem; font-weight: 800; margin-bottom: 10px;
+    text-transform: uppercase; letter-spacing: 0.3px;
+  }
   .coach-outcome.correct { color: var(--green); }
   .coach-outcome.wrong { color: var(--red); }
   .coach-outcome.neutral { color: var(--muted); }
-  .coach-why { font-size: 0.88rem; color: var(--text); opacity: 0.9; margin-bottom: 4px; }
+  .coach-why-list {
+    list-style: none; margin: 0 0 10px; padding: 0; text-align: left;
+    display: inline-block;
+  }
+  .coach-why-list li {
+    font-size: 0.9rem; color: var(--text); opacity: 0.92; line-height: 1.4;
+    padding: 3px 0 3px 18px; position: relative;
+  }
+  .coach-why-list li::before {
+    content: "•"; position: absolute; left: 2px; color: var(--gold); font-weight: 700;
+  }
   .coach-pnl { font-family: var(--font-mono); font-variant-numeric: tabular-nums; font-size: 0.95rem; font-weight: 700; margin-bottom: 10px; }
   .coach-pnl.pos { color: var(--green); }
   .coach-pnl.neg { color: var(--red); }
@@ -432,6 +445,38 @@
     background: none; border: none; color: var(--muted); font-size: 0.85rem;
     text-decoration: underline; cursor: pointer; padding: 8px;
   }
+  .challenge-btn {
+    width: 100%; padding: 15px; font-size: 0.95rem; font-weight: 700; font-family: var(--font-display); border-radius: 14px;
+    border: 1px solid rgba(199, 146, 234, 0.4); background: rgba(199, 146, 234, 0.1); color: var(--purple); cursor: pointer;
+    margin-bottom: 10px; transition: transform 0.15s cubic-bezier(.34,1.56,.64,1);
+  }
+  .challenge-btn:active { transform: scale(0.97); }
+  .challenge-link-box {
+    margin: 4px 0 14px; text-align: left; background: var(--card2); border: 1px solid var(--border);
+    border-radius: 12px; padding: 12px;
+  }
+  .challenge-link-label { font-size: 0.78rem; color: var(--muted); margin-bottom: 6px; }
+  .challenge-link-row { display: flex; gap: 8px; }
+  .challenge-link-row input {
+    flex: 1; min-width: 0; background: var(--card); border: 1px solid var(--border); border-radius: 8px;
+    color: var(--text); font-family: var(--font-mono); font-size: 0.78rem; padding: 8px 10px;
+  }
+  .challenge-link-row button {
+    flex-shrink: 0; padding: 8px 14px; font-size: 0.85rem; font-family: var(--font-display); font-weight: 700;
+    border-radius: 8px; border: 1px solid var(--border-strong); background: var(--card2); color: var(--text); cursor: pointer;
+  }
+  .challenge-vs-row { display: flex; align-items: center; gap: 10px; margin: 10px 0 16px; }
+  .challenge-vs-side {
+    flex: 1; background: var(--card); border: 1px solid var(--border); border-radius: 12px;
+    padding: 14px 6px; text-align: center;
+  }
+  .challenge-vs-side.win { border-color: var(--gold); background: rgba(245,180,0,0.08); }
+  .challenge-vs-name {
+    font-size: 0.78rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.4px; margin-bottom: 4px;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .challenge-vs-score { font-family: var(--font-mono); font-variant-numeric: tabular-nums; font-size: 1.15rem; font-weight: 700; }
+  .challenge-vs-sep { font-family: var(--font-display); font-weight: 700; color: var(--muted); font-size: 0.85rem; }
 
   /* ---------- exit confirm modal ---------- */
   .exit-confirm-overlay {
@@ -542,8 +587,9 @@
   .daily-result-badge { font-family: var(--font-display); font-size: 2.6rem; font-weight: 700; margin-bottom: 8px; }
   .daily-result-badge.win { color: var(--green); }
   .daily-result-badge.loss { color: var(--red); }
-  .daily-outcome-line { font-size: 1.05rem; font-weight: 700; margin-bottom: 6px; }
-  .daily-why { font-size: 0.9rem; color: var(--muted); margin-bottom: 18px; padding: 0 6px; }
+  .daily-outcome-line { font-size: 1.2rem; font-weight: 800; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.3px; }
+  .daily-why { margin-bottom: 18px; padding: 0 6px; text-align: center; }
+  .daily-why .coach-why-list { text-align: left; }
   .daily-streaks { display: flex; gap: 8px; margin-bottom: 16px; }
   .daily-distribution {
     background: var(--card); border: 1px solid var(--border); border-radius: 12px;
@@ -708,6 +754,8 @@ let autoAdvanceHandle = null;
 let sessionResults = [];
 let currentMode = null; // 'practice' | 'daily' | 'tutorial' | 'speedrun'
 let speedRunStartTime = 0;
+let lastSessionTimeMs = 0;
+let activeChallenge = null; // the challenge row being replayed, if any
 let currentDrill = null;
 let currentDrillMultiplier = 1;
 let drillInProgress = false;
@@ -832,6 +880,11 @@ async function loadDailyDistribution(dateStr, isCorrect) {
 function formatMoney(n) {
   const sign = n < 0 ? "-" : "";
   return sign + "$" + Math.abs(Math.round(n)).toLocaleString("en-US");
+}
+function escapeHtml(str) {
+  const div = document.createElement("div");
+  div.textContent = str == null ? "" : String(str);
+  return div.innerHTML;
 }
 function shuffleArray(arr) {
   for (let i = arr.length - 1; i > 0; i--) {
@@ -1364,9 +1417,17 @@ function updateStreakAndMultiplier(isCorrect) {
   updateStreakDisplay();
 }
 
-function coachWhyText(drill) {
-  if (drill.context) return drill.context;
-  return "No standout signal here — this one came down to feel.";
+function humanizeContextLine(line) {
+  return line.replace("VWAP at the breakout", "the day's average price (VWAP) at the breakout");
+}
+function coachWhyBullets(drill) {
+  let bullets = (drill.context_all && drill.context_all.length) ? drill.context_all.slice(0, 3)
+    : (drill.context ? [drill.context] : []);
+  if (!bullets.length) bullets = ["No standout signal here — this one came down to feel."];
+  return bullets.map(humanizeContextLine);
+}
+function renderWhyBullets(bullets) {
+  return `<ul class="coach-why-list">${bullets.map(b => `<li>${escapeHtml(b)}</li>`).join("")}</ul>`;
 }
 
 function applyResultJuice(isCorrect, isFizzle) {
@@ -1451,7 +1512,7 @@ function showCoachCard(drill, isCorrect, pnl, isFizzle) {
     outcomeEl.className = "coach-outcome " + (isCorrect ? "correct" : "wrong");
   }
   outcomeEl.textContent = outcomeText;
-  whyEl.textContent = coachWhyText(drill);
+  whyEl.innerHTML = renderWhyBullets(coachWhyBullets(drill));
   if (pnl === null) {
     pnlEl.classList.add("hidden");
   } else {
@@ -1474,12 +1535,11 @@ function showCoachCard(drill, isCorrect, pnl, isFizzle) {
     btn.textContent = `🔄 Use Second Chance (${appState.ownedSecondChances})`;
     btn.onclick = useSecondChance;
     card.insertBefore(btn, document.getElementById("nextBtn"));
-  } else {
-    const delay = currentMode === "speedrun" ? 900 : 2500;
-    autoAdvanceHandle = setTimeout(() => {
-      if (currentMode === "speedrun") advanceOrEndSpeedRun();
-      else advanceOrEnd();
-    }, delay);
+  } else if (currentMode === "speedrun") {
+    // Speed Run keeps its snappy auto-advance — the whole point is pace.
+    // Practice mode's card stays put until the player taps Next, so the
+    // WHY explanation is never missed mid-blur of the next chart loading.
+    autoAdvanceHandle = setTimeout(() => advanceOrEndSpeedRun(), 900);
   }
 }
 function useSecondChance() {
@@ -1515,7 +1575,7 @@ function useSecondChance() {
 function advanceOrEnd() {
   clearTimeout(autoAdvanceHandle);
   sessionIndex++;
-  if (sessionIndex >= sessionDeck.length) showEndOfDay();
+  if (sessionIndex >= sessionDeck.length) { activeChallenge ? showChallengeResult() : showEndOfDay(); }
   else loadDrill(sessionDeck[sessionIndex]);
 }
 function verdictText(pnl, correctCount) {
@@ -1562,6 +1622,8 @@ function showEndOfDay() {
       <div id="eodSigninPrompt"></div>
       <button class="trade-again-btn" id="tradeAgainBtn">TRADE ANOTHER DAY</button>
       <button class="share-btn" id="shareBtnPractice">📤 SHARE</button>
+      <button class="challenge-btn" id="challengeBtnPractice">⚔️ Challenge a friend</button>
+      <div id="challengeLinkPanel"></div>
       <button class="text-link-btn" id="backToStartBtn2">← Back to start</button>
     </div>
   `;
@@ -1569,7 +1631,8 @@ function showEndOfDay() {
   document.getElementById("backToStartBtn2").onclick = renderStartScreen;
   document.getElementById("shareBtnPractice").onclick = () =>
     generateAndShareCard("practice", { sessionPnl, correctCount, bestStreak });
-  renderEodSigninPrompt();
+  document.getElementById("challengeBtnPractice").onclick = createChallengeFromCurrentSession;
+  renderSigninPromptInto("eodSigninPrompt");
 
   if (isNewBest && sessionPnl > 0) launchConfetti();
 }
@@ -1577,11 +1640,11 @@ function startNewPracticeSession() {
   renderGameScreen("practice");
   startNewSession();
 }
-function startNewSession() {
+function startNewSession(fixedDeck) {
   sessionIndex = 0; sessionPnl = 0; bankroll = STARTING_BANKROLL;
   streak = 0; bestStreak = 0; multiplier = 1; sessionResults = [];
   secondChanceUsedThisSession = false;
-  sessionDeck = buildSessionDeck();
+  sessionDeck = fixedDeck || buildSessionDeck();
   document.getElementById("bankrollValue").textContent = formatMoney(bankroll);
   document.getElementById("pnlValue").textContent = "$0";
   document.getElementById("pnlValue").className = "stat-value";
@@ -1590,18 +1653,18 @@ function startNewSession() {
 }
 
 /* ============================= SPEED RUN MODE ============================= */
-function startNewSpeedRun() {
+function startNewSpeedRun(fixedDeck) {
   renderGameScreen("speedrun");
   sessionIndex = 0;
   sessionResults = [];
   speedRunStartTime = performance.now();
-  sessionDeck = buildSessionDeck().slice(0, SPEEDRUN_DRILLS);
+  sessionDeck = fixedDeck || buildSessionDeck().slice(0, SPEEDRUN_DRILLS);
   loadDrill(sessionDeck[sessionIndex]);
 }
 function advanceOrEndSpeedRun() {
   clearTimeout(autoAdvanceHandle);
   sessionIndex++;
-  if (sessionIndex >= sessionDeck.length) showSpeedRunEnd();
+  if (sessionIndex >= sessionDeck.length) { activeChallenge ? showChallengeResult() : showSpeedRunEnd(); }
   else loadDrill(sessionDeck[sessionIndex]);
 }
 function speedRunVerdictText(accuracy, seconds) {
@@ -1609,19 +1672,12 @@ function speedRunVerdictText(accuracy, seconds) {
   if (accuracy >= 60) return `Solid pace — sharpen the misses and go again.`;
   return `Speed comes after accuracy — slow down a notch and re-run it.`;
 }
-function renderSrSigninPrompt() {
-  const el = document.getElementById("srSigninPrompt");
-  if (!el) return;
-  if (!authReady() || tlIsSignedIn()) { el.innerHTML = ""; return; }
-  el.innerHTML = `<div class="signin-prompt">Sign in to save your streak &amp; join the leaderboard — <button class="link-btn" id="srSignInLink">sign in</button></div>`;
-  const btn = document.getElementById("srSignInLink");
-  if (btn) btn.onclick = () => tlOpenAuthModal();
-}
 function showSpeedRunEnd() {
   setDrillInProgress(false);
   const content = document.getElementById("content");
   const correctCount = sessionResults.filter(r => r.correct === true).length;
   const totalMs = performance.now() - speedRunStartTime;
+  lastSessionTimeMs = totalMs;
   const totalSeconds = totalMs / 1000;
   const accuracy = Math.round(100 * correctCount / sessionDeck.length);
 
@@ -1646,16 +1702,233 @@ function showSpeedRunEnd() {
       <div id="srSigninPrompt"></div>
       <button class="trade-again-btn" id="srAgainBtn">RUN IT BACK</button>
       <button class="share-btn" id="shareBtnSpeedRun">📤 SHARE</button>
+      <button class="challenge-btn" id="challengeBtnSpeedRun">⚔️ Challenge a friend</button>
+      <div id="challengeLinkPanel"></div>
       <button class="text-link-btn" id="backToStartBtn3">← Back to start</button>
     </div>
   `;
-  document.getElementById("srAgainBtn").onclick = startNewSpeedRun;
+  document.getElementById("srAgainBtn").onclick = () => startNewSpeedRun();
   document.getElementById("backToStartBtn3").onclick = renderStartScreen;
   document.getElementById("shareBtnSpeedRun").onclick = () =>
     generateAndShareCard("speedrun", { totalSeconds, accuracy, correctCount, total: sessionDeck.length });
-  renderSrSigninPrompt();
+  document.getElementById("challengeBtnSpeedRun").onclick = createChallengeFromCurrentSession;
+  renderSigninPromptInto("srSigninPrompt");
 
   if (isNewBestTime) launchConfetti();
+}
+
+/* ============================= CHALLENGE A FRIEND ============================= */
+function renderChallengeLinkPanel(challengeId, errorMsg) {
+  const panel = document.getElementById("challengeLinkPanel");
+  if (!panel) return;
+  if (errorMsg) {
+    panel.innerHTML = `<div class="offline-notice">${escapeHtml(errorMsg)}</div>`;
+    return;
+  }
+  const url = `${location.origin}/play/?challenge=${challengeId}`;
+  panel.innerHTML = `
+    <div class="challenge-link-box">
+      <div class="challenge-link-label">Send this to a friend:</div>
+      <div class="challenge-link-row">
+        <input type="text" readonly id="challengeLinkInput" value="${escapeHtml(url)}">
+        <button id="challengeCopyBtn">Copy</button>
+      </div>
+    </div>
+  `;
+  document.getElementById("challengeCopyBtn").onclick = async () => {
+    const btn = document.getElementById("challengeCopyBtn");
+    try {
+      await navigator.clipboard.writeText(url);
+      btn.textContent = "Copied ✓";
+    } catch (e) {
+      document.getElementById("challengeLinkInput").select();
+      btn.textContent = "Select & copy";
+    }
+    setTimeout(() => { if (btn) btn.textContent = "Copy"; }, 1500);
+  };
+}
+function openChallengeNameModal(onConfirm) {
+  let overlay = document.getElementById("challengeNameOverlay");
+  if (!overlay) {
+    overlay = document.createElement("div");
+    overlay.className = "auth-modal-overlay";
+    overlay.id = "challengeNameOverlay";
+    overlay.innerHTML = `
+      <div class="auth-modal-card">
+        <button class="auth-modal-close" id="challengeNameCloseBtn" aria-label="Close">✕</button>
+        <h3>Name your challenge</h3>
+        <p>Shown to whoever opens your link.</p>
+        <input type="text" id="challengeNameInput" placeholder="your_name" maxlength="24">
+        <div class="auth-modal-error hidden" id="challengeNameErr"></div>
+        <button class="btn btn-primary" id="challengeNameGoBtn">Create link</button>
+      </div>
+    `;
+    document.body.appendChild(overlay);
+    overlay.addEventListener("click", (e) => { if (e.target === overlay) overlay.classList.remove("show"); });
+    document.getElementById("challengeNameCloseBtn").onclick = () => overlay.classList.remove("show");
+  }
+  document.getElementById("challengeNameInput").value = "";
+  document.getElementById("challengeNameErr").classList.add("hidden");
+  overlay.classList.add("show");
+  document.getElementById("challengeNameGoBtn").onclick = () => {
+    const name = document.getElementById("challengeNameInput").value.trim();
+    if (!name) {
+      const err = document.getElementById("challengeNameErr");
+      err.textContent = "Enter a name so your friend knows who to beat.";
+      err.classList.remove("hidden");
+      return;
+    }
+    overlay.classList.remove("show");
+    onConfirm(name);
+  };
+}
+async function createChallengeFromCurrentSession() {
+  if (!authReady()) { renderChallengeLinkPanel(null, "Challenges need a connection — try again in a moment."); return; }
+  const doCreate = async (name) => {
+    const panel = document.getElementById("challengeLinkPanel");
+    if (panel) panel.innerHTML = `<div class="skeleton-line" style="width:100%;"></div>`;
+    const correctCount = sessionResults.filter(r => r.correct === true).length;
+    const totalDrills = sessionDeck.length;
+    const accuracy = Math.round(100 * correctCount / totalDrills);
+    const payload = {
+      mode: currentMode,
+      drillIds: sessionDeck.map(d => d.id),
+      creatorName: name,
+      accuracy,
+      correctCount,
+      totalDrills,
+    };
+    if (currentMode === "speedrun") payload.timeMs = Math.round(lastSessionTimeMs);
+    else payload.pnl = sessionPnl;
+    try {
+      const row = await tlCreateChallenge(payload);
+      renderChallengeLinkPanel(row.id);
+    } catch (e) {
+      renderChallengeLinkPanel(null, e.message || "Couldn't create the challenge link — try again.");
+    }
+  };
+  if (tlIsSignedIn() && tlProfile) doCreate(tlProfile.display_name);
+  else openChallengeNameModal(doCreate);
+}
+function showChallengeResult() {
+  setDrillInProgress(false);
+  const content = document.getElementById("content");
+  const challenge = activeChallenge;
+  const correctCount = sessionResults.filter(r => r.correct === true).length;
+  const totalDrills = sessionDeck.length;
+  const accuracy = Math.round(100 * correctCount / totalDrills);
+
+  let yourScoreText, theirScoreText, verdict, youWon, tie;
+  if (challenge.mode === "practice") {
+    const yourPnl = sessionPnl;
+    const theirPnl = challenge.pnl || 0;
+    yourScoreText = formatMoney(yourPnl);
+    theirScoreText = formatMoney(theirPnl);
+    const diff = yourPnl - theirPnl;
+    tie = diff === 0;
+    youWon = diff > 0;
+    verdict = tie ? `Dead even with ${challenge.creator_name}!`
+      : youWon ? `You beat ${challenge.creator_name} by ${formatMoney(diff)}! 🏆`
+      : `${challenge.creator_name} takes it by ${formatMoney(-diff)}.`;
+    updateBestSessionPnl(yourPnl);
+    updateBestStreakEver(bestStreak);
+    awardTicks(25);
+  } else {
+    lastSessionTimeMs = performance.now() - speedRunStartTime;
+    const yourSeconds = lastSessionTimeMs / 1000;
+    const theirSeconds = (challenge.time_ms || 0) / 1000;
+    yourScoreText = `${yourSeconds.toFixed(1)}s (${accuracy}%)`;
+    theirScoreText = `${theirSeconds.toFixed(1)}s (${challenge.accuracy}%)`;
+    tie = accuracy === challenge.accuracy && Math.abs(yourSeconds - theirSeconds) < 0.05;
+    youWon = !tie && (accuracy !== challenge.accuracy ? accuracy > challenge.accuracy : yourSeconds < theirSeconds);
+    verdict = tie ? `Dead even with ${challenge.creator_name}!`
+      : youWon ? `You beat ${challenge.creator_name}! 🏆`
+      : `${challenge.creator_name} takes it.`;
+    updateSpeedRunBestTime(lastSessionTimeMs, correctCount === totalDrills);
+    updateSpeedRunBestAccuracy(accuracy);
+    awardTicks(15);
+  }
+  if (authReady()) tlSyncStats(appState);
+
+  content.innerHTML = `
+    <div class="end-of-day">
+      <h2>⚔️ Challenge Result</h2>
+      <div class="challenge-vs-row">
+        <div class="challenge-vs-side ${youWon ? "win" : ""}">
+          <div class="challenge-vs-name">You</div>
+          <div class="challenge-vs-score">${yourScoreText}</div>
+        </div>
+        <div class="challenge-vs-sep">VS</div>
+        <div class="challenge-vs-side ${!youWon && !tie ? "win" : ""}">
+          <div class="challenge-vs-name">${escapeHtml(challenge.creator_name)}</div>
+          <div class="challenge-vs-score">${theirScoreText}</div>
+        </div>
+      </div>
+      <div class="eod-verdict">${verdict}</div>
+      <div id="challengeSigninPrompt"></div>
+      <button class="share-btn" id="shareBtnChallenge">📤 SHARE</button>
+      <button class="challenge-btn" id="challengeCreateBtn">⚔️ Challenge a friend</button>
+      <div id="challengeLinkPanel"></div>
+      <button class="text-link-btn" id="backToStartBtn4">← Back to start</button>
+    </div>
+  `;
+  document.getElementById("shareBtnChallenge").onclick = () =>
+    generateAndShareCard("challenge", { yourScoreText, theirScoreText, theirName: challenge.creator_name, verdict, youWon });
+  document.getElementById("challengeCreateBtn").onclick = createChallengeFromCurrentSession;
+  document.getElementById("backToStartBtn4").onclick = renderStartScreen;
+  renderSigninPromptInto("challengeSigninPrompt");
+
+  if (youWon) launchConfetti();
+}
+function renderChallengeFallback(message) {
+  const root = document.getElementById("screenRoot");
+  root.innerHTML = `
+    <div class="start-screen">
+      <div class="start-wordmark">⚔️ Challenge</div>
+      <div class="start-sub">${escapeHtml(message)}</div>
+      <button class="mode-btn practice-btn" id="challengeFallbackBtn">PLAY NORMALLY</button>
+    </div>
+  `;
+  document.getElementById("challengeFallbackBtn").onclick = () => {
+    history.replaceState(null, "", location.pathname);
+    goToStartOrDeepLink();
+  };
+}
+function renderChallengeIntro(row) {
+  const root = document.getElementById("screenRoot");
+  const scoreLine = row.mode === "practice"
+    ? `scored <strong>${formatMoney(row.pnl || 0)}</strong>`
+    : `finished in <strong>${((row.time_ms || 0) / 1000).toFixed(1)}s</strong> (${row.accuracy}% accuracy)`;
+  root.innerHTML = `
+    <div class="start-screen">
+      <div class="start-wordmark">⚔️ Challenge</div>
+      <div class="start-sub">${escapeHtml(row.creator_name)} ${scoreLine} on this run.</div>
+      <div class="start-sub" style="margin-top:-10px;font-weight:700;color:var(--text);">Beat them.</div>
+      <button class="mode-btn speedrun-btn" id="startChallengeBtn">START CHALLENGE →</button>
+      <button class="text-link-btn" id="challengeDeclineBtn">← Not now</button>
+    </div>
+  `;
+  document.getElementById("startChallengeBtn").onclick = () => startChallengeSession(row);
+  document.getElementById("challengeDeclineBtn").onclick = () => {
+    history.replaceState(null, "", location.pathname);
+    renderStartScreen();
+  };
+}
+function startChallengeSession(row) {
+  history.replaceState(null, "", location.pathname);
+  const resolved = row.drill_ids.map(id => allDrills.find(d => d.id === id)).filter(Boolean);
+  if (!resolved.length) { renderChallengeFallback("This challenge's drills aren't available right now."); return; }
+  activeChallenge = row;
+  if (row.mode === "speedrun") startNewSpeedRun(resolved);
+  else { renderGameScreen("practice"); startNewSession(resolved); }
+}
+async function loadChallengeFromUrl(id) {
+  document.getElementById("screenRoot").innerHTML = `<div class="loading">Loading challenge…</div>`;
+  if (!authReady()) { renderChallengeFallback("We can't reach the challenge service right now."); return; }
+  const row = await tlFetchChallenge(id);
+  if (!row) { renderChallengeFallback("This challenge link doesn't exist (or we can't reach it right now)."); return; }
+  if (new Date(row.expires_at).getTime() < Date.now()) { renderChallengeFallback("This challenge link has expired (30-day limit)."); return; }
+  renderChallengeIntro(row);
 }
 
 /* ============================= DAILY MODE ============================= */
@@ -1688,7 +1961,7 @@ function renderDailyResultScreen(drill, isCorrect, isFizzle) {
     <div class="daily-result">
       <div class="daily-result-badge ${isCorrect ? "win" : "loss"}">${isCorrect ? "WIN ✅" : "LOSS ❌"}</div>
       <div class="daily-outcome-line">${outcomeText}</div>
-      <div class="daily-why">${coachWhyText(drill)}</div>
+      <div class="daily-why">${renderWhyBullets(coachWhyBullets(drill))}</div>
       <div class="daily-streaks">
         <div class="mini-stat"><div class="v">${appState.dailyPlayStreak}</div><div class="l">Day Streak</div></div>
         <div class="mini-stat"><div class="v">${appState.dailyWinStreak}</div><div class="l">Win Streak</div></div>
@@ -1704,7 +1977,7 @@ function renderDailyResultScreen(drill, isCorrect, isFizzle) {
   document.getElementById("shareBtnDaily").onclick = () => generateAndShareCard("daily", { drill, isCorrect });
 
   loadDailyDistribution(getEtDateString(0), isCorrect);
-  renderDailySigninPrompt();
+  renderSigninPromptInto("dailySigninPrompt");
 
   startCountdown();
 }
@@ -1791,6 +2064,7 @@ function renderTutorialOutro() {
 /* ============================= START SCREEN ============================= */
 function renderStartScreen() {
   currentMode = null;
+  activeChallenge = null;
   setDrillInProgress(false);
   clearTimer();
   clearTimeout(playoutHandle);
@@ -1832,7 +2106,7 @@ function renderStartScreen() {
   `;
   document.getElementById("dailyBtn").onclick = handleDailyButtonClick;
   document.getElementById("practiceBtn").onclick = startNewPracticeSession;
-  document.getElementById("speedRunBtn").onclick = startNewSpeedRun;
+  document.getElementById("speedRunBtn").onclick = () => startNewSpeedRun();
 }
 
 /* ============================= SHARE CARD ============================= */
@@ -1897,6 +2171,22 @@ function generateShareCanvas(mode, data) {
     ctx.font = "700 50px Arial, sans-serif";
     ctx.fillStyle = "#e6e9ef";
     ctx.fillText(`${data.correctCount}/${data.total} correct (${data.accuracy}%)`, 540, 620);
+  } else if (mode === "challenge") {
+    ctx.font = "700 54px Arial, sans-serif";
+    ctx.fillStyle = "#e6e9ef";
+    ctx.fillText("⚔️ CHALLENGE", 540, 380);
+    ctx.font = "400 34px Arial, sans-serif";
+    ctx.fillStyle = data.youWon ? "#22c55e" : "#8b95a7";
+    ctx.fillText("You", 270, 470);
+    ctx.fillStyle = !data.youWon ? "#22c55e" : "#8b95a7";
+    ctx.fillText(data.theirName, 810, 470);
+    ctx.font = "900 62px Arial, sans-serif";
+    ctx.fillStyle = "#e6e9ef";
+    ctx.fillText(data.yourScoreText, 270, 550);
+    ctx.fillText(data.theirScoreText, 810, 550);
+    ctx.font = "700 38px Arial, sans-serif";
+    ctx.fillStyle = "#f5b400";
+    ctx.fillText(data.verdict, 540, 660);
   } else {
     ctx.font = "900 110px Arial, sans-serif";
     ctx.fillStyle = data.sessionPnl >= 0 ? "#22c55e" : "#ef4444";
@@ -1952,20 +2242,13 @@ function renderNavAccountChip() {
     el.onclick = () => tlOpenAuthModal();
   }
 }
-function renderDailySigninPrompt() {
-  const el = document.getElementById("dailySigninPrompt");
+function renderSigninPromptInto(elementId) {
+  const el = document.getElementById(elementId);
   if (!el) return;
   if (!authReady() || tlIsSignedIn()) { el.innerHTML = ""; return; }
-  el.innerHTML = `<div class="signin-prompt">Sign in to save your streak &amp; join the leaderboard — <button class="link-btn" id="dailySignInLink">sign in</button></div>`;
-  const btn = document.getElementById("dailySignInLink");
-  if (btn) btn.onclick = () => tlOpenAuthModal();
-}
-function renderEodSigninPrompt() {
-  const el = document.getElementById("eodSigninPrompt");
-  if (!el) return;
-  if (!authReady() || tlIsSignedIn()) { el.innerHTML = ""; return; }
-  el.innerHTML = `<div class="signin-prompt">Sign in to save your streak &amp; join the leaderboard — <button class="link-btn" id="eodSignInLink">sign in</button></div>`;
-  const btn = document.getElementById("eodSignInLink");
+  const linkId = elementId + "Link";
+  el.innerHTML = `<div class="signin-prompt">Sign in to save your streak &amp; join the leaderboard — <button class="link-btn" id="${linkId}">sign in</button></div>`;
+  const btn = document.getElementById(linkId);
   if (btn) btn.onclick = () => tlOpenAuthModal();
 }
 async function initAccountSync() {
@@ -2066,6 +2349,7 @@ let pendingDeepLinkMode = (function () {
   const m = new URLSearchParams(location.search).get("mode");
   return (m === "daily" || m === "practice") ? m : null;
 })();
+const pendingChallengeId = new URLSearchParams(location.search).get("challenge");
 function goToStartOrDeepLink() {
   const mode = pendingDeepLinkMode;
   pendingDeepLinkMode = null;
@@ -2084,7 +2368,8 @@ async function init() {
     checkStreakFreeze();
     updateNavStreak();
     initAccountSync();
-    if (!appState.hasSeenTutorial) renderTutorialIntro();
+    if (pendingChallengeId) loadChallengeFromUrl(pendingChallengeId);
+    else if (!appState.hasSeenTutorial) renderTutorialIntro();
     else goToStartOrDeepLink();
   } catch (e) {
     document.getElementById("screenRoot").innerHTML = `
