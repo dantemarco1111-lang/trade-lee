@@ -542,6 +542,20 @@
   }
 
   #confettiLayer { position: fixed; inset: 0; pointer-events: none; z-index: 999; overflow: hidden; }
+  #toastLayer {
+    position: fixed; left: 0; right: 0; bottom: 24px; z-index: 998;
+    display: flex; flex-direction: column; align-items: center; gap: 8px;
+    pointer-events: none; padding: 0 16px;
+  }
+  .toast {
+    background: var(--card2); border: 1px solid var(--border-strong); color: var(--text);
+    font-family: var(--font-body); font-weight: 600; font-size: 0.88rem;
+    padding: 12px 18px; border-radius: 999px; box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+    max-width: 340px; text-align: center;
+    animation: toastIn 0.25s cubic-bezier(.34,1.56,.64,1), toastOut 0.25s ease 2.6s forwards;
+  }
+  @keyframes toastIn { from { opacity: 0; transform: translateY(12px) scale(0.95); } to { opacity: 1; transform: translateY(0) scale(1); } }
+  @keyframes toastOut { from { opacity: 1; } to { opacity: 0; transform: translateY(-6px); } }
   .confetti-piece { position: absolute; top: -20px; width: 8px; height: 14px; opacity: 0.9; animation: confettiFall linear forwards; }
   @keyframes confettiFall { to { transform: translateY(110vh) rotate(540deg); opacity: 0.3; } }
 
@@ -671,6 +685,7 @@
 </div>
 
 <div id="confettiLayer"></div>
+<div id="toastLayer"></div>
 
 <div class="exit-confirm-overlay" id="exitConfirmOverlay">
   <div class="exit-confirm-card">
@@ -688,6 +703,13 @@ const DRILLS_PER_SESSION = 10;
 const DECISION_SECONDS = 10;
 const SPEEDRUN_DRILLS = 5;
 const SPEEDRUN_SECONDS = 5;
+const PRACTICE_TIMER_START = 30;
+const PRACTICE_TIMER_MIN = 10;
+const PRACTICE_TIMER_MAX = 30;
+const PRACTICE_TIMER_STEP = 5;
+const PRACTICE_TIMER_WINDOW = 10;
+const PRACTICE_TIMER_SPEEDUP_ACCURACY = 0.60;
+const PRACTICE_TIMER_SLOWDOWN_ACCURACY = 0.45;
 const STARTING_BANKROLL = 10000;
 const POSITION_SIZE = 5000;
 const PNL_CAP_PCT = 0.03;
@@ -722,6 +744,10 @@ function defaultState() {
     // speed run
     speedRunBestTimeMs: null,
     speedRunBestAccuracy: 0,
+    // adaptive practice timer
+    practiceTimerSeconds: PRACTICE_TIMER_START,
+    practiceDrillsSinceAdjust: 0,
+    practiceCorrectSinceAdjust: 0,
   };
 }
 function loadPersistedState() {
@@ -886,6 +912,15 @@ function escapeHtml(str) {
   div.textContent = str == null ? "" : String(str);
   return div.innerHTML;
 }
+function showToast(message) {
+  const layer = document.getElementById("toastLayer");
+  if (!layer) return;
+  const toast = document.createElement("div");
+  toast.className = "toast";
+  toast.textContent = message;
+  layer.appendChild(toast);
+  setTimeout(() => toast.remove(), 2900);
+}
 function shuffleArray(arr) {
   for (let i = arr.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
@@ -941,6 +976,30 @@ function incrementGlobalStats(isCorrect) {
 }
 function updateBestStreakEver(streakVal) {
   if (streakVal > (appState.bestStreakEver || 0)) { appState.bestStreakEver = streakVal; saveState(); }
+}
+function updateTimerLevelDisplay() {
+  const el = document.getElementById("timerLevelValue");
+  if (el) el.textContent = (appState.practiceTimerSeconds || PRACTICE_TIMER_START) + "s";
+}
+function recordPracticeTimerProgress(isCorrect) {
+  appState.practiceDrillsSinceAdjust = (appState.practiceDrillsSinceAdjust || 0) + 1;
+  if (isCorrect) appState.practiceCorrectSinceAdjust = (appState.practiceCorrectSinceAdjust || 0) + 1;
+  if (appState.practiceDrillsSinceAdjust >= PRACTICE_TIMER_WINDOW) {
+    const accuracy = appState.practiceCorrectSinceAdjust / appState.practiceDrillsSinceAdjust;
+    const prevTimer = appState.practiceTimerSeconds || PRACTICE_TIMER_START;
+    let newTimer = prevTimer;
+    if (accuracy >= PRACTICE_TIMER_SPEEDUP_ACCURACY) newTimer = Math.max(PRACTICE_TIMER_MIN, prevTimer - PRACTICE_TIMER_STEP);
+    else if (accuracy < PRACTICE_TIMER_SLOWDOWN_ACCURACY) newTimer = Math.min(PRACTICE_TIMER_MAX, prevTimer + PRACTICE_TIMER_STEP);
+    appState.practiceTimerSeconds = newTimer;
+    appState.practiceDrillsSinceAdjust = 0;
+    appState.practiceCorrectSinceAdjust = 0;
+    if (newTimer !== prevTimer) {
+      const faster = newTimer < prevTimer;
+      showToast(faster ? `You're getting faster — timer now ${newTimer}s ⚡` : `Taking it slower — timer now ${newTimer}s`);
+    }
+    updateTimerLevelDisplay();
+  }
+  saveState();
 }
 function updateBestSessionPnl(pnl) {
   if (appState.bestSessionPnl === null || pnl > appState.bestSessionPnl) { appState.bestSessionPnl = pnl; saveState(); return true; }
@@ -1161,6 +1220,7 @@ function renderGameScreen(mode) {
         <div class="stat-chip"><span class="stat-value" id="pnlValue">$0</span><span class="stat-label">Session P&L</span></div>
         <div class="stat-chip"><span class="stat-value" id="streakValue">0</span><span class="stat-label">Streak</span></div>
         <div class="stat-chip"><span class="stat-value" id="bestStreakValue">0</span><span class="stat-label">Best</span></div>
+        <div class="stat-chip"><span class="stat-value" id="timerLevelValue">${appState.practiceTimerSeconds || PRACTICE_TIMER_START}s</span><span class="stat-label">Timer</span></div>
         <div class="stat-chip"><span class="stat-value" id="drillCounter">1/10</span><span class="stat-label">Drill</span></div>
       </div>`;
   } else if (mode === "speedrun") {
@@ -1284,7 +1344,9 @@ function loadDrill(drill, opts) {
 /* ============================= TIMER ============================= */
 function startTimer() {
   clearTimer();
-  const decisionSeconds = currentMode === "speedrun" ? SPEEDRUN_SECONDS : DECISION_SECONDS;
+  const decisionSeconds = currentMode === "speedrun" ? SPEEDRUN_SECONDS
+    : currentMode === "practice" ? (appState.practiceTimerSeconds || PRACTICE_TIMER_START)
+    : DECISION_SECONDS;
   timerDeadline = performance.now() + decisionSeconds * 1000;
   const fill = document.getElementById("timerFill");
   function tick() {
@@ -1321,6 +1383,7 @@ function handleTimeout() {
     streak = 0; multiplier = 1;
     updateStreakDisplay();
     sessionResults.push({ pnl: 0, correct: null, skipped: true });
+    recordPracticeTimerProgress(false);
   } else if (currentMode === "speedrun") {
     sessionResults.push({ pnl: 0, correct: null, skipped: true });
   }
@@ -1460,6 +1523,7 @@ function finishPlayout(drill, choice) {
     const pnl = computePnl(drill, isCorrect, currentDrillMultiplier * doubleDownMult);
     sessionResults.push({ pnl, correct: isCorrect, skipped: false, doubledDown: doubleDownActiveThisDrill });
     incrementGlobalStats(isCorrect);
+    recordPracticeTimerProgress(isCorrect);
 
     const prevBankroll = bankroll, prevSessionPnl = sessionPnl;
     bankroll += pnl; sessionPnl += pnl;
@@ -2273,6 +2337,7 @@ async function initAccountSync() {
               appState.ticksEarnedAllTime = Math.max(appState.ticksEarnedAllTime || 0, result.merged.ticks);
               appState.speedRunBestTimeMs = result.merged.best_speedrun_time_ms;
               appState.speedRunBestAccuracy = result.merged.best_speedrun_accuracy || 0;
+              appState.practiceTimerSeconds = result.merged.practice_timer_seconds || PRACTICE_TIMER_START;
               appState.dailyPlayStreak = recomputed.dailyPlayStreak;
               appState.dailyWinStreak = recomputed.dailyWinStreak;
               if (recomputed.lastDailyDate) appState.lastDailyDate = recomputed.lastDailyDate;

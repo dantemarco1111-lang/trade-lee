@@ -123,6 +123,15 @@ async function tlMergeLocalIntoCloud(appState) {
     else if (cloudSrTime == null) mergedSrTime = localSrTime;
     else mergedSrTime = Math.min(localSrTime, cloudSrTime);
 
+    // Lower practice timer = more adapted/skilled, so merge takes the lower
+    // (more advanced) of the two rather than max/min-by-value-only guessing.
+    const localTimer = appState.practiceTimerSeconds;
+    const cloudTimer = existingStats ? existingStats.practice_timer_seconds : null;
+    let mergedTimer;
+    if (localTimer == null) mergedTimer = cloudTimer;
+    else if (cloudTimer == null) mergedTimer = localTimer;
+    else mergedTimer = Math.min(localTimer, cloudTimer);
+
     const merged = {
       user_id: uid,
       best_streak: Math.max(appState.bestStreakEver || 0, existingStats ? existingStats.best_streak : 0),
@@ -131,6 +140,7 @@ async function tlMergeLocalIntoCloud(appState) {
       ticks: Math.max(appState.ticks || 0, existingStats ? existingStats.ticks : 0),
       best_speedrun_time_ms: mergedSrTime,
       best_speedrun_accuracy: Math.max(appState.speedRunBestAccuracy || 0, existingStats ? existingStats.best_speedrun_accuracy : 0),
+      practice_timer_seconds: mergedTimer,
     };
     await sbClient.from("stats").upsert(merged);
 
@@ -193,6 +203,7 @@ async function tlSyncStats(appState) {
       ticks: appState.ticks || 0,
       best_speedrun_time_ms: appState.speedRunBestTimeMs ?? null,
       best_speedrun_accuracy: appState.speedRunBestAccuracy || 0,
+      practice_timer_seconds: appState.practiceTimerSeconds || 30,
     });
   } catch (e) {}
 }
