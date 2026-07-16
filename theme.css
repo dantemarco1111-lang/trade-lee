@@ -43,6 +43,8 @@
 
 * { box-sizing: border-box; }
 
+.hidden { display: none !important; }
+
 /* ---------- layered site background ---------- */
 body {
   background-color: var(--bg);
@@ -54,6 +56,11 @@ body {
   background-size: auto, auto, 46px 46px, 46px 46px;
   background-attachment: fixed, fixed, fixed, fixed;
   background-repeat: no-repeat, no-repeat, repeat, repeat;
+  animation: tlPageFadeIn 0.15s ease;
+}
+@keyframes tlPageFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 /* ---------- buttons: one consistent system ---------- */

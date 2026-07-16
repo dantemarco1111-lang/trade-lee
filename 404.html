@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chart not found — Trade Lee</title>
+<meta name="robots" content="noindex">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230b0e14'/%3E%3Cline x1='11' y1='4' x2='11' y2='28' stroke='%2326a69a' stroke-width='2.2'/%3E%3Crect x='7' y='10' width='8' height='10' rx='1' fill='%2326a69a'/%3E%3Cline x1='23' y1='6' x2='23' y2='25' stroke='%23ef5350' stroke-width='2.2'/%3E%3Crect x='19' y='12' width='8' height='7' rx='1' fill='%23ef5350'/%3E%3C/svg%3E">
+<link rel="manifest" href="/manifest.json">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta name="theme-color" content="#0b0e14">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="/theme.css">
+<style>
+  html, body {
+    margin: 0; padding: 0;
+    color: var(--text);
+    font-family: var(--font-body);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    overflow-x: hidden;
+  }
+  .notfound-wrap { max-width: 420px; padding: 40px 24px; }
+  .notfound-chart {
+    width: 64px; height: 64px; margin: 0 auto 22px;
+    position: relative;
+  }
+  .notfound-chart::before {
+    content: "";
+    position: absolute; left: 18px; top: 4px; bottom: 4px;
+    width: 3px; background: var(--red);
+    transform: rotate(18deg);
+  }
+  .notfound-chart::after {
+    content: "";
+    position: absolute; left: 40px; top: 14px; bottom: 20px;
+    width: 3px; background: var(--red);
+    transform: rotate(18deg);
+  }
+  .notfound-code {
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    letter-spacing: 2px;
+    color: var(--text-dim);
+    margin-bottom: 6px;
+  }
+  h1 {
+    font-family: var(--font-display);
+    font-size: 1.6rem;
+    margin: 0 0 10px;
+  }
+  p {
+    color: var(--text-dim);
+    font-size: 0.95rem;
+    line-height: 1.5;
+    margin: 0 0 28px;
+  }
+  .notfound-btn {
+    display: inline-block;
+    padding: 15px 26px;
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 1rem;
+    border-radius: 14px;
+    background: linear-gradient(135deg, #ffb020, #ff5e3a);
+    color: #1a0a00;
+    text-decoration: none;
+    box-shadow: 0 6px 20px rgba(255,130,0,0.25);
+    transition: transform 0.15s cubic-bezier(.34,1.56,.64,1);
+  }
+  .notfound-btn:active { transform: scale(0.96); }
+  .notfound-home {
+    display: block;
+    margin-top: 18px;
+    color: var(--text-dim);
+    font-size: 0.85rem;
+    text-decoration: underline;
+  }
+</style>
+</head>
+<body>
+<div class="notfound-wrap">
+  <div class="notfound-chart" aria-hidden="true"></div>
+  <div class="notfound-code">404</div>
+  <h1>This chart doesn't exist.</h1>
+  <p>The page you're looking for broke out and never came back. Let's get you to a real one.</p>
+  <a class="notfound-btn" href="/play/?mode=daily">Play the daily drill →</a>
+  <a class="notfound-home" href="/">Back to Trade Lee home</a>
+</div>
+</body>
+</html>
