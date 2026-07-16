@@ -132,6 +132,10 @@ async function tlMergeLocalIntoCloud(appState) {
     else if (cloudTimer == null) mergedTimer = localTimer;
     else mergedTimer = Math.min(localTimer, cloudTimer);
 
+    // Onboarding profile is a one-time personalization choice, not a stat —
+    // the current device's answer wins if present, otherwise keep the cloud's.
+    const mergedOnboarding = appState.onboardingProfile || (existingStats ? existingStats.onboarding_profile : null) || null;
+
     const merged = {
       user_id: uid,
       best_streak: Math.max(appState.bestStreakEver || 0, existingStats ? existingStats.best_streak : 0),
@@ -141,6 +145,7 @@ async function tlMergeLocalIntoCloud(appState) {
       best_speedrun_time_ms: mergedSrTime,
       best_speedrun_accuracy: Math.max(appState.speedRunBestAccuracy || 0, existingStats ? existingStats.best_speedrun_accuracy : 0),
       practice_timer_seconds: mergedTimer,
+      onboarding_profile: mergedOnboarding,
     };
     await sbClient.from("stats").upsert(merged);
 
@@ -204,6 +209,7 @@ async function tlSyncStats(appState) {
       best_speedrun_time_ms: appState.speedRunBestTimeMs ?? null,
       best_speedrun_accuracy: appState.speedRunBestAccuracy || 0,
       practice_timer_seconds: appState.practiceTimerSeconds || 30,
+      onboarding_profile: appState.onboardingProfile || null,
     });
   } catch (e) {}
 }

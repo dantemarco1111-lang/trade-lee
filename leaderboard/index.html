@@ -288,6 +288,7 @@ async function initAccounts() {
                 full.speedRunBestTimeMs = result.merged.best_speedrun_time_ms;
                 full.speedRunBestAccuracy = result.merged.best_speedrun_accuracy || 0;
                 full.practiceTimerSeconds = result.merged.practice_timer_seconds || 30;
+                if (result.merged.onboarding_profile) full.onboardingProfile = result.merged.onboarding_profile;
                 full.dailyPlayStreak = recomputed.dailyPlayStreak;
                 full.dailyWinStreak = recomputed.dailyWinStreak;
                 full.lastDailyDate = recomputed.lastDailyDate || full.lastDailyDate;

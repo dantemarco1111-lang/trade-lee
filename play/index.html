@@ -570,6 +570,9 @@
   }
   .start-daily-streak .win-streak { color: var(--green); font-size: 0.85rem; font-weight: 600; }
   .start-daily-streak .freeze-icons { font-size: 0.9rem; }
+  .daily-goal-chip {
+    display: block; font-size: 0.78rem; color: var(--text-dim); margin: 8px 0 20px; text-align: center;
+  }
   .freeze-notice {
     background: rgba(92, 158, 255, 0.1); border: 1px solid rgba(92, 158, 255, 0.35);
     color: #5c9eff; border-radius: 12px; padding: 10px 14px; font-size: 0.85rem;
@@ -684,6 +687,42 @@
   .tutorial-outro h2 { font-family: var(--font-display); margin: 0 0 6px; }
   .tutorial-outro p { color: var(--muted); margin-bottom: 26px; }
 
+  /* ---------- onboarding quiz ---------- */
+  .onboarding-screen { padding: 40px 8px 10px; text-align: center; animation: coachIn 0.3s cubic-bezier(.22,1,.36,1); }
+  .onboarding-dots { display: flex; justify-content: center; gap: 8px; margin-bottom: 34px; }
+  .onboarding-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--border-strong); transition: background 0.2s, transform 0.2s; }
+  .onboarding-dot.active { background: var(--green); transform: scale(1.3); }
+  .onboarding-dot.done { background: var(--green); opacity: 0.5; }
+  .onboarding-question {
+    font-family: var(--font-display); font-size: 1.4rem; font-weight: 700; margin: 0 0 30px; line-height: 1.3;
+  }
+  .onboarding-options { display: flex; flex-direction: column; gap: 12px; margin-bottom: 20px; }
+  .onboarding-option-btn {
+    width: 100%; padding: 18px 16px; font-size: 1rem; font-weight: 700; font-family: var(--font-body);
+    border-radius: 16px; border: 1px solid var(--border-strong); background: var(--card); color: var(--text);
+    cursor: pointer; transition: transform 0.15s cubic-bezier(.34,1.56,.64,1), border-color 0.15s ease;
+  }
+  .onboarding-option-btn:active { transform: scale(0.97); }
+  .onboarding-option-btn:hover { border-color: var(--green); }
+  .onboarding-skip { color: var(--muted); opacity: 0.7; }
+  .onboarding-building {
+    display: flex; flex-direction: column; align-items: center; gap: 14px; padding: 110px 12px;
+    animation: coachIn 0.3s ease;
+  }
+  .onboarding-summary { text-align: center; padding: 40px 10px 10px; animation: coachIn 0.3s cubic-bezier(.22,1,.36,1); }
+  .onboarding-summary h2 { font-family: var(--font-display); margin: 0 0 22px; }
+  .onboarding-plan-card {
+    background: var(--card); border: 1px solid var(--border); border-radius: 16px;
+    padding: 20px; margin-bottom: 18px; text-align: left;
+  }
+  .onboarding-plan-line {
+    font-size: 0.98rem; padding: 8px 0; border-bottom: 1px solid var(--border);
+  }
+  .onboarding-plan-line:last-child { border-bottom: none; }
+  .onboarding-risk-link {
+    display: block; font-size: 0.85rem; color: var(--gold); margin-bottom: 18px; text-decoration: underline;
+  }
+
   @media (max-width: 400px) {
     .bankroll-value { font-size: 1.7rem; }
     .btn { font-size: 0.95rem; padding: 16px 6px; }
@@ -788,6 +827,8 @@ function defaultState() {
     practiceMarket: "stocks",
     practiceSession: null,
     practiceTimeframe: "5m",
+    // onboarding quiz (Stage 5) — null until a first-time player completes or skips it
+    onboardingProfile: null,
   };
 }
 function loadPersistedState() {
@@ -2104,15 +2145,136 @@ function startCountdown() {
   window.__countdownInterval = setInterval(tick, 1000);
 }
 
+/* ============================= ONBOARDING QUIZ (Stage 5) ============================= */
+const ONBOARDING_QUESTIONS = [
+  { key: "experience", question: "How much trading experience do you have?", options: [
+    { value: "new", label: "Brand new" },
+    { value: "learning", label: "Been learning a while" },
+    { value: "active", label: "I trade actively" },
+  ] },
+  { key: "market", question: "What do you want to trade?", options: [
+    { value: "stocks", label: "Stocks" },
+    { value: "futures", label: "Futures" },
+    { value: "forex", label: "Forex" },
+    { value: "crypto", label: "Crypto" },
+    { value: "unsure", label: "Not sure yet" },
+  ] },
+  { key: "goal", question: "What's your goal?", options: [
+    { value: "read_charts", label: "Learn to read charts" },
+    { value: "prop_eval", label: "Pass a prop firm eval" },
+    { value: "sharpen_edge", label: "Sharpen my edge" },
+    { value: "curious", label: "Just curious" },
+  ] },
+  { key: "time", question: "How much time do you have daily?", options: [
+    { value: "2min", label: "2 min (just the daily)" },
+    { value: "5to10", label: "5-10 min" },
+    { value: "long", label: "As long as it takes" },
+  ] },
+];
+const EXPERIENCE_TIMER_MAP = { new: PRACTICE_TIMER_START, learning: 20, active: 15 };
+const TIME_GOAL_LABEL = { "2min": "1 drill a day", "5to10": "Daily + a practice round", "long": "Go as deep as you want" };
+const MARKET_LABELS = { stocks: "Stocks", futures: "Futures", forex: "Forex", crypto: "Crypto", unsure: "Stocks" };
+
+let onboardingAnswers = {};
+
+function renderOnboardingQuiz() {
+  onboardingAnswers = {};
+  showOnboardingStep(0);
+}
+function showOnboardingStep(stepIndex) {
+  const q = ONBOARDING_QUESTIONS[stepIndex];
+  const root = document.getElementById("screenRoot");
+  const dots = ONBOARDING_QUESTIONS.map((_, i) =>
+    `<span class="onboarding-dot ${i === stepIndex ? "active" : i < stepIndex ? "done" : ""}"></span>`
+  ).join("");
+  root.innerHTML = `
+    <div class="onboarding-screen">
+      <div class="onboarding-dots">${dots}</div>
+      <h2 class="onboarding-question">${escapeHtml(q.question)}</h2>
+      <div class="onboarding-options">
+        ${q.options.map(o => `<button class="onboarding-option-btn" data-value="${o.value}">${escapeHtml(o.label)}</button>`).join("")}
+      </div>
+      <button class="text-link-btn onboarding-skip" id="onboardingSkipBtn">Skip, use defaults</button>
+    </div>
+  `;
+  root.querySelectorAll(".onboarding-option-btn").forEach(btn => {
+    btn.onclick = () => {
+      onboardingAnswers[q.key] = btn.dataset.value;
+      if (stepIndex + 1 < ONBOARDING_QUESTIONS.length) showOnboardingStep(stepIndex + 1);
+      else finishOnboardingQuiz();
+    };
+  });
+  document.getElementById("onboardingSkipBtn").onclick = skipOnboarding;
+}
+function skipOnboarding() {
+  onboardingAnswers = { experience: "new", market: "stocks", goal: "read_charts", time: "long" };
+  finishOnboardingQuiz();
+}
+function finishOnboardingQuiz() {
+  const root = document.getElementById("screenRoot");
+  root.innerHTML = `
+    <div class="onboarding-building">
+      <div class="candle-pulse"></div>
+      <div class="brand-loading-text">Building your plan…</div>
+    </div>
+  `;
+  setTimeout(applyOnboardingProfile, 1500);
+}
+function applyOnboardingProfile() {
+  const { experience, market, goal, time } = onboardingAnswers;
+  appState.onboardingProfile = { experience, market, goal, time };
+  appState.practiceTimerSeconds = EXPERIENCE_TIMER_MAP[experience] || PRACTICE_TIMER_START;
+  appState.practiceDrillsSinceAdjust = 0;
+  appState.practiceCorrectSinceAdjust = 0;
+  appState.practiceMarket = (market && market !== "unsure") ? market : "stocks";
+  saveState();
+  if (authReady()) tlSyncStats(appState);
+  renderOnboardingSummary();
+}
+function renderOnboardingSummary() {
+  const { market, goal, time } = appState.onboardingProfile;
+  const marketLabel = MARKET_LABELS[market] || "Stocks";
+  const timerSeconds = appState.practiceTimerSeconds;
+  const goalText = TIME_GOAL_LABEL[time] || "1 drill a day";
+  const root = document.getElementById("screenRoot");
+  const propNote = goal === "prop_eval"
+    ? `<a class="onboarding-risk-link" href="/risk/">Risk rules matter most — read this after →</a>` : "";
+  root.innerHTML = `
+    <div class="onboarding-summary">
+      <div class="outro-emoji">📈</div>
+      <h2>Your plan is ready</h2>
+      <div class="onboarding-plan-card">
+        <div class="onboarding-plan-line">Your plan: <strong>${escapeHtml(marketLabel)}</strong> drills</div>
+        <div class="onboarding-plan-line"><strong>${timerSeconds}-second</strong> timer to start</div>
+        <div class="onboarding-plan-line"><strong>${escapeHtml(goalText)}</strong></div>
+      </div>
+      ${propNote}
+      <button class="mode-btn practice-btn" id="onboardingStartBtn">START →</button>
+    </div>
+  `;
+  document.getElementById("onboardingStartBtn").onclick = beginTutorialFromOnboarding;
+}
+function beginTutorialFromOnboarding() {
+  const root = document.getElementById("screenRoot");
+  root.innerHTML = `<div class="loading">Loading…</div>`;
+  renderTutorialIntro();
+}
+
 /* ============================= TUTORIAL ============================= */
 const TUTORIAL_STEPS = [
   { text: "Price is coiling in this zone — that's the consolidation range.", arrow: "arrow-left" },
   { text: "Real breakouts usually bring a volume surge. Watch this pane.", arrow: "arrow-center" },
   { text: "This candle just broke the range — your call.", arrow: "arrow-right" },
 ];
-function renderTutorialIntro() {
-  const reals = allDrills.filter(d => d.outcome === "real").sort((a, b) => b.volume_ratio - a.volume_ratio);
-  const tutorialDrill = reals[0] || allDrills[0];
+async function renderTutorialIntro() {
+  const market = appState.practiceMarket || "stocks";
+  let pool = allDrills;
+  if (market !== "stocks") {
+    const fetched = await loadDrillPack(market, "5m");
+    if (fetched) pool = fetched;
+  }
+  const reals = pool.filter(d => d.outcome === "real").sort((a, b) => b.volume_ratio - a.volume_ratio);
+  const tutorialDrill = reals[0] || pool[0];
   renderGameScreen("tutorial");
   loadDrill(tutorialDrill, { deferTimer: true });
 
@@ -2325,6 +2487,7 @@ function renderStartScreen() {
         ${appState.dailyWinStreak > 0 ? `<span class="win-streak">· ${appState.dailyWinStreak} win streak</span>` : ""}
         ${appState.ownedFreezes > 0 ? `<span class="freeze-icons">${"🧊".repeat(appState.ownedFreezes)}</span>` : ""}
       </div>
+      ${appState.onboardingProfile ? `<div class="daily-goal-chip">🎯 ${escapeHtml(TIME_GOAL_LABEL[appState.onboardingProfile.time] || "1 drill a day")}</div>` : ""}
 
       <button class="mode-btn daily-btn ${alreadyPlayedDaily ? "done" : ""}" id="dailyBtn">
         ${alreadyPlayedDaily ? "DAILY DRILL ✓ DONE — VIEW RESULT" : "DAILY DRILL"}
@@ -2535,6 +2698,7 @@ async function initAccountSync() {
               appState.speedRunBestTimeMs = result.merged.best_speedrun_time_ms;
               appState.speedRunBestAccuracy = result.merged.best_speedrun_accuracy || 0;
               appState.practiceTimerSeconds = result.merged.practice_timer_seconds || PRACTICE_TIMER_START;
+              if (result.merged.onboarding_profile) appState.onboardingProfile = result.merged.onboarding_profile;
               appState.dailyPlayStreak = recomputed.dailyPlayStreak;
               appState.dailyWinStreak = recomputed.dailyWinStreak;
               if (recomputed.lastDailyDate) appState.lastDailyDate = recomputed.lastDailyDate;
@@ -2631,7 +2795,7 @@ async function init() {
     updateNavStreak();
     initAccountSync();
     if (pendingChallengeId) loadChallengeFromUrl(pendingChallengeId);
-    else if (!appState.hasSeenTutorial) renderTutorialIntro();
+    else if (!appState.hasSeenTutorial) renderOnboardingQuiz();
     else goToStartOrDeepLink();
   } catch (e) {
     document.getElementById("screenRoot").innerHTML = `
