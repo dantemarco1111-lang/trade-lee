@@ -25,6 +25,9 @@
 <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@500;700&display=swap">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@500;700&display=swap">
 <link rel="stylesheet" href="/theme.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/supabase-config.js"></script>
+<script src="/auth.js"></script>
 <style>
   html, body { margin: 0; padding: 0; color: var(--text); font-family: var(--font-body); overflow-x: hidden; -webkit-tap-highlight-color: transparent; min-height: 100vh; }
   a { color: inherit; }
@@ -150,6 +153,49 @@
     .unit-node { width: 50px; height: 50px; font-size: 1.35rem; }
     .unit-path::before { left: 24px; }
     .acad-calc-grid { grid-template-columns: 1fr 1fr; }
+  }
+
+  /* ---------- Pro lock + paywall (Phase 5) ---------- */
+  .unit-card.pro-locked { opacity: 0.85; }
+  .pro-chip {
+    position: absolute; bottom: -2px; right: -2px; background: #f5b400; color: #1a1200;
+    font-family: var(--font-mono); font-size: 0.55rem; font-weight: 700; letter-spacing: 0.3px;
+    border-radius: 6px; padding: 2px 5px;
+  }
+  .paywall-backdrop {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 999;
+    display: flex; align-items: flex-end; justify-content: center;
+  }
+  .paywall-sheet {
+    background: var(--surface); border-top: 1px solid var(--border-strong);
+    border-radius: 20px 20px 0 0; padding: 20px 20px 28px; max-width: 480px; width: 100%;
+    box-sizing: border-box; animation: paywallSlideUp 0.25s ease;
+  }
+  @keyframes paywallSlideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+  .paywall-handle { width: 40px; height: 4px; background: var(--border-strong); border-radius: 2px; margin: 0 auto 16px; }
+  .paywall-badge {
+    display: inline-block; font-family: var(--font-mono); font-size: 0.7rem; letter-spacing: 1px;
+    color: #1a1200; background: #f5b400; border-radius: 6px; padding: 3px 8px; font-weight: 700; margin-bottom: 10px;
+  }
+  .paywall-sheet h3 { font-family: var(--font-display); margin: 0 0 12px; font-size: 1.15rem; }
+  .paywall-features { list-style: none; padding: 0; margin: 0 0 16px; }
+  .paywall-features li { padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 0.88rem; display: flex; gap: 8px; }
+  .paywall-features li::before { content: "✓"; color: var(--green); font-weight: 700; }
+  .paywall-form { display: flex; gap: 8px; margin-bottom: 10px; }
+  .paywall-form input {
+    flex: 1; background: var(--surface-2); border: 1px solid var(--border-strong); border-radius: 10px;
+    padding: 12px; color: var(--text); font-size: 0.9rem; min-width: 0;
+  }
+  .paywall-join-btn {
+    background: #f5b400; color: #1a1200; border: none; border-radius: 10px; padding: 12px 16px;
+    font-weight: 700; font-family: var(--font-display); cursor: pointer; white-space: nowrap;
+  }
+  .paywall-msg { font-size: 0.8rem; margin-bottom: 8px; }
+  .paywall-msg.success { color: var(--green); }
+  .paywall-msg.error { color: var(--red); }
+  .paywall-dismiss {
+    display: block; width: 100%; background: none; border: none; color: var(--text-dim);
+    font-size: 0.85rem; padding: 8px; cursor: pointer; text-decoration: underline; font-family: var(--font-body);
   }
 </style>
 </head>
@@ -429,7 +475,7 @@ const ACADEMY_UNITS = [
     ],
   },
   {
-    key: "order_types", icon: "🎟️", title: "Order Types & Execution",
+    key: "order_types", icon: "🎟️", title: "Order Types & Execution", proOnly: true,
     desc: "Market, limit, stop, stop-limit, and how a bracket order works.",
     drillLink: { label: "Try the Order Execution Trainer", href: "/play/?mode=ordertrainer" },
     lessons: [
@@ -452,7 +498,7 @@ const ACADEMY_UNITS = [
     ],
   },
   {
-    key: "sessions", icon: "🕒", title: "Sessions & Time",
+    key: "sessions", icon: "🕒", title: "Sessions & Time", proOnly: true,
     desc: "When markets move — and the honest truth about Kill Zones.",
     drillLink: { label: "Try the Kill Zones pack", href: "/play/?strategyPack=kill_zones" },
     lessons: [
@@ -473,7 +519,7 @@ const ACADEMY_UNITS = [
     ],
   },
   {
-    key: "smc", icon: "🔍", title: "Smart Money Concepts",
+    key: "smc", icon: "🔍", title: "Smart Money Concepts", proOnly: true,
     desc: "ICT vocabulary, explained honestly — discretionary, not settled science.",
     drillLink: { label: "Try the Liquidity Sweep pack", href: "/play/?strategyPack=liquidity_sweep" },
     lessons: [
@@ -499,7 +545,7 @@ const ACADEMY_UNITS = [
     ],
   },
   {
-    key: "psychology", icon: "🧠", title: "Trading Psychology",
+    key: "psychology", icon: "🧠", title: "Trading Psychology", proOnly: true,
     desc: "The real edge — scored scenarios, not just facts.",
     drillLink: { label: "Play the Daily Drill", href: "/play/?mode=daily" },
     lessons: [
@@ -521,7 +567,7 @@ const ACADEMY_UNITS = [
     ],
   },
   {
-    key: "prop_firm", icon: "🏆", title: "Prop Firm Path",
+    key: "prop_firm", icon: "🏆", title: "Prop Firm Path", proOnly: true,
     desc: "Trading with a firm's capital — and the reality check first.",
     drillLink: { label: "Explore funded programs", href: "/funded/" },
     lessons: [
@@ -549,7 +595,16 @@ let currentView = { screen: "path" }; // {screen:"path"} | {screen:"unit", unitK
 
 function isUnitUnlocked(i) {
   if (i === 0) return true;
+  // Pro-gating supersedes sequential-gating: a proOnly unit's prerequisite can
+  // never actually be completed while it's paywalled, so without this it would
+  // stay stuck behind a plain sequential lock forever instead of showing PRO.
+  if (ACADEMY_UNITS[i].proOnly) return true;
   return state.academyProgress.unitsCompleted.includes(ACADEMY_UNITS[i - 1].key);
+}
+// No real Pro subscription exists yet (waitlist only) — proOnly units are
+// always locked for everyone, regardless of sequential progress.
+function isProLocked(i) {
+  return !!ACADEMY_UNITS[i].proOnly;
 }
 function unitLessonsRead(unitKey) {
   return state.academyProgress.lessonsRead[unitKey] || [];
@@ -609,6 +664,56 @@ function wireCalcWidget() {
 }
 
 /* ============================= RENDER: PATH ============================= */
+/* ============================= PAYWALL BOTTOM SHEET (Phase 5) ============================= */
+function showPaywallSheet(title, bullets) {
+  const existing = document.getElementById("paywallSheet");
+  if (existing) existing.remove();
+  const wrap = document.createElement("div");
+  wrap.id = "paywallSheet";
+  wrap.className = "paywall-backdrop";
+  wrap.innerHTML = `
+    <div class="paywall-sheet">
+      <div class="paywall-handle"></div>
+      <div class="paywall-badge">PRO — WAITLIST</div>
+      <h3>${escapeHtml(title)}</h3>
+      <ul class="paywall-features">${bullets.map(b => `<li>${escapeHtml(b)}</li>`).join("")}</ul>
+      <form id="paywallForm" class="paywall-form">
+        <input type="email" id="paywallEmail" placeholder="you@email.com" required>
+        <button type="submit" class="paywall-join-btn">Join waitlist</button>
+      </form>
+      <div class="paywall-msg hidden" id="paywallMsg"></div>
+      <button class="paywall-dismiss" id="paywallDismiss">Maybe later</button>
+    </div>
+  `;
+  document.body.appendChild(wrap);
+  wrap.addEventListener("click", (e) => { if (e.target === wrap) wrap.remove(); });
+  document.getElementById("paywallDismiss").onclick = () => wrap.remove();
+  document.getElementById("paywallForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const emailInput = document.getElementById("paywallEmail");
+    const btn = wrap.querySelector(".paywall-join-btn");
+    const msgEl = document.getElementById("paywallMsg");
+    msgEl.classList.add("hidden");
+    btn.disabled = true;
+    btn.textContent = "Joining…";
+    try {
+      if (typeof tlJoinWaitlist !== "function") throw new Error("offline");
+      await tlJoinWaitlist(emailInput.value);
+      msgEl.textContent = "You're on the list — we'll email you when Pro launches.";
+      msgEl.className = "paywall-msg success";
+      btn.textContent = "Joined ✓";
+    } catch (err) {
+      msgEl.textContent = err.message === "offline"
+        ? "Can't reach the waitlist right now — please try again in a moment."
+        : (err.message || "Something went wrong — please try again.");
+      msgEl.className = "paywall-msg error";
+      btn.disabled = false;
+      btn.textContent = "Join waitlist";
+    }
+    msgEl.classList.remove("hidden");
+  });
+}
+
 function renderPath() {
   currentView = { screen: "path" };
   const root = document.getElementById("academyRoot");
@@ -621,22 +726,26 @@ function renderPath() {
     </div>
     <div class="unit-path">
       ${ACADEMY_UNITS.map((u, i) => {
-        const unlocked = isUnitUnlocked(i);
+        const seqUnlocked = isUnitUnlocked(i);
+        const proLocked = isProLocked(i);
         const completed = state.academyProgress.unitsCompleted.includes(u.key);
-        const isCurrent = unlocked && !completed;
+        const isCurrent = seqUnlocked && !proLocked && !completed;
         const read = unitLessonsRead(u.key).length;
-        const cls = completed ? "completed" : isCurrent ? "current" : "";
+        const cls = completed ? "completed" : isCurrent ? "current" : proLocked && seqUnlocked ? "pro-locked" : "";
+        // Pro units stay clickable even while "locked" so tapping shows the paywall preview,
+        // not a dead button — never a hard interruption, per the freemium plan.
+        const clickable = seqUnlocked;
         return `
-          <button class="unit-card ${cls}" data-unit="${u.key}" ${unlocked ? "" : "disabled"}>
+          <button class="unit-card ${cls}" data-unit="${u.key}" data-idx="${i}" ${clickable ? "" : "disabled"}>
             <div class="unit-node">
               ${u.icon}
-              ${completed ? `<span class="check">✓</span>` : !unlocked ? `<span class="lock">🔒</span>` : ""}
+              ${completed ? `<span class="check">✓</span>` : !seqUnlocked ? `<span class="lock">🔒</span>` : proLocked ? `<span class="pro-chip">PRO</span>` : ""}
             </div>
             <div class="unit-body">
               <div class="unit-num">Unit ${i + 1}</div>
               <div class="unit-title">${escapeHtml(u.title)}</div>
               <div class="unit-desc">${escapeHtml(u.desc)}</div>
-              ${unlocked ? `<div class="unit-progress">${completed ? "Complete ✓" : `${read}/${u.lessons.length} lessons read`}</div>` : ""}
+              ${seqUnlocked ? `<div class="unit-progress">${completed ? "Complete ✓" : proLocked ? "Requires Pro" : `${read}/${u.lessons.length} lessons read`}</div>` : ""}
             </div>
           </button>
         `;
@@ -644,8 +753,21 @@ function renderPath() {
     </div>
   `;
   document.querySelectorAll(".unit-card:not(:disabled)").forEach(btn => {
-    btn.onclick = () => renderUnitDetail(btn.dataset.unit);
+    const i = parseInt(btn.dataset.idx, 10);
+    btn.onclick = () => {
+      if (isProLocked(i)) showAcademyProPaywall(ACADEMY_UNITS[i]);
+      else renderUnitDetail(btn.dataset.unit);
+    };
   });
+}
+function showAcademyProPaywall(unit) {
+  showPaywallSheet(`${unit.title} is a Pro unit`, [
+    "Academy Units 8-12 (Order Types, Sessions, Smart Money Concepts, Psychology, Prop Firm Path)",
+    "All 12 Strategy Packs, not just ORB",
+    "Unlimited practice sessions & Order Trainer rounds",
+    "2x Ticks on everything you play",
+    "Founding-member price once Pro launches",
+  ]);
 }
 
 /* ============================= RENDER: UNIT DETAIL ============================= */

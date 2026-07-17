@@ -400,8 +400,51 @@
     padding: 12px 14px; text-align: left; cursor: pointer;
   }
   .strategy-pack-card:active { transform: scale(0.98); }
-  .spc-label { font-family: var(--font-display); font-size: 0.95rem; margin-bottom: 3px; }
+  .strategy-pack-card.pro-locked { opacity: 0.75; }
+  .spc-label { font-family: var(--font-display); font-size: 0.95rem; margin-bottom: 3px; display: flex; align-items: center; gap: 8px; }
   .spc-desc { font-size: 0.78rem; color: var(--muted); line-height: 1.35; }
+  .pro-chip-inline {
+    display: inline-block; font-family: var(--font-mono); font-size: 0.55rem; font-weight: 700; letter-spacing: 0.3px;
+    color: #1a1200; background: #f5b400; border-radius: 6px; padding: 2px 6px;
+  }
+  .daily-limit-note { font-size: 0.72rem; color: var(--muted); text-align: center; margin: -6px 0 6px; }
+
+  /* ---------- paywall bottom sheet (Phase 5) ---------- */
+  .paywall-backdrop {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 999;
+    display: flex; align-items: flex-end; justify-content: center;
+  }
+  .paywall-sheet {
+    background: var(--card); border-top: 1px solid var(--border);
+    border-radius: 20px 20px 0 0; padding: 20px 20px 28px; max-width: 480px; width: 100%;
+    box-sizing: border-box; animation: paywallSlideUp 0.25s ease;
+  }
+  @keyframes paywallSlideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+  .paywall-handle { width: 40px; height: 4px; background: var(--border); border-radius: 2px; margin: 0 auto 16px; }
+  .paywall-badge {
+    display: inline-block; font-family: var(--font-mono); font-size: 0.7rem; letter-spacing: 1px;
+    color: #1a1200; background: #f5b400; border-radius: 6px; padding: 3px 8px; font-weight: 700; margin-bottom: 10px;
+  }
+  .paywall-sheet h3 { font-family: var(--font-display); margin: 0 0 12px; font-size: 1.15rem; }
+  .paywall-features { list-style: none; padding: 0; margin: 0 0 16px; }
+  .paywall-features li { padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 0.88rem; display: flex; gap: 8px; }
+  .paywall-features li::before { content: "✓"; color: #26a69a; font-weight: 700; }
+  .paywall-form { display: flex; gap: 8px; margin-bottom: 10px; }
+  .paywall-form input {
+    flex: 1; background: var(--bg, #0b0e14); border: 1px solid var(--border); border-radius: 10px;
+    padding: 12px; color: var(--text); font-size: 0.9rem; min-width: 0;
+  }
+  .paywall-join-btn {
+    background: #f5b400; color: #1a1200; border: none; border-radius: 10px; padding: 12px 16px;
+    font-weight: 700; font-family: var(--font-display); cursor: pointer; white-space: nowrap;
+  }
+  .paywall-msg { font-size: 0.8rem; margin-bottom: 8px; }
+  .paywall-msg.success { color: #26a69a; }
+  .paywall-msg.error { color: #ef5350; }
+  .paywall-dismiss {
+    display: block; width: 100%; background: none; border: none; color: var(--muted);
+    font-size: 0.85rem; padding: 8px; cursor: pointer; text-decoration: underline; font-family: inherit;
+  }
 
   .legend-row {
     display: flex; flex-wrap: wrap; gap: 10px; justify-content: center;
@@ -878,6 +921,13 @@ const LSW_RESOLUTION_MULTIPLE = 0.75;
 const LSW_DECISION_SECONDS = 15;
 const STRATEGY_PACK_DRILLS_PER_SESSION = 10;
 const STRATEGY_PACK_DECISION_SECONDS = 15;
+
+// ---- freemium limits (Phase 5) — no real Pro subscription exists yet
+// (waitlist only), so these apply to everyone until Pro actually launches.
+const FREE_PRACTICE_SESSIONS_PER_DAY = 3;
+const FREE_ORDER_TRAINER_ROUNDS_PER_DAY = 3;
+const FREE_MISS_REVIEW_LIMIT = 20;
+const FREE_STRATEGY_PACK_KEYS = ["orb"];
 const STARTING_BANKROLL = 10000;
 const POSITION_SIZE = 5000;
 const PNL_CAP_PCT = 0.03;
@@ -933,6 +983,9 @@ function defaultState() {
     orderTrainerStats: { totalOrders: 0, filled: 0, wins: 0 },
     // strategy packs (Phase 3)
     strategyPackStats: { totalAnswered: 0, totalCorrect: 0 },
+    // freemium daily limits (Phase 5) — reset each ET calendar day
+    practiceSessionsToday: 0, practiceSessionsDate: null,
+    orderTrainerToday: 0, orderTrainerDate: null,
   };
 }
 function loadPersistedState() {
@@ -2208,10 +2261,19 @@ function showEndOfDay() {
 
   if (isNewBest && sessionPnl > 0) launchConfetti();
 }
+const PRACTICE_PAYWALL_BULLETS = [
+  "Unlimited practice sessions every day",
+  "All 12 Strategy Packs, not just ORB",
+  "Unlimited Order Execution Trainer rounds",
+  "Academy Units 8-12",
+  "2x Ticks on everything you play",
+];
 async function startNewPracticeSession() {
   const style = appState.drillStyle || "classic";
   if (style === "longshortwait") { await startNewLswSession(); return; }
   if (style === "ordertrainer") { await startOrderTrainerRound(); return; }
+  if (!checkDailyLimitOrPaywall("practiceSessionsToday", "practiceSessionsDate", FREE_PRACTICE_SESSIONS_PER_DAY,
+      "You've used today's free practice sessions", PRACTICE_PAYWALL_BULLETS)) return;
   renderGameScreen("practice");
   const content = document.getElementById("content");
   if (content) content.innerHTML = `<div class="loading">Loading drills…</div>`;
@@ -2244,6 +2306,8 @@ async function loadLswPool() {
   }
 }
 async function startNewLswSession() {
+  if (!checkDailyLimitOrPaywall("practiceSessionsToday", "practiceSessionsDate", FREE_PRACTICE_SESSIONS_PER_DAY,
+      "You've used today's free practice sessions", PRACTICE_PAYWALL_BULLETS)) return;
   renderGameScreen("longshortwait");
   const content = document.getElementById("content");
   if (content) content.innerHTML = `<div class="loading">Loading drills…</div>`;
@@ -2411,7 +2475,16 @@ function positionOtLines() {
     el.classList.remove("hidden");
   });
 }
+const ORDER_TRAINER_PAYWALL_BULLETS = [
+  "Unlimited Order Execution Trainer rounds every day",
+  "All 12 Strategy Packs, not just ORB",
+  "Unlimited practice sessions",
+  "Academy Units 8-12",
+  "2x Ticks on everything you play",
+];
 async function startOrderTrainerRound() {
+  if (!checkDailyLimitOrPaywall("orderTrainerToday", "orderTrainerDate", FREE_ORDER_TRAINER_ROUNDS_PER_DAY,
+      "You've used today's free Order Trainer rounds", ORDER_TRAINER_PAYWALL_BULLETS)) return;
   renderGameScreen("ordertrainer");
   const content = document.getElementById("content");
   if (content) content.innerHTML = `<div class="loading">Loading a setup…</div>`;
@@ -2613,6 +2686,86 @@ const STRATEGY_PACKS = [
 ];
 const ICT_HONESTY_BLURB = "Smart Money Concepts is a discretionary framework, not settled science. These setups map closely onto older classical ideas under new names, and no independent study confirms a standalone edge for any of them — see the About page for the full picture. We teach the vocabulary honestly, not as gospel.";
 
+/* ============================= FREEMIUM: daily limits + paywall (Phase 5) ============================= */
+function getDailyLimitUsed(counterField, dateField) {
+  const today = getEtDateString(0);
+  if (appState[dateField] !== today) return 0;
+  return appState[counterField] || 0;
+}
+function getDailyLimitRemaining(counterField, dateField, limit) {
+  return Math.max(0, limit - getDailyLimitUsed(counterField, dateField));
+}
+function dailyLimitNoteText() {
+  const style = appState.drillStyle || "classic";
+  if (style === "ordertrainer") {
+    const left = getDailyLimitRemaining("orderTrainerToday", "orderTrainerDate", FREE_ORDER_TRAINER_ROUNDS_PER_DAY);
+    return `${left} of ${FREE_ORDER_TRAINER_ROUNDS_PER_DAY} free rounds left today`;
+  }
+  const left = getDailyLimitRemaining("practiceSessionsToday", "practiceSessionsDate", FREE_PRACTICE_SESSIONS_PER_DAY);
+  return `${left} of ${FREE_PRACTICE_SESSIONS_PER_DAY} free sessions left today`;
+}
+// Checks AND consumes one credit atomically. Returns false (and shows the
+// paywall) if the day's free credits are already spent.
+function checkDailyLimitOrPaywall(counterField, dateField, limit, title, bullets) {
+  const today = getEtDateString(0);
+  if (appState[dateField] !== today) { appState[dateField] = today; appState[counterField] = 0; }
+  if (appState[counterField] >= limit) {
+    showPaywallSheet(title, bullets);
+    return false;
+  }
+  appState[counterField]++;
+  saveState();
+  return true;
+}
+function showPaywallSheet(title, bullets) {
+  const existing = document.getElementById("paywallSheet");
+  if (existing) existing.remove();
+  const wrap = document.createElement("div");
+  wrap.id = "paywallSheet";
+  wrap.className = "paywall-backdrop";
+  wrap.innerHTML = `
+    <div class="paywall-sheet">
+      <div class="paywall-handle"></div>
+      <div class="paywall-badge">PRO — WAITLIST</div>
+      <h3>${escapeHtml(title)}</h3>
+      <ul class="paywall-features">${bullets.map(b => `<li>${escapeHtml(b)}</li>`).join("")}</ul>
+      <form id="paywallForm" class="paywall-form">
+        <input type="email" id="paywallEmail" placeholder="you@email.com" required>
+        <button type="submit" class="paywall-join-btn">Join waitlist</button>
+      </form>
+      <div class="paywall-msg hidden" id="paywallMsg"></div>
+      <button class="paywall-dismiss" id="paywallDismiss">Maybe later</button>
+    </div>
+  `;
+  document.body.appendChild(wrap);
+  wrap.addEventListener("click", (e) => { if (e.target === wrap) wrap.remove(); });
+  document.getElementById("paywallDismiss").onclick = () => wrap.remove();
+  document.getElementById("paywallForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const emailInput = document.getElementById("paywallEmail");
+    const btn = wrap.querySelector(".paywall-join-btn");
+    const msgEl = document.getElementById("paywallMsg");
+    msgEl.classList.add("hidden");
+    btn.disabled = true;
+    btn.textContent = "Joining…";
+    try {
+      if (typeof tlJoinWaitlist !== "function") throw new Error("offline");
+      await tlJoinWaitlist(emailInput.value);
+      msgEl.textContent = "You're on the list — we'll email you when Pro launches.";
+      msgEl.className = "paywall-msg success";
+      btn.textContent = "Joined ✓";
+    } catch (err) {
+      msgEl.textContent = err.message === "offline"
+        ? "Can't reach the waitlist right now — please try again in a moment."
+        : (err.message || "Something went wrong — please try again.");
+      msgEl.className = "paywall-msg error";
+      btn.disabled = false;
+      btn.textContent = "Join waitlist";
+    }
+    msgEl.classList.remove("hidden");
+  });
+}
+
 let strategyPackCache = {};
 async function loadStrategyPackPool(pack) {
   if (strategyPackCache[pack.file]) return strategyPackCache[pack.file];
@@ -2694,12 +2847,15 @@ function renderStrategyPickerScreen() {
   const root = document.getElementById("screenRoot");
   const classical = STRATEGY_PACKS.filter(p => p.category === "classical");
   const ict = STRATEGY_PACKS.filter(p => p.category === "ict");
-  const packCard = (p) => `
-    <button class="strategy-pack-card" data-pack="${p.key}">
-      <div class="spc-label">${escapeHtml(p.label)}</div>
-      <div class="spc-desc">${escapeHtml(p.description)}</div>
-    </button>
-  `;
+  const packCard = (p) => {
+    const isFree = FREE_STRATEGY_PACK_KEYS.includes(p.key);
+    return `
+      <button class="strategy-pack-card ${isFree ? "" : "pro-locked"}" data-pack="${p.key}" data-free="${isFree}">
+        <div class="spc-label">${escapeHtml(p.label)}${isFree ? "" : ` <span class="pro-chip-inline">PRO</span>`}</div>
+        <div class="spc-desc">${escapeHtml(p.description)}</div>
+      </button>
+    `;
+  };
   root.innerHTML = `
     <div class="topbar">
       <div class="bankroll">
@@ -2717,9 +2873,22 @@ function renderStrategyPickerScreen() {
     </div>
   `;
   document.querySelectorAll(".strategy-pack-card").forEach(btn => {
-    btn.onclick = () => startStrategyPackSession(btn.dataset.pack);
+    btn.onclick = () => {
+      if (btn.dataset.free === "true") startStrategyPackSession(btn.dataset.pack);
+      else showStrategyPackProPaywall(btn.dataset.pack);
+    };
   });
   document.getElementById("strategyBackBtn").onclick = renderStartScreen;
+}
+function showStrategyPackProPaywall(packKey) {
+  const pack = STRATEGY_PACKS.find(p => p.key === packKey);
+  showPaywallSheet(`${pack ? pack.label : "This pack"} is a Pro strategy pack`, [
+    "All 12 Strategy Packs, not just ORB",
+    "Unlimited practice sessions & Order Trainer rounds",
+    "Academy Units 8-12",
+    "2x Ticks on everything you play",
+    "Founding-member price once Pro launches",
+  ]);
 }
 
 /* ============================= SPEED RUN MODE ============================= */
@@ -3020,8 +3189,12 @@ async function startMissReview() {
   const content = document.getElementById("content");
   if (content) content.innerHTML = `<div class="loading">Loading your misses…</div>`;
 
+  // Free tier reviews only the most recent FREE_MISS_REVIEW_LIMIT misses —
+  // full history is a Pro benefit. We still store up to 100 (see
+  // recordMissOrClear) so that history is already there once Pro launches.
+  const reviewable = appState.missedDrills.slice(-FREE_MISS_REVIEW_LIMIT);
   const byPack = {};
-  appState.missedDrills.forEach(m => {
+  reviewable.forEach(m => {
     const key = (m.market || "stocks") + "|" + (m.timeframe || "5m");
     (byPack[key] = byPack[key] || []).push(m);
   });
@@ -3502,6 +3675,8 @@ function practiceButtonLabel() {
 function updatePracticeButtonLabel() {
   const btn = document.getElementById("practiceBtn");
   if (btn) btn.textContent = practiceButtonLabel();
+  const noteEl = document.getElementById("dailyLimitNote");
+  if (noteEl) noteEl.textContent = dailyLimitNoteText();
 }
 function applyDrillStyleGroupVisibility() {
   const style = appState.drillStyle || "classic";
@@ -3597,10 +3772,11 @@ function renderStartScreen() {
       </div>
 
       <button class="mode-btn practice-btn" id="practiceBtn">${practiceButtonLabel()}</button>
+      <div class="daily-limit-note" id="dailyLimitNote">${dailyLimitNoteText()}</div>
       <button class="mode-btn speedrun-btn" id="speedRunBtn">⚡ SPEED RUN — 5 DRILLS, 5s EACH</button>
       <button class="text-link-btn" id="strategyPacksBtn" style="padding:4px 0;">🎯 Strategy Packs (ORB, VWAP, ICT/SMC & more)</button>
       <a class="text-link-btn" href="/academy/" style="padding:4px 0;display:block;">📚 Academy — lessons, quizzes &amp; a learning path</a>
-      ${appState.missedDrills.length ? `<button class="text-link-btn" id="missReviewBtn">📕 Review your misses (${appState.missedDrills.length})</button>` : ""}
+      ${appState.missedDrills.length ? `<button class="text-link-btn" id="missReviewBtn">📕 Review your misses (${Math.min(appState.missedDrills.length, FREE_MISS_REVIEW_LIMIT)}${appState.missedDrills.length > FREE_MISS_REVIEW_LIMIT ? ` of ${appState.missedDrills.length}` : ""})</button>` : ""}
 
       <div class="start-stats-row">
         <div class="mini-stat"><div class="v">${accuracy}%</div><div class="l">Accuracy</div></div>

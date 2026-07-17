@@ -210,21 +210,44 @@ Status legend: `[ ]` not started · `[~]` in progress · `[x]` done and verified
       Academy and a spot-checked existing page (root index.html) after the
       9-file nav edit, and the game's own new Academy nav link resolving.
 
-## PHASE 5: Freemium Structure
-- [ ] Free tier locked in as genuinely great: daily drill forever, 3 practice
-      sessions/day (any unlocked mode), Academy U1-U7, classic + long/short/wait
-      modes, leaderboard, miss review (last 20)
-- [ ] Pro tier definition ($9/mo, waitlist only, no payment processing): unlimited
-      practice, Academy U8-U12, all strategy packs (free = Breakout core + ORB),
-      unlimited order-execution trainer (free = 3/day), full miss-review history +
-      per-pattern edge analytics, 2x Ticks, AI Trade Coach (coming-first-to-Pro),
-      founding-price lock
-- [ ] Locked items show a gold PRO chip; tapping opens a bottom-sheet paywall
-      preview (feature list + waitlist email capture to existing Supabase table) —
-      never a hard interruption, never mid-drill
-- [ ] Subtle "Pro" nav tab
-- [ ] Free limits reset midnight ET with a friendly counter ("2 of 3 sessions left
-      today")
+## PHASE 5: Freemium Structure — DONE
+- [x] Free tier: daily drill forever (unaffected), 3 practice sessions/day
+      shared across classic + Long/Short/Wait (separate 3/day for Order
+      Trainer rounds, since it's a per-round mode not a 10-drill session),
+      Academy U1-U7, only the ORB strategy pack, leaderboard (unaffected),
+      miss review capped to the most recent 20 (up to 100 still stored
+      locally so full history is ready whenever Pro actually launches).
+- [x] Pro tier framing (still waitlist-only — no payment processing exists,
+      so every visitor is effectively "free" right now): unlimited practice
+      + Order Trainer, Academy U8-U12, all 12 Strategy Packs, full miss-review
+      history, 2x Ticks, AI Trade Coach (coming-first-to-Pro, not built —
+      nothing to gate yet), founding price. premium/index.html's feature
+      list rewritten to state the real gated numbers instead of the earlier
+      placeholder copy.
+- [x] Locked items show a gold PRO chip (Strategy Pack cards, Academy unit
+      nodes) — tapping opens a bottom-sheet paywall (slide-up, dismissible,
+      feature-specific bullet list, waitlist email capture via the existing
+      tlJoinWaitlist()/Supabase waitlist table) instead of blocking outright;
+      hitting a daily-session cap shows the same sheet over whatever screen
+      was already visible rather than interrupting a request response.
+      Never appears mid-drill — every check happens at session-start, never
+      inside an active drill.
+- [x] "Premium" nav item already existed pre-Phase-5 (site-wide nav, gold
+      PRO tag) — left as-is, it already satisfies "subtle Pro nav tab."
+- [x] Free limits keyed to getEtDateString(0) (midnight ET reset, reusing
+      the same helper the Daily Drill streak already relies on) with a
+      friendly live counter under the Practice button ("3 of 3 free
+      sessions left today" / "0 of 3 free rounds left today" for Order
+      Trainer, refreshing live when the Drill Style pill changes).
+- [x] Verified live in-browser: hitting the 3-session cap shows the
+      practice paywall over the still-visible start screen; a separate
+      Order Trainer cap triggers its own paywall and doesn't share credits
+      with practice; tapping a non-ORB Strategy Pack or a Pro-only Academy
+      unit shows the correct feature-specific paywall while ORB and U1-U7
+      stay fully playable; miss-review button label correctly shows "20 of
+      25" once more than 20 misses exist; Daily Drill and LSW mode both
+      regression-checked as unaffected/still-gated-correctly; paywall sheet
+      readable at 375px mobile width.
 
 ## PHASE 6: Polish + Integrity Pass
 - [ ] Every lesson/drill copy proofread at a beginner reading level; zero
