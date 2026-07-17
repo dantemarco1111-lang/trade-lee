@@ -3,18 +3,18 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Trade Lee — spot the real breakout</title>
-<meta name="description" content="A Duolingo-style drill that trains you to read real breakouts from fakeouts, using real market data.">
-<meta property="og:title" content="Trade Lee — spot the real breakout">
-<meta property="og:description" content="One chart. Ten seconds. Is it a real breakout or a fakeout? Train your eye with real market data.">
+<title>Trade Lee — can you read the tape?</title>
+<meta name="description" content="A daily drill that trains you to read real charts fast — take it or fade it, using real market data.">
+<meta property="og:title" content="Trade Lee — can you read the tape?">
+<meta property="og:description" content="One chart. Ten seconds. Take it or fade it — train your eye with real market data.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://trade-lee.vercel.app/play/">
 <meta property="og:image" content="https://trade-lee.vercel.app/og-image.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Trade Lee — spot the real breakout">
-<meta name="twitter:description" content="One chart. Ten seconds. Is it a real breakout or a fakeout?">
+<meta name="twitter:title" content="Trade Lee — can you read the tape?">
+<meta name="twitter:description" content="One chart. Ten seconds. Take it or fade it.">
 <meta name="twitter:image" content="https://trade-lee.vercel.app/og-image.png">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230b0e14'/%3E%3Cline x1='11' y1='4' x2='11' y2='28' stroke='%2326a69a' stroke-width='2.2'/%3E%3Crect x='7' y='10' width='8' height='10' rx='1' fill='%2326a69a'/%3E%3Cline x1='23' y1='6' x2='23' y2='25' stroke='%23ef5350' stroke-width='2.2'/%3E%3Crect x='19' y='12' width='8' height='7' rx='1' fill='%23ef5350'/%3E%3C/svg%3E">
 <link rel="manifest" href="/manifest.json">
@@ -496,6 +496,11 @@
   .btn.fake { background: linear-gradient(180deg, #f0563f, var(--red-dark)); box-shadow: 0 6px 20px rgba(239,68,68,0.2); }
   .btn.wait { background: linear-gradient(180deg, #8b95a7, #565f6e); box-shadow: 0 6px 20px rgba(139,149,167,0.2); font-size: 0.9rem; }
   .btn:disabled { opacity: 0.45; cursor: default; }
+
+  .decision-prompt {
+    text-align: center; font-size: 0.86rem; font-weight: 600; color: var(--muted);
+    margin: 2px 0 8px; letter-spacing: 0.1px;
+  }
 
   .skip-message {
     text-align: center; padding: 14px 10px; border-radius: 14px;
@@ -1567,6 +1572,7 @@ function renderShell() {
     </div>
     <div class="powerup-bar hidden" id="powerupBar"></div>
     <div class="timer-bar-wrap ${currentMode === "review" ? "hidden" : ""}"><div class="timer-fill" id="timerFill"></div></div>
+    ${(currentMode === "longshortwait" || currentMode === "strategy_pack") ? "" : `<div class="decision-prompt">It just broke the range. Real move or trap?</div>`}
     <div class="buttons-row" id="buttonsRow">
       ${currentMode === "longshortwait" ? `
         <button class="btn real" id="longBtn">LONG</button>
@@ -1575,8 +1581,8 @@ function renderShell() {
       ` : currentMode === "strategy_pack" ? `
         ${currentStrategyPack.buttons.map((b, i) => `<button class="btn ${i === 0 ? "real" : i === currentStrategyPack.buttons.length - 1 ? "fake" : "wait"}" id="spBtn${i}">${b[1]}</button>`).join("")}
       ` : `
-        <button class="btn real" id="realBtn">REAL BREAKOUT</button>
-        <button class="btn fake" id="fakeBtn">FAKEOUT</button>
+        <button class="btn real" id="realBtn">TAKE IT</button>
+        <button class="btn fake" id="fakeBtn">FADE IT</button>
       `}
     </div>
     <div class="skip-message hidden" id="skipMessage">Too slow — the market doesn't wait</div>
@@ -2125,13 +2131,13 @@ function showCoachCard(drill, isCorrect, pnl, isFizzle) {
 
   let outcomeText;
   if (isFizzle) {
-    outcomeText = "No follow-through — sometimes the market just naps 😴";
+    outcomeText = "NO FOLLOW-THROUGH — it just died";
     outcomeEl.className = "coach-outcome neutral";
   } else if (drill.outcome === "real") {
-    outcomeText = `Ran +${drill.extension_multiple}x the range ✅`;
+    outcomeText = `IT RAN ✅ +${drill.extension_multiple}x the range`;
     outcomeEl.className = "coach-outcome " + (isCorrect ? "correct" : "wrong");
   } else {
-    outcomeText = `Failed — back inside in ${drill.reversal_minutes} min ❌`;
+    outcomeText = `TRAPPED ❌ back inside in ${drill.reversal_minutes} min`;
     outcomeEl.className = "coach-outcome " + (isCorrect ? "correct" : "wrong");
   }
   outcomeEl.textContent = outcomeText;
@@ -3066,8 +3072,8 @@ function showChallengeResult() {
     const diff = yourPnl - theirPnl;
     tie = diff === 0;
     youWon = diff > 0;
-    verdict = tie ? `Dead even with ${challenge.creator_name}!`
-      : youWon ? `You beat ${challenge.creator_name} by ${formatMoney(diff)}! 🏆`
+    verdict = tie ? `Dead even with ${challenge.creator_name}.`
+      : youWon ? `You beat ${challenge.creator_name} by ${formatMoney(diff)} 🏆`
       : `${challenge.creator_name} takes it by ${formatMoney(-diff)}.`;
     updateBestSessionPnl(yourPnl);
     updateBestStreakEver(bestStreak);
@@ -3080,8 +3086,8 @@ function showChallengeResult() {
     theirScoreText = `${theirSeconds.toFixed(1)}s (${challenge.accuracy}%)`;
     tie = accuracy === challenge.accuracy && Math.abs(yourSeconds - theirSeconds) < 0.05;
     youWon = !tie && (accuracy !== challenge.accuracy ? accuracy > challenge.accuracy : yourSeconds < theirSeconds);
-    verdict = tie ? `Dead even with ${challenge.creator_name}!`
-      : youWon ? `You beat ${challenge.creator_name}! 🏆`
+    verdict = tie ? `Dead even with ${challenge.creator_name}.`
+      : youWon ? `You beat ${challenge.creator_name} 🏆`
       : `${challenge.creator_name} takes it.`;
     updateSpeedRunBestTime(lastSessionTimeMs, correctCount === totalDrills);
     updateSpeedRunBestAccuracy(accuracy);
@@ -3234,7 +3240,7 @@ function renderReviewEnd() {
       <h2>📕 Review Complete</h2>
       <div class="eod-verdict">${remaining
         ? `${remaining} still on your miss list — every correct answer clears one.`
-        : "Clean sheet — no misses left to review! 🎉"}</div>
+        : "Clean sheet — no misses left to review."}</div>
       <button class="trade-again-btn" id="reviewBackBtn">← Back to start</button>
     </div>
   `;
@@ -3260,8 +3266,8 @@ function renderDailyResultScreen(drill, isCorrect, isFizzle) {
   setDrillInProgress(false);
   clearInterval(window.__countdownInterval);
   const outcomeText = isFizzle
-    ? "No follow-through — sometimes the market just naps 😴"
-    : drill.outcome === "real" ? `Ran +${drill.extension_multiple}x the range` : `Failed — back inside in ${drill.reversal_minutes} min`;
+    ? "NO FOLLOW-THROUGH — it just died"
+    : drill.outcome === "real" ? `IT RAN ✅ +${drill.extension_multiple}x the range` : `TRAPPED ❌ back inside in ${drill.reversal_minutes} min`;
 
   const root = document.getElementById("screenRoot");
   root.innerHTML = `
@@ -3718,7 +3724,7 @@ function renderStartScreen() {
   const showFreezeNotice = !!appState.freezeConsumedPending;
   if (showFreezeNotice) { appState.freezeConsumedPending = false; saveState(); }
 
-  let subhead = "Can you spot the real breakout?";
+  let subhead = "Can you read the tape?";
   if (authReady() && tlIsSignedIn() && tlProfile && (appState.dailyPlayStreak || 0) > 0) {
     const greetDay = alreadyPlayedDaily ? appState.dailyPlayStreak : appState.dailyPlayStreak + 1;
     subhead = `Back for day ${greetDay}, ${escapeHtml(tlProfile.display_name)}?`;
@@ -3730,7 +3736,7 @@ function renderStartScreen() {
       <div class="start-wordmark">📈 Trade Lee</div>
       <div class="start-sub">${subhead}</div>
 
-      ${showFreezeNotice ? `<div class="freeze-notice">🧊 Streak saved by freeze! Your streak didn't reset.</div>` : ""}
+      ${showFreezeNotice ? `<div class="freeze-notice">🧊 Streak saved by freeze. Your streak didn't reset.</div>` : ""}
 
       <div class="start-daily-streak">
         <span>🔥</span> ${appState.dailyPlayStreak || 0} day streak
@@ -3887,7 +3893,7 @@ function generateShareCanvas(mode, data) {
 
   ctx.font = "400 30px Arial, sans-serif";
   ctx.fillStyle = "#8b95a7";
-  ctx.fillText("Can you spot the real breakout?", 540, 1800);
+  ctx.fillText("Can you read the tape?", 540, 1800);
   return canvas;
 }
 function generateAndShareCard(mode, data) {
@@ -3897,7 +3903,7 @@ function generateAndShareCard(mode, data) {
     try {
       const file = new File([blob], fileName, { type: "image/png" });
       if (navigator.canShare && navigator.canShare({ files: [file] })) {
-        await navigator.share({ files: [file], title: "Trade Lee", text: "Can you spot the real breakout?" });
+        await navigator.share({ files: [file], title: "Trade Lee", text: "Can you read the tape?" });
         return;
       }
     } catch (e) {}
