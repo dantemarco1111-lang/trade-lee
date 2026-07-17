@@ -2096,7 +2096,7 @@ function computeLswPnl(drill, choice, isCorrect) {
   return POSITION_SIZE * magnitudePct * (isCorrect ? 1 : -1);
 }
 function lswSubTypeLabel(subType) {
-  return { vwap_pullback: "VWAP pullback", prior_period_test: "Prior-session level test", mid_range_chop: "Mid-range chop" }[subType] || subType;
+  return { vwap_pullback: "VWAP pullback", prior_period_test: "Prior-session level test", mid_range_chop: "Sitting mid-range, no clear edge" }[subType] || subType;
 }
 function showLswCoachCard(drill, choice, isCorrect, pnl) {
   const card = document.getElementById("coachCard");
@@ -2867,7 +2867,7 @@ function renderStrategyPickerScreen() {
       <div class="strategy-section-label">Classical</div>
       <div class="strategy-pack-grid">${classical.map(packCard).join("")}</div>
       <div class="strategy-section-label">ICT / Smart Money Concepts</div>
-      <div class="ict-honesty-banner">⚠️ ${escapeHtml(ICT_HONESTY_BLURB)}</div>
+      <div class="ict-honesty-banner">⚠️ ${escapeHtml(ICT_HONESTY_BLURB)} <a href="/about/" style="color:inherit;text-decoration:underline;">Read our full methodology →</a></div>
       <div class="strategy-pack-grid">${ict.map(packCard).join("")}</div>
       <button class="text-link-btn" id="strategyBackBtn" style="margin:14px 0 24px;">← Back to start</button>
     </div>

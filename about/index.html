@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>About & Methodology — Trade Lee</title>
+<meta name="description" content="How Trade Lee's drills are actually generated, what 'correct' means in each mode, and an honest note on sample sizes and the limits of pattern-matching drills.">
+<meta property="og:title" content="About & Methodology — Trade Lee">
+<meta property="og:description" content="How Trade Lee's drills are actually generated, what 'correct' means in each mode, and an honest note on sample sizes.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://trade-lee.vercel.app/about/">
+<meta property="og:image" content="https://trade-lee.vercel.app/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="About & Methodology — Trade Lee">
+<meta name="twitter:description" content="How the drills are generated, what 'correct' means, and an honest note on sample sizes.">
+<meta name="twitter:image" content="https://trade-lee.vercel.app/og-image.png">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230b0e14'/%3E%3Cline x1='11' y1='4' x2='11' y2='28' stroke='%2326a69a' stroke-width='2.2'/%3E%3Crect x='7' y='10' width='8' height='10' rx='1' fill='%2326a69a'/%3E%3Cline x1='23' y1='6' x2='23' y2='25' stroke='%23ef5350' stroke-width='2.2'/%3E%3Crect x='19' y='12' width='8' height='7' rx='1' fill='%23ef5350'/%3E%3C/svg%3E">
+<link rel="manifest" href="/manifest.json">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta name="theme-color" content="#0b0e14">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@500;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@500;700&display=swap">
+<link rel="stylesheet" href="/theme.css">
+<style>
+  html, body { margin: 0; padding: 0; color: var(--text); font-family: var(--font-body); overflow-x: hidden; -webkit-tap-highlight-color: transparent; min-height: 100vh; }
+  a { color: inherit; }
+  .wrap { max-width: 1100px; margin: 0 auto; padding: 0 20px; }
+  .lesson-icon { margin-bottom: 14px; }
+  .content-card h2 { align-items: flex-start; }
+  .mode-def { background: var(--surface-2); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; margin: 10px 0; }
+  .mode-def strong { color: var(--green); }
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="wrap site-header-inner">
+    <a class="nav-wordmark" href="/">📈 Trade Lee</a>
+    <nav class="nav-links-desktop">
+      <div class="nav-dropdown" id="playDropdown">
+        <button class="nav-dropdown-trigger" type="button">Play <span class="caret">▾</span></button>
+        <div class="nav-dropdown-menu">
+          <a href="/play/?mode=daily">Daily Drill</a>
+          <a href="/play/?mode=practice">Practice</a>
+        </div>
+      </div>
+      <div class="nav-dropdown" id="learnDropdown">
+        <button class="nav-dropdown-trigger" type="button">Learn <span class="caret">▾</span></button>
+        <div class="nav-dropdown-menu">
+          <a href="/academy/">Academy</a>
+          <a href="/risk/">Risk</a>
+          <a href="/strategies/">Strategies</a>
+          <a href="/learn/">Lessons</a>
+          <a href="/about/">About</a>
+        </div>
+      </div>
+      <a href="/funded/">Get Funded</a>
+      <a href="/leaderboard/">Leaderboard</a>
+      <a href="/premium/">Premium <span class="soon-tag">PRO</span></a>
+    </nav>
+    <button class="hamburger-btn" id="hamburgerBtn" aria-label="Open menu">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</header>
+
+<div class="mobile-menu-overlay" id="mobileMenuOverlay">
+  <button class="mobile-menu-close" id="mobileMenuClose" aria-label="Close menu">✕</button>
+  <div class="mobile-menu-label">Play</div>
+  <a href="/play/?mode=daily">Daily Drill</a>
+  <a href="/play/?mode=practice">Practice</a>
+  <div class="mobile-menu-label">Learn</div>
+  <a href="/academy/">Academy</a>
+  <a href="/risk/">Risk</a>
+  <a href="/strategies/">Strategies</a>
+  <a href="/learn/">Lessons</a>
+  <a href="/about/">About</a>
+  <div class="mobile-menu-label">More</div>
+  <a href="/funded/">Get Funded</a>
+  <a href="/leaderboard/">Leaderboard</a>
+  <a href="/premium/">Premium <span class="soon-tag">PRO</span></a>
+</div>
+
+<main class="content-page">
+  <div class="content-hero">
+    <div class="badge">METHODOLOGY</div>
+    <h1>How Trade Lee actually works</h1>
+    <p>No black box. Here's exactly where the drills come from, what "correct" means, and where the honest limits are.</p>
+  </div>
+
+  <section class="content-card card">
+    <h2><span class="card-num">1</span>How drills are generated</h2>
+    <p>Every drill starts from real historical candles — 5-minute (and some 15-minute) bars pulled from actual trading days across stocks/index ETFs, futures, forex, and crypto. Nothing is hand-drawn or randomly generated. When you're judging a chart, you're judging something that really happened on a real trading day.</p>
+    <p>A Python pipeline scans that raw data for each pattern (a consolidation-then-breakout, a VWAP pullback, a fair value gap, and so on) using a fixed, mechanical rule per pattern — not a human eyeballing charts and picking "good" examples. Every one of those rules is written down in plain language in our public <code>DETECTION.md</code> file, including the exact thresholds used. If a rule sounds arbitrary, that's because most of these thresholds genuinely are conventions rather than laws of markets — DETECTION.md says so explicitly wherever that's the case.</p>
+  </section>
+
+  <section class="content-card card">
+    <h2><span class="card-num">2</span>What "correct" means, mode by mode</h2>
+    <div class="mode-def"><strong>Daily Drill / Classic Practice:</strong> "Real" if price extends at least 1x the consolidation range's height beyond the breakout level within the outcome window; "Fake" if it closes back inside the range first.</div>
+    <div class="mode-def"><strong>Long / Short / Wait:</strong> LONG or SHORT is correct if price moves at least 0.75x a fixed reference range in that direction within the window; otherwise WAIT is correct.</div>
+    <div class="mode-def"><strong>Order Execution Trainer:</strong> there's no single "correct" — you're scored on whether your order type's real fill mechanics actually filled your order (limits can miss, stop-limits can gap through), and the resulting R-multiple if it did.</div>
+    <div class="mode-def"><strong>Strategy Packs (hold/fail packs — VWAP Pullback, Supply & Demand, Trend Pullback, Mean Reversion, Range Trading, Liquidity Sweep, Order Blocks):</strong> "Hold" if price continues in the setup's original direction past a target; "Fail" if it closes through the level against that direction first. Full numeric thresholds per pack are in DETECTION.md.</div>
+    <div class="mode-def"><strong>Fair Value Gap:</strong> "Fill" if price later trades back into the 3-candle gap; "No-Fill" if it never does within the window.</div>
+    <div class="mode-def"><strong>Market Structure:</strong> not a prediction — a classification quiz. BOS or CHoCH is determined objectively from swing-high/low sequences at the moment shown, using a fixed pivot rule.</div>
+    <div class="mode-def"><strong>Kill Zones:</strong> also a classification quiz — the correct answer is just the candle's real ET timestamp checked against the stated time windows. No prediction involved.</div>
+    <div class="mode-def"><strong>SMT Divergence:</strong> "Confirms" if the leading instrument (QQQ) reverses back through its prior swing level within the window; "Fails" if it pushes on to a genuine new extreme instead.</div>
+  </section>
+
+  <section class="content-card card">
+    <h2><span class="card-num">3</span>Sample-size honesty</h2>
+    <p>Most Strategy Pack decks are built from roughly 60 days of 5-minute data across a handful of tickers (QQQ, SPY, IWM, DIA for the stocks-based packs). Depending on how common the pattern is, that yields anywhere from a few dozen to a couple hundred qualifying examples before we sample a balanced deck out of them — not thousands, and not enough to be a rigorous statistical study on its own.</p>
+    <p>That's real market data, and every example is something that genuinely happened — but a modest sample from a specific ~2-month window is not the same as a large, multi-year, multi-regime backtest. Treat these drills as reps for pattern recognition, not as proof any given setup has a durable statistical edge.</p>
+  </section>
+
+  <section class="content-card card">
+    <h2><span class="card-num">4</span>On Smart Money Concepts specifically</h2>
+    <p>Our ICT/SMC strategy pack and Academy unit both open with the same honest framing every time: Smart Money Concepts is a discretionary trading framework, not settled or independently validated science. Several of its core ideas map closely onto much older classical technical analysis concepts under new names — market structure resembles Dow Theory, fair value gaps resemble Market Profile's low-volume nodes, order blocks resemble classical supply/demand zones. No independent, peer-reviewed study confirms a standalone statistical edge for any of it.</p>
+    <p>We teach the vocabulary because a huge number of traders encounter these terms and deserve a straight, mechanical explanation of what they actually claim — not because we're asserting the underlying claims about institutional intent are proven. No track records, no guru-worship, anywhere in this app.</p>
+  </section>
+
+  <section class="content-card card">
+    <h2><span class="card-num">!</span>Standing disclaimer</h2>
+    <p>Trade Lee is an educational pattern-recognition game. Nothing in this app is financial advice, and no bankroll, P&L number, or streak here involves real money. Past patterns in historical data are not a guarantee of future market behavior. If you go on to trade with real capital, that decision and its risks are entirely your own.</p>
+  </section>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <div class="footer-wordmark">📈 Trade Lee</div>
+    <div class="footer-tagline">Trade Lee — train your eye. © 2026</div>
+    <div class="footer-links">
+      <a href="#" data-social="tiktok">TikTok</a>
+      <a href="#" data-social="x">X</a>
+      <a href="#" data-social="instagram">Instagram</a>
+      <a href="#" data-social="youtube">YouTube</a>
+    </div>
+    <div class="footer-disclaimer">Educational content, not financial advice.</div>
+  </div>
+</footer>
+
+<script src="/social-links.js"></script>
+<script>
+(function () {
+  const overlay = document.getElementById("mobileMenuOverlay");
+  document.getElementById("hamburgerBtn").onclick = () => overlay.classList.add("open");
+  document.getElementById("mobileMenuClose").onclick = () => overlay.classList.remove("open");
+  overlay.querySelectorAll("a").forEach(a => a.addEventListener("click", () => overlay.classList.remove("open")));
+
+  document.querySelectorAll(".nav-dropdown").forEach(dd => {
+    const trigger = dd.querySelector(".nav-dropdown-trigger");
+    trigger.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const isOpen = dd.classList.contains("open");
+      document.querySelectorAll(".nav-dropdown.open").forEach(o => o.classList.remove("open"));
+      if (!isOpen) dd.classList.add("open");
+    });
+  });
+  document.addEventListener("click", () => {
+    document.querySelectorAll(".nav-dropdown.open").forEach(o => o.classList.remove("open"));
+  });
+})();
+</script>
+</body>
+</html>
