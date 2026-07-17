@@ -162,6 +162,7 @@
     font-family: var(--font-mono); font-size: 0.55rem; font-weight: 700; letter-spacing: 0.3px;
     border-radius: 6px; padding: 2px 5px;
   }
+  .pro-chip.beta-chip { cursor: pointer; }
   .paywall-backdrop {
     position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 999;
     display: flex; align-items: flex-end; justify-content: center;
@@ -181,6 +182,7 @@
   .paywall-features { list-style: none; padding: 0; margin: 0 0 16px; }
   .paywall-features li { padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 0.88rem; display: flex; gap: 8px; }
   .paywall-features li::before { content: "✓"; color: var(--green); font-weight: 700; }
+  .paywall-msg-body { font-size: 0.9rem; color: var(--text-dim); line-height: 1.5; margin: 0 0 16px; }
   .paywall-form { display: flex; gap: 8px; margin-bottom: 10px; }
   .paywall-form input {
     flex: 1; background: var(--surface-2); border: 1px solid var(--border-strong); border-radius: 10px;
@@ -224,7 +226,7 @@
       </div>
       <a href="/funded/">Get Funded</a>
       <a href="/leaderboard/">Leaderboard</a>
-      <a href="/premium/">Premium <span class="soon-tag">PRO</span></a>
+      <a href="/premium/">Pro <span class="soon-tag">BETA</span></a>
     </nav>
     <button class="hamburger-btn" id="hamburgerBtn" aria-label="Open menu">
       <span></span><span></span><span></span>
@@ -246,7 +248,7 @@
   <div class="mobile-menu-label">More</div>
   <a href="/funded/">Get Funded</a>
   <a href="/leaderboard/">Leaderboard</a>
-  <a href="/premium/">Premium <span class="soon-tag">PRO</span></a>
+  <a href="/premium/">Pro <span class="soon-tag">BETA</span></a>
 </div>
 
 <main class="acad-main" id="academyRoot"></main>
@@ -313,6 +315,11 @@ let state = loadState();
 function escapeHtml(str) {
   return String(str).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 }
+
+// No real Pro subscription exists yet (waitlist only) — BETA_FREE unlocks
+// every proOnly unit for the open beta. Flip this single line back to false
+// to restore normal Pro gating once payments actually exist.
+const BETA_FREE = true;
 
 /* ============================= UNIT DATA ============================= */
 const ICT_NOTE = "Smart Money Concepts is a discretionary framework, not settled science. It overlaps classical technical analysis under new names, and no independent study confirms a standalone edge for any of it — we teach the vocabulary honestly, not as gospel.";
@@ -604,9 +611,10 @@ function isUnitUnlocked(i) {
   if (ACADEMY_UNITS[i].proOnly) return true;
   return state.academyProgress.unitsCompleted.includes(ACADEMY_UNITS[i - 1].key);
 }
-// No real Pro subscription exists yet (waitlist only) — proOnly units are
-// always locked for everyone, regardless of sequential progress.
+// proOnly units are Pro-gated for everyone regardless of sequential progress
+// — except BETA_FREE unlocks them all for the open beta.
 function isProLocked(i) {
+  if (BETA_FREE) return false;
   return !!ACADEMY_UNITS[i].proOnly;
 }
 function unitLessonsRead(unitKey) {
@@ -669,18 +677,22 @@ function wireCalcWidget() {
 
 /* ============================= RENDER: PATH ============================= */
 /* ============================= PAYWALL BOTTOM SHEET (Phase 5) ============================= */
-function showPaywallSheet(title, bullets) {
+function showPaywallSheet(title, body, opts) {
+  opts = opts || {};
   const existing = document.getElementById("paywallSheet");
   if (existing) existing.remove();
   const wrap = document.createElement("div");
   wrap.id = "paywallSheet";
   wrap.className = "paywall-backdrop";
+  const bodyHtml = Array.isArray(body)
+    ? `<ul class="paywall-features">${body.map(b => `<li>${escapeHtml(b)}</li>`).join("")}</ul>`
+    : `<p class="paywall-msg-body">${escapeHtml(body)}</p>`;
   wrap.innerHTML = `
     <div class="paywall-sheet">
       <div class="paywall-handle"></div>
-      <div class="paywall-badge">PRO — WAITLIST</div>
+      <div class="paywall-badge">${escapeHtml(opts.badge || "PRO — WAITLIST")}</div>
       <h3>${escapeHtml(title)}</h3>
-      <ul class="paywall-features">${bullets.map(b => `<li>${escapeHtml(b)}</li>`).join("")}</ul>
+      ${bodyHtml}
       <form id="paywallForm" class="paywall-form">
         <input type="email" id="paywallEmail" placeholder="you@email.com" required>
         <button type="submit" class="paywall-join-btn">Join waitlist</button>
@@ -717,8 +729,23 @@ function showPaywallSheet(title, bullets) {
     msgEl.classList.remove("hidden");
   });
 }
+function showBetaInfoSheet() {
+  showPaywallSheet(
+    "Everything's free during beta",
+    "Everything's free while Trade Lee is in beta. Pro launches later — waitlist members lock founding pricing.",
+    { badge: "BETA" }
+  );
+}
+// The sheet is appended to <body> so it can overlay any screen, which means
+// it survives a screen change unless explicitly dismissed — call this at the
+// top of every top-level screen render so a stray sheet never lingers.
+function dismissStrayPaywallSheet() {
+  const el = document.getElementById("paywallSheet");
+  if (el) el.remove();
+}
 
 function renderPath() {
+  dismissStrayPaywallSheet();
   currentView = { screen: "path" };
   const root = document.getElementById("academyRoot");
   const totalCompleted = state.academyProgress.unitsCompleted.length;
@@ -732,6 +759,7 @@ function renderPath() {
       ${ACADEMY_UNITS.map((u, i) => {
         const seqUnlocked = isUnitUnlocked(i);
         const proLocked = isProLocked(i);
+        const betaUnit = !!u.proOnly && BETA_FREE; // would be Pro-gated, free for now
         const completed = state.academyProgress.unitsCompleted.includes(u.key);
         const isCurrent = seqUnlocked && !proLocked && !completed;
         const read = unitLessonsRead(u.key).length;
@@ -739,17 +767,22 @@ function renderPath() {
         // Pro units stay clickable even while "locked" so tapping shows the paywall preview,
         // not a dead button — never a hard interruption, per the freemium plan.
         const clickable = seqUnlocked;
+        const chip = completed ? `<span class="check">✓</span>`
+          : !seqUnlocked ? `<span class="lock">🔒</span>`
+          : proLocked ? `<span class="pro-chip">PRO</span>`
+          : betaUnit ? `<span class="pro-chip beta-chip" data-beta-chip="1">BETA</span>`
+          : "";
         return `
           <button class="unit-card ${cls}" data-unit="${u.key}" data-idx="${i}" ${clickable ? "" : "disabled"}>
             <div class="unit-node">
               ${u.icon}
-              ${completed ? `<span class="check">✓</span>` : !seqUnlocked ? `<span class="lock">🔒</span>` : proLocked ? `<span class="pro-chip">PRO</span>` : ""}
+              ${chip}
             </div>
             <div class="unit-body">
               <div class="unit-num">Unit ${i + 1}</div>
               <div class="unit-title">${escapeHtml(u.title)}</div>
               <div class="unit-desc">${escapeHtml(u.desc)}</div>
-              ${seqUnlocked ? `<div class="unit-progress">${completed ? "Complete ✓" : proLocked ? "Requires Pro" : `${read}/${u.lessons.length} lessons read`}</div>` : ""}
+              ${seqUnlocked ? `<div class="unit-progress">${completed ? "Complete ✓" : proLocked ? "Requires Pro" : betaUnit ? "Free during beta" : `${read}/${u.lessons.length} lessons read`}</div>` : ""}
             </div>
           </button>
         `;
@@ -762,6 +795,9 @@ function renderPath() {
       if (isProLocked(i)) showAcademyProPaywall(ACADEMY_UNITS[i]);
       else renderUnitDetail(btn.dataset.unit);
     };
+  });
+  document.querySelectorAll("[data-beta-chip]").forEach(chip => {
+    chip.onclick = (e) => { e.stopPropagation(); showBetaInfoSheet(); };
   });
 }
 function showAcademyProPaywall(unit) {
@@ -776,6 +812,7 @@ function showAcademyProPaywall(unit) {
 
 /* ============================= RENDER: UNIT DETAIL ============================= */
 function renderUnitDetail(unitKey) {
+  dismissStrayPaywallSheet();
   const unit = ACADEMY_UNITS.find(u => u.key === unitKey);
   currentView = { screen: "unit", unitKey };
   const root = document.getElementById("academyRoot");

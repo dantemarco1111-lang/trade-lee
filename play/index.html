@@ -429,6 +429,8 @@
   .paywall-features { list-style: none; padding: 0; margin: 0 0 16px; }
   .paywall-features li { padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 0.88rem; display: flex; gap: 8px; }
   .paywall-features li::before { content: "✓"; color: #26a69a; font-weight: 700; }
+  .paywall-msg-body { font-size: 0.9rem; color: var(--muted); line-height: 1.5; margin: 0 0 16px; }
+  .pro-chip-inline.beta-chip { background: #f5b400; cursor: pointer; }
   .paywall-form { display: flex; gap: 8px; margin-bottom: 10px; }
   .paywall-form input {
     flex: 1; background: var(--bg, #0b0e14); border: 1px solid var(--border); border-radius: 10px;
@@ -929,6 +931,10 @@ const STRATEGY_PACK_DECISION_SECONDS = 15;
 
 // ---- freemium limits (Phase 5) — no real Pro subscription exists yet
 // (waitlist only), so these apply to everyone until Pro actually launches.
+// BETA_FREE flips every one of them off at once for the open beta — flip
+// this single line back to false to restore normal Pro gating once payments
+// actually exist. All the underlying limit constants/logic stay intact below.
+const BETA_FREE = true;
 const FREE_PRACTICE_SESSIONS_PER_DAY = 3;
 const FREE_ORDER_TRAINER_ROUNDS_PER_DAY = 3;
 const FREE_MISS_REVIEW_LIMIT = 20;
@@ -1451,6 +1457,7 @@ function computePnl(drill, isCorrect, mult) {
 
 /* ============================= GAME SCREEN CHROME ============================= */
 function renderGameScreen(mode) {
+  dismissStrayPaywallSheet();
   currentMode = mode;
   const root = document.getElementById("screenRoot");
   let headerHtml;
@@ -2702,6 +2709,7 @@ function getDailyLimitRemaining(counterField, dateField, limit) {
   return Math.max(0, limit - getDailyLimitUsed(counterField, dateField));
 }
 function dailyLimitNoteText() {
+  if (BETA_FREE) return "Unlimited during beta";
   const style = appState.drillStyle || "classic";
   if (style === "ordertrainer") {
     const left = getDailyLimitRemaining("orderTrainerToday", "orderTrainerDate", FREE_ORDER_TRAINER_ROUNDS_PER_DAY);
@@ -2713,6 +2721,7 @@ function dailyLimitNoteText() {
 // Checks AND consumes one credit atomically. Returns false (and shows the
 // paywall) if the day's free credits are already spent.
 function checkDailyLimitOrPaywall(counterField, dateField, limit, title, bullets) {
+  if (BETA_FREE) return true; // no daily limits during the open beta
   const today = getEtDateString(0);
   if (appState[dateField] !== today) { appState[dateField] = today; appState[counterField] = 0; }
   if (appState[counterField] >= limit) {
@@ -2723,18 +2732,22 @@ function checkDailyLimitOrPaywall(counterField, dateField, limit, title, bullets
   saveState();
   return true;
 }
-function showPaywallSheet(title, bullets) {
+function showPaywallSheet(title, body, opts) {
+  opts = opts || {};
   const existing = document.getElementById("paywallSheet");
   if (existing) existing.remove();
   const wrap = document.createElement("div");
   wrap.id = "paywallSheet";
   wrap.className = "paywall-backdrop";
+  const bodyHtml = Array.isArray(body)
+    ? `<ul class="paywall-features">${body.map(b => `<li>${escapeHtml(b)}</li>`).join("")}</ul>`
+    : `<p class="paywall-msg-body">${escapeHtml(body)}</p>`;
   wrap.innerHTML = `
     <div class="paywall-sheet">
       <div class="paywall-handle"></div>
-      <div class="paywall-badge">PRO — WAITLIST</div>
+      <div class="paywall-badge">${escapeHtml(opts.badge || "PRO — WAITLIST")}</div>
       <h3>${escapeHtml(title)}</h3>
-      <ul class="paywall-features">${bullets.map(b => `<li>${escapeHtml(b)}</li>`).join("")}</ul>
+      ${bodyHtml}
       <form id="paywallForm" class="paywall-form">
         <input type="email" id="paywallEmail" placeholder="you@email.com" required>
         <button type="submit" class="paywall-join-btn">Join waitlist</button>
@@ -2770,6 +2783,20 @@ function showPaywallSheet(title, bullets) {
     }
     msgEl.classList.remove("hidden");
   });
+}
+function showBetaInfoSheet() {
+  showPaywallSheet(
+    "Everything's free during beta",
+    "Everything's free while Trade Lee is in beta. Pro launches later — waitlist members lock founding pricing.",
+    { badge: "BETA" }
+  );
+}
+// The sheet is appended to <body> (so it can overlay any screen), which means
+// it survives a screen change unless explicitly dismissed — call this at the
+// top of every top-level screen render so a stray sheet never lingers.
+function dismissStrayPaywallSheet() {
+  const el = document.getElementById("paywallSheet");
+  if (el) el.remove();
 }
 
 let strategyPackCache = {};
@@ -2845,6 +2872,7 @@ function showStrategyPackEnd() {
 }
 
 function renderStrategyPickerScreen() {
+  dismissStrayPaywallSheet();
   currentMode = null;
   setDrillInProgress(false);
   clearTimer();
@@ -2854,10 +2882,14 @@ function renderStrategyPickerScreen() {
   const classical = STRATEGY_PACKS.filter(p => p.category === "classical");
   const ict = STRATEGY_PACKS.filter(p => p.category === "ict");
   const packCard = (p) => {
-    const isFree = FREE_STRATEGY_PACK_KEYS.includes(p.key);
+    const isCoreFree = FREE_STRATEGY_PACK_KEYS.includes(p.key);
+    const unlocked = isCoreFree || BETA_FREE;
+    const chip = isCoreFree ? "" : BETA_FREE
+      ? ` <span class="pro-chip-inline beta-chip" data-beta-chip="1">BETA — free for now</span>`
+      : ` <span class="pro-chip-inline">PRO</span>`;
     return `
-      <button class="strategy-pack-card ${isFree ? "" : "pro-locked"}" data-pack="${p.key}" data-free="${isFree}">
-        <div class="spc-label">${escapeHtml(p.label)}${isFree ? "" : ` <span class="pro-chip-inline">PRO</span>`}</div>
+      <button class="strategy-pack-card ${unlocked ? "" : "pro-locked"}" data-pack="${p.key}" data-free="${unlocked}">
+        <div class="spc-label">${escapeHtml(p.label)}${chip}</div>
         <div class="spc-desc">${escapeHtml(p.description)}</div>
       </button>
     `;
@@ -2883,6 +2915,9 @@ function renderStrategyPickerScreen() {
       if (btn.dataset.free === "true") startStrategyPackSession(btn.dataset.pack);
       else showStrategyPackProPaywall(btn.dataset.pack);
     };
+  });
+  document.querySelectorAll("[data-beta-chip]").forEach(chip => {
+    chip.onclick = (e) => { e.stopPropagation(); showBetaInfoSheet(); };
   });
   document.getElementById("strategyBackBtn").onclick = renderStartScreen;
 }
@@ -3195,10 +3230,9 @@ async function startMissReview() {
   const content = document.getElementById("content");
   if (content) content.innerHTML = `<div class="loading">Loading your misses…</div>`;
 
-  // Free tier reviews only the most recent FREE_MISS_REVIEW_LIMIT misses —
-  // full history is a Pro benefit. We still store up to 100 (see
-  // recordMissOrClear) so that history is already there once Pro launches.
-  const reviewable = appState.missedDrills.slice(-FREE_MISS_REVIEW_LIMIT);
+  // Free tier normally reviews only the most recent FREE_MISS_REVIEW_LIMIT
+  // misses (full history is a Pro benefit) — BETA_FREE lifts that cap.
+  const reviewable = BETA_FREE ? appState.missedDrills : appState.missedDrills.slice(-FREE_MISS_REVIEW_LIMIT);
   const byPack = {};
   reviewable.forEach(m => {
     const key = (m.market || "stocks") + "|" + (m.timeframe || "5m");
@@ -3710,6 +3744,7 @@ function initCustomizePanel() {
 
 /* ============================= START SCREEN ============================= */
 function renderStartScreen() {
+  dismissStrayPaywallSheet();
   currentMode = null;
   activeChallenge = null;
   setDrillInProgress(false);
@@ -3782,7 +3817,7 @@ function renderStartScreen() {
       <button class="mode-btn speedrun-btn" id="speedRunBtn">⚡ SPEED RUN — 5 DRILLS, 5s EACH</button>
       <button class="text-link-btn" id="strategyPacksBtn" style="padding:4px 0;">🎯 Strategy Packs (ORB, VWAP, ICT/SMC & more)</button>
       <a class="text-link-btn" href="/academy/" style="padding:4px 0;display:block;">📚 Academy — lessons, quizzes &amp; a learning path</a>
-      ${appState.missedDrills.length ? `<button class="text-link-btn" id="missReviewBtn">📕 Review your misses (${Math.min(appState.missedDrills.length, FREE_MISS_REVIEW_LIMIT)}${appState.missedDrills.length > FREE_MISS_REVIEW_LIMIT ? ` of ${appState.missedDrills.length}` : ""})</button>` : ""}
+      ${appState.missedDrills.length ? `<button class="text-link-btn" id="missReviewBtn">📕 Review your misses (${BETA_FREE ? appState.missedDrills.length : Math.min(appState.missedDrills.length, FREE_MISS_REVIEW_LIMIT) + (appState.missedDrills.length > FREE_MISS_REVIEW_LIMIT ? ` of ${appState.missedDrills.length}` : "")})</button>` : ""}
 
       <div class="start-stats-row">
         <div class="mini-stat"><div class="v">${accuracy}%</div><div class="l">Accuracy</div></div>
