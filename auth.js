@@ -148,6 +148,11 @@ async function tlMergeLocalIntoCloud(appState) {
       practice_timer_seconds: mergedTimer,
       onboarding_profile: mergedOnboarding,
       chart_settings: mergedChartSettings,
+      lsw_total_answered: Math.max(appState.lswStats ? appState.lswStats.totalAnswered : 0, existingStats ? existingStats.lsw_total_answered : 0),
+      lsw_total_correct: Math.max(appState.lswStats ? appState.lswStats.totalCorrect : 0, existingStats ? existingStats.lsw_total_correct : 0),
+      ot_total_orders: Math.max(appState.orderTrainerStats ? appState.orderTrainerStats.totalOrders : 0, existingStats ? existingStats.ot_total_orders : 0),
+      ot_total_filled: Math.max(appState.orderTrainerStats ? appState.orderTrainerStats.filled : 0, existingStats ? existingStats.ot_total_filled : 0),
+      ot_total_wins: Math.max(appState.orderTrainerStats ? appState.orderTrainerStats.wins : 0, existingStats ? existingStats.ot_total_wins : 0),
     };
     await sbClient.from("stats").upsert(merged);
 
@@ -213,6 +218,11 @@ async function tlSyncStats(appState) {
       practice_timer_seconds: appState.practiceTimerSeconds || 30,
       onboarding_profile: appState.onboardingProfile || null,
       chart_settings: appState.chartSettings || null,
+      lsw_total_answered: appState.lswStats ? appState.lswStats.totalAnswered : 0,
+      lsw_total_correct: appState.lswStats ? appState.lswStats.totalCorrect : 0,
+      ot_total_orders: appState.orderTrainerStats ? appState.orderTrainerStats.totalOrders : 0,
+      ot_total_filled: appState.orderTrainerStats ? appState.orderTrainerStats.filled : 0,
+      ot_total_wins: appState.orderTrainerStats ? appState.orderTrainerStats.wins : 0,
     });
   } catch (e) {}
 }

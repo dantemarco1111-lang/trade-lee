@@ -356,6 +356,34 @@
     position: absolute; left: 0; right: 26%; height: 0; border-top: 1px dotted rgba(139, 149, 167, 0.5);
   }
 
+  /* ---------- order execution trainer ---------- */
+  .ot-line {
+    position: absolute; left: 0; right: 0; height: 0; z-index: 30; cursor: ns-resize; touch-action: none;
+  }
+  .ot-line::before { content: ""; position: absolute; left: 0; right: 0; top: -8px; height: 16px; }
+  .ot-line.ot-entry { border-top: 2px solid #5c9eff; }
+  .ot-line.ot-stop { border-top: 2px dashed #ef5350; }
+  .ot-line.ot-target { border-top: 2px dashed #26a69a; }
+  .ot-line-label {
+    position: absolute; left: 6px; top: -18px; font-family: var(--font-mono); font-size: 0.65rem; font-weight: 700;
+    padding: 2px 6px; border-radius: 4px; color: #0b0e14; white-space: nowrap;
+  }
+  .ot-entry .ot-line-label { background: #5c9eff; }
+  .ot-stop .ot-line-label { background: #ef5350; }
+  .ot-target .ot-line-label { background: #26a69a; }
+  .ot-ticket { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 12px; margin-top: 8px; }
+  .ot-ticket-row { margin-bottom: 10px; }
+  .ot-ticket-row:last-of-type { margin-bottom: 0; }
+  .ot-hint { font-size: 0.78rem; color: var(--text-dim); margin-bottom: 10px; line-height: 1.4; }
+  .ot-error { font-size: 0.8rem; color: var(--red); margin-bottom: 8px; }
+  .ot-result-card {
+    background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 18px; text-align: center;
+  }
+  .ot-result-r { font-family: var(--font-mono); font-variant-numeric: tabular-nums; font-size: 2.2rem; font-weight: 700; }
+  .ot-result-r.pos { color: var(--green); }
+  .ot-result-r.neg { color: var(--red); }
+  .ot-result-r.neutral { color: var(--muted); }
+
   .legend-row {
     display: flex; flex-wrap: wrap; gap: 10px; justify-content: center;
     font-size: 0.68rem; color: var(--muted); margin: 3px 0 2px;
@@ -404,6 +432,7 @@
   .btn:active { transform: scale(0.94); }
   .btn.real { background: linear-gradient(180deg, #2fbf9f, var(--green-dark)); box-shadow: 0 6px 20px rgba(34,197,94,0.2); }
   .btn.fake { background: linear-gradient(180deg, #f0563f, var(--red-dark)); box-shadow: 0 6px 20px rgba(239,68,68,0.2); }
+  .btn.wait { background: linear-gradient(180deg, #8b95a7, #565f6e); box-shadow: 0 6px 20px rgba(139,149,167,0.2); font-size: 0.9rem; }
   .btn:disabled { opacity: 0.45; cursor: default; }
 
   .skip-message {
@@ -825,6 +854,9 @@ const PRACTICE_TIMER_STEP = 5;
 const PRACTICE_TIMER_WINDOW = 10;
 const PRACTICE_TIMER_SPEEDUP_ACCURACY = 0.60;
 const PRACTICE_TIMER_SLOWDOWN_ACCURACY = 0.45;
+const LSW_DRILLS_PER_SESSION = 10;
+const LSW_RESOLUTION_MULTIPLE = 0.75;
+const LSW_DECISION_SECONDS = 15;
 const STARTING_BANKROLL = 10000;
 const POSITION_SIZE = 5000;
 const PNL_CAP_PCT = 0.03;
@@ -874,6 +906,10 @@ function defaultState() {
     missedDrills: [],
     // chart settings (Phase 1)
     chartSettings: { volumeProfile: false, showVwap: true, showVolume: true },
+    // decision modes (Phase 2)
+    drillStyle: "classic",
+    lswStats: { totalAnswered: 0, totalCorrect: 0 },
+    orderTrainerStats: { totalOrders: 0, filled: 0, wins: 0 },
   };
 }
 function loadPersistedState() {
@@ -1373,6 +1409,27 @@ function renderGameScreen(mode) {
       <div class="statsbar">
         <div class="stat-chip"><span class="stat-value" id="drillCounter">1/${reviewQueue.length}</span><span class="stat-label">Drill</span></div>
       </div>`;
+  } else if (mode === "longshortwait") {
+    headerHtml = `
+      <div class="topbar">
+        <div class="bankroll">
+          <div class="bankroll-label">Long / Short / Wait</div>
+          <div class="bankroll-value" id="bankrollValue">${formatMoney(bankroll)}</div>
+        </div>
+      </div>
+      <div class="statsbar">
+        <div class="stat-chip"><span class="stat-value" id="pnlValue">$0</span><span class="stat-label">Session P&L</span></div>
+        <div class="stat-chip"><span class="stat-value" id="lswCorrectValue">0</span><span class="stat-label">Correct</span></div>
+        <div class="stat-chip"><span class="stat-value" id="drillCounter">1/${LSW_DRILLS_PER_SESSION}</span><span class="stat-label">Drill</span></div>
+      </div>`;
+  } else if (mode === "ordertrainer") {
+    headerHtml = `
+      <div class="topbar">
+        <div class="bankroll">
+          <div class="bankroll-label">Order Execution Trainer</div>
+          <div class="bankroll-value" style="font-size:1.15rem;">Build a real bracket order</div>
+        </div>
+      </div>`;
   } else {
     const label = mode === "daily" ? "Daily Drill" : "Quick Tutorial";
     const sub = mode === "daily" ? getEtDateHuman() : "Learn the basics";
@@ -1396,6 +1453,7 @@ function toggleSound() {
 /* ============================= DRILL SHELL / LOAD ============================= */
 function renderShell() {
   const content = document.getElementById("content");
+  if (currentMode === "ordertrainer") { renderOrderTrainerShell(content); return; }
   content.innerHTML = `
     <div class="chart-card slide-in" id="chartCard">
       <div id="chartContainer"></div>
@@ -1418,8 +1476,14 @@ function renderShell() {
     <div class="powerup-bar hidden" id="powerupBar"></div>
     <div class="timer-bar-wrap ${currentMode === "review" ? "hidden" : ""}"><div class="timer-fill" id="timerFill"></div></div>
     <div class="buttons-row" id="buttonsRow">
-      <button class="btn real" id="realBtn">REAL BREAKOUT</button>
-      <button class="btn fake" id="fakeBtn">FAKEOUT</button>
+      ${currentMode === "longshortwait" ? `
+        <button class="btn real" id="longBtn">LONG</button>
+        <button class="btn wait" id="waitBtn">WAIT</button>
+        <button class="btn fake" id="shortBtn">SHORT</button>
+      ` : `
+        <button class="btn real" id="realBtn">REAL BREAKOUT</button>
+        <button class="btn fake" id="fakeBtn">FAKEOUT</button>
+      `}
     </div>
     <div class="skip-message hidden" id="skipMessage">Too slow — the market doesn't wait</div>
     <div class="coach-card hidden" id="coachCard">
@@ -1429,12 +1493,19 @@ function renderShell() {
       <button class="next-btn" id="nextBtn">Next →</button>
     </div>
   `;
-  document.getElementById("realBtn").onclick = () => answer("real");
-  document.getElementById("fakeBtn").onclick = () => answer("fake");
+  if (currentMode === "longshortwait") {
+    document.getElementById("longBtn").onclick = () => answer("long");
+    document.getElementById("waitBtn").onclick = () => answer("wait");
+    document.getElementById("shortBtn").onclick = () => answer("short");
+  } else {
+    document.getElementById("realBtn").onclick = () => answer("real");
+    document.getElementById("fakeBtn").onclick = () => answer("fake");
+  }
   document.getElementById("nextBtn").onclick = () => {
     clearTimeout(autoAdvanceHandle);
     if (currentMode === "speedrun") advanceOrEndSpeedRun();
     else if (currentMode === "review") advanceOrEndReview();
+    else if (currentMode === "longshortwait") advanceOrEndLsw();
     else advanceOrEnd();
   };
   initChartSettingsUI();
@@ -1591,7 +1662,7 @@ function loadDrill(drill, opts) {
     if (chartSettings.volumeProfile) renderVolumeProfile(drill); else clearVolumeProfile();
   }));
 
-  document.getElementById("formingMarker").classList.remove("hidden");
+  if (currentMode !== "longshortwait") document.getElementById("formingMarker").classList.remove("hidden");
 
   if (!opts.deferTimer) startTimer();
 }
@@ -1601,6 +1672,7 @@ function startTimer() {
   clearTimer();
   const decisionSeconds = currentMode === "speedrun" ? SPEEDRUN_SECONDS
     : currentMode === "practice" ? (appState.practiceTimerSeconds || PRACTICE_TIMER_START)
+    : currentMode === "longshortwait" ? LSW_DECISION_SECONDS
     : DECISION_SECONDS;
   timerDeadline = performance.now() + decisionSeconds * 1000;
   const fill = document.getElementById("timerFill");
@@ -1618,9 +1690,10 @@ function startTimer() {
 }
 function clearTimer() { if (timerHandle) cancelAnimationFrame(timerHandle); timerHandle = null; }
 function disableButtons() {
-  const r = document.getElementById("realBtn"), f = document.getElementById("fakeBtn");
-  if (r) r.disabled = true;
-  if (f) f.disabled = true;
+  ["realBtn", "fakeBtn", "longBtn", "waitBtn", "shortBtn"].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.disabled = true;
+  });
 }
 function hideFormingMarker() {
   const m = document.getElementById("formingMarker");
@@ -1641,12 +1714,15 @@ function handleTimeout() {
     recordPracticeTimerProgress(false);
   } else if (currentMode === "speedrun") {
     sessionResults.push({ pnl: 0, correct: null, skipped: true });
+  } else if (currentMode === "longshortwait") {
+    sessionResults.push({ pnl: 0, correct: null, skipped: true });
   }
   const skipMsg = document.getElementById("skipMessage");
   if (skipMsg) skipMsg.classList.remove("hidden");
   autoAdvanceHandle = setTimeout(() => {
     if (currentMode === "practice") advanceOrEnd();
     else if (currentMode === "speedrun") advanceOrEndSpeedRun();
+    else if (currentMode === "longshortwait") advanceOrEndLsw();
     else if (currentMode === "daily") renderStartScreen();
     else renderStartScreen();
   }, 1500);
@@ -1767,10 +1843,10 @@ function applyResultJuice(isCorrect, isFizzle) {
 
 /* ============================= RESOLUTION ============================= */
 function finishPlayout(drill, choice) {
-  const isCorrect = choice === drill.outcome;
-  const isFizzle = drill.outcome === "fake" && drill.reversal_minutes === null && drill.resolution_bar_index === null;
+  const isCorrect = currentMode === "longshortwait" ? choice === drill.correct_answer : choice === drill.outcome;
+  const isFizzle = currentMode !== "longshortwait" && drill.outcome === "fake" && drill.reversal_minutes === null && drill.resolution_bar_index === null;
 
-  if (currentMode !== "tutorial") recordMissOrClear(drill, isCorrect);
+  if (currentMode !== "tutorial" && currentMode !== "longshortwait") recordMissOrClear(drill, isCorrect);
   applyResultJuice(isCorrect, isFizzle);
 
   if (currentMode === "practice") {
@@ -1813,7 +1889,60 @@ function finishPlayout(drill, choice) {
     showCoachCard(drill, isCorrect, null, isFizzle);
   } else if (currentMode === "review") {
     showCoachCard(drill, isCorrect, null, isFizzle);
+  } else if (currentMode === "longshortwait") {
+    const pnl = computeLswPnl(drill, choice, isCorrect);
+    sessionResults.push({ pnl, correct: isCorrect, skipped: false, choice });
+    appState.lswStats = appState.lswStats || { totalAnswered: 0, totalCorrect: 0 };
+    appState.lswStats.totalAnswered++;
+    if (isCorrect) appState.lswStats.totalCorrect++;
+    saveState();
+    if (authReady()) tlSyncStats(appState);
+
+    const prevBankroll = bankroll, prevSessionPnl = sessionPnl;
+    bankroll += pnl; sessionPnl += pnl;
+    const bankrollEl = document.getElementById("bankrollValue");
+    const pnlEl = document.getElementById("pnlValue");
+    animateNumber(prevBankroll, bankroll, 600, v => bankrollEl.textContent = formatMoney(v));
+    animateNumber(prevSessionPnl, sessionPnl, 600, v => {
+      pnlEl.textContent = formatMoney(v);
+      pnlEl.classList.toggle("pnl-up", v >= 0);
+      pnlEl.classList.toggle("pnl-down", v < 0);
+    });
+    const correctSoFar = sessionResults.filter(r => r.correct === true).length;
+    const correctEl = document.getElementById("lswCorrectValue");
+    if (correctEl) correctEl.textContent = correctSoFar;
+
+    showLswCoachCard(drill, choice, isCorrect, pnl);
   }
+}
+function computeLswPnl(drill, choice, isCorrect) {
+  if (choice === "wait") return isCorrect ? 20 : -15;
+  const refRange = (drill.range_high || 0) - (drill.range_low || 0);
+  const magnitudePct = drill.entry_price > 0 && refRange > 0
+    ? Math.min((LSW_RESOLUTION_MULTIPLE * refRange) / drill.entry_price, PNL_CAP_PCT)
+    : 0.01;
+  return POSITION_SIZE * magnitudePct * (isCorrect ? 1 : -1);
+}
+function lswSubTypeLabel(subType) {
+  return { vwap_pullback: "VWAP pullback", prior_period_test: "Prior-session level test", mid_range_chop: "Mid-range chop" }[subType] || subType;
+}
+function showLswCoachCard(drill, choice, isCorrect, pnl) {
+  const card = document.getElementById("coachCard");
+  const outcomeEl = document.getElementById("coachOutcome");
+  const whyEl = document.getElementById("coachWhy");
+  const pnlEl = document.getElementById("coachPnl");
+
+  const answerLabel = { long: "LONG", short: "SHORT", wait: "WAIT" }[drill.correct_answer] || drill.correct_answer.toUpperCase();
+  outcomeEl.textContent = `${answerLabel} WAS CORRECT ${isCorrect ? "✅" : "❌"}`;
+  outcomeEl.className = "coach-outcome " + (isCorrect ? "correct" : "wrong");
+  const bullets = coachWhyBullets(drill).filter(b => !b.includes("Reference range") && !b.includes("Correct ="));
+  whyEl.innerHTML = renderWhyBullets(bullets.length ? bullets : [lswSubTypeLabel(drill.sub_type) + " setup"]);
+  pnlEl.classList.remove("hidden");
+  pnlEl.textContent = (pnl >= 0 ? "+" : "") + formatMoney(pnl);
+  pnlEl.className = "coach-pnl " + (pnl >= 0 ? "pos" : "neg");
+
+  card.classList.remove("hidden");
+  document.getElementById("buttonsRow").classList.add("hidden");
 }
 
 function showCoachCard(drill, isCorrect, pnl, isFizzle) {
@@ -1961,6 +2090,9 @@ function showEndOfDay() {
   if (isNewBest && sessionPnl > 0) launchConfetti();
 }
 async function startNewPracticeSession() {
+  const style = appState.drillStyle || "classic";
+  if (style === "longshortwait") { await startNewLswSession(); return; }
+  if (style === "ordertrainer") { await startOrderTrainerRound(); return; }
   renderGameScreen("practice");
   const content = document.getElementById("content");
   if (content) content.innerHTML = `<div class="loading">Loading drills…</div>`;
@@ -1977,6 +2109,346 @@ function startNewSession(fixedDeck, sourcePool) {
   document.getElementById("pnlValue").className = "stat-value";
   updateStreakDisplay();
   loadDrill(sessionDeck[sessionIndex]);
+}
+
+/* ============================= LONG / SHORT / WAIT MODE (Phase 2) ============================= */
+let lswPackCache = null;
+async function loadLswPool() {
+  if (lswPackCache) return lswPackCache;
+  try {
+    const res = await fetch("../drills/drills-lsw.json", { cache: "no-store" });
+    if (!res.ok) throw new Error("not found");
+    lswPackCache = await res.json();
+    return lswPackCache;
+  } catch (e) {
+    return null;
+  }
+}
+async function startNewLswSession() {
+  renderGameScreen("longshortwait");
+  const content = document.getElementById("content");
+  if (content) content.innerHTML = `<div class="loading">Loading drills…</div>`;
+  const pool = await loadLswPool();
+  if (!pool || !pool.length) {
+    showToast("Couldn't load Long/Short/Wait drills — try again in a moment.");
+    renderStartScreen();
+    return;
+  }
+  sessionIndex = 0; sessionPnl = 0; bankroll = STARTING_BANKROLL; sessionResults = [];
+  sessionDeck = shuffleArray(pool.slice()).slice(0, LSW_DRILLS_PER_SESSION);
+  document.getElementById("bankrollValue").textContent = formatMoney(bankroll);
+  document.getElementById("pnlValue").textContent = "$0";
+  document.getElementById("pnlValue").className = "stat-value";
+  loadDrill(sessionDeck[sessionIndex]);
+}
+function advanceOrEndLsw() {
+  clearTimeout(autoAdvanceHandle);
+  sessionIndex++;
+  if (sessionIndex >= sessionDeck.length) showLswEnd();
+  else loadDrill(sessionDeck[sessionIndex]);
+}
+function showLswEnd() {
+  setDrillInProgress(false);
+  const content = document.getElementById("content");
+  const correctCount = sessionResults.filter(r => r.correct === true).length;
+  const total = sessionDeck.length;
+  const accuracy = total ? Math.round(100 * correctCount / total) : 0;
+  appState.practiceSessionsCompleted = (appState.practiceSessionsCompleted || 0) + 1;
+  awardTicks(25);
+  saveState();
+  if (authReady()) tlSyncStats(appState);
+
+  content.innerHTML = `
+    <div class="end-of-day">
+      <h2>Long / Short / Wait — Complete</h2>
+      <div class="eod-pnl ${sessionPnl >= 0 ? "pos" : "neg"}">${(sessionPnl >= 0 ? "+" : "")}${formatMoney(sessionPnl)}</div>
+      <div style="color:var(--muted);font-size:0.85rem;margin-bottom:6px;">Session P&L</div>
+      <div class="eod-grid">
+        <div class="cell"><div class="v">${correctCount}/${total}</div><div class="l">Correct</div></div>
+        <div class="cell"><div class="v">${accuracy}%</div><div class="l">Accuracy</div></div>
+        <div class="cell"><div class="v">${appState.lswStats ? appState.lswStats.totalAnswered : 0}</div><div class="l">All-Time</div></div>
+      </div>
+      <div class="eod-verdict">${accuracy >= 60 ? "Solid read on direction — including knowing when to sit out." : "Standing aside is a skill too — review the WAIT calls you missed."}</div>
+      <button class="trade-again-btn" id="lswAgainBtn">RUN IT AGAIN</button>
+      <button class="text-link-btn" id="lswBackBtn">← Back to start</button>
+    </div>
+  `;
+  document.getElementById("lswAgainBtn").onclick = startNewLswSession;
+  document.getElementById("lswBackBtn").onclick = renderStartScreen;
+}
+
+/* ============================= ORDER EXECUTION TRAINER (Phase 2) ============================= */
+const ORDER_TYPE_INFO = [
+  ["market", "Market", "Fills now at whatever price is available"],
+  ["limit", "Limit", "Fills at your price or better — may never fill if price doesn't reach it"],
+  ["stop", "Stop", "Triggers a market order once price reaches your level"],
+  ["stoplimit", "Stop-Limit", "Triggers a limit order at your level — can miss the fill if price gaps past it"],
+];
+let otDirection = "long";
+let otOrderType = "market";
+let otEntryPrice = null, otStopPrice = null, otTargetPrice = null;
+let otDrill = null;
+
+function renderOrderTrainerShell(content) {
+  content.innerHTML = `
+    <div class="chart-card slide-in" id="chartCard">
+      <div id="chartContainer"></div>
+      <div class="volume-profile-layer hidden" id="volumeProfileLayer"></div>
+      <button class="chart-settings-gear" id="chartSettingsGear" aria-label="Chart settings">⚙</button>
+      <div class="chart-settings-panel hidden" id="chartSettingsPanel">
+        <label><input type="checkbox" id="settingVolumeProfile"> Volume Profile</label>
+        <label><input type="checkbox" id="settingVwap"> VWAP</label>
+        <label><input type="checkbox" id="settingVolume"> Volume</label>
+      </div>
+      <div class="ot-line ot-target hidden" id="otTargetLine"><span class="ot-line-label">TARGET</span></div>
+      <div class="ot-line ot-entry hidden" id="otEntryLine"><span class="ot-line-label">ENTRY</span></div>
+      <div class="ot-line ot-stop hidden" id="otStopLine"><span class="ot-line-label">STOP</span></div>
+    </div>
+    <div class="legend-row">
+      <span><span class="swatch" style="background:#c792ea"></span>VWAP</span>
+    </div>
+    <div class="ot-ticket" id="otTicket">
+      <div class="ot-ticket-row">
+        <div class="customize-pills" id="otDirectionPills">
+          <button class="pill-btn ${otDirection === "long" ? "active" : ""}" data-dir="long">LONG</button>
+          <button class="pill-btn ${otDirection === "short" ? "active" : ""}" data-dir="short">SHORT</button>
+        </div>
+      </div>
+      <div class="ot-ticket-row">
+        <div class="customize-pills" id="otOrderTypePills"></div>
+      </div>
+      <div class="ot-error hidden" id="otError"></div>
+      <div class="ot-hint">Drag the ENTRY, STOP, and TARGET lines on the chart to set your bracket, then place the order.</div>
+      <button class="mode-btn practice-btn" id="otPlaceBtn">PLACE ORDER</button>
+      <button class="text-link-btn" id="otSkipBtn">← Back to start</button>
+    </div>
+  `;
+  document.getElementById("otOrderTypePills").innerHTML = ORDER_TYPE_INFO.map(([key, label, tip]) =>
+    `<button class="pill-btn ${otOrderType === key ? "active" : ""}" data-type="${key}" title="${escapeHtml(tip)}">${label}</button>`
+  ).join("");
+  document.querySelectorAll("#otDirectionPills .pill-btn").forEach(btn => {
+    btn.onclick = () => {
+      otDirection = btn.dataset.dir;
+      document.querySelectorAll("#otDirectionPills .pill-btn").forEach(b => b.classList.toggle("active", b === btn));
+      resetOtLinesToDefault();
+    };
+  });
+  document.querySelectorAll("#otOrderTypePills .pill-btn").forEach(btn => {
+    btn.onclick = () => {
+      otOrderType = btn.dataset.type;
+      document.querySelectorAll("#otOrderTypePills .pill-btn").forEach(b => b.classList.toggle("active", b === btn));
+    };
+  });
+  document.getElementById("otPlaceBtn").onclick = placeOrder;
+  document.getElementById("otSkipBtn").onclick = renderStartScreen;
+  initChartSettingsUI();
+  ["otEntryLine", "otStopLine", "otTargetLine"].forEach(id => makeOtLineDraggable(document.getElementById(id)));
+}
+
+function makeOtLineDraggable(lineEl) {
+  if (!lineEl) return;
+  let dragging = false;
+  lineEl.addEventListener("pointerdown", (e) => {
+    dragging = true;
+    try { lineEl.setPointerCapture(e.pointerId); } catch (err) {}
+  });
+  lineEl.addEventListener("pointermove", (e) => {
+    if (!dragging || !candleSeries) return;
+    const rect = document.getElementById("chartCard").getBoundingClientRect();
+    const y = Math.max(0, Math.min(rect.height, e.clientY - rect.top));
+    lineEl.style.top = y + "px";
+    const price = candleSeries.coordinateToPrice(y);
+    if (price !== null) storeOtLinePrice(lineEl.dataset.role || lineEl.id, price);
+  });
+  lineEl.addEventListener("pointerup", (e) => {
+    dragging = false;
+    try { lineEl.releasePointerCapture(e.pointerId); } catch (err) {}
+  });
+}
+function storeOtLinePrice(idOrRole, price) {
+  if (idOrRole === "otEntryLine") otEntryPrice = price;
+  else if (idOrRole === "otStopLine") otStopPrice = price;
+  else if (idOrRole === "otTargetLine") otTargetPrice = price;
+}
+function resetOtLinesToDefault() {
+  if (!otDrill || !candleSeries) return;
+  const lastClose = otDrill.candles[otDrill.candles.length - 1].close;
+  const refRange = (otDrill.range_high && otDrill.range_low) ? (otDrill.range_high - otDrill.range_low) : lastClose * 0.005;
+  const offset = Math.max(refRange * 0.6, lastClose * 0.002);
+  otEntryPrice = lastClose;
+  if (otDirection === "long") { otStopPrice = lastClose - offset; otTargetPrice = lastClose + offset * 1.5; }
+  else { otStopPrice = lastClose + offset; otTargetPrice = lastClose - offset * 1.5; }
+  positionOtLines();
+}
+function positionOtLines() {
+  if (!candleSeries) return;
+  const map = [["otEntryLine", otEntryPrice], ["otStopLine", otStopPrice], ["otTargetLine", otTargetPrice]];
+  map.forEach(([id, price]) => {
+    const el = document.getElementById(id);
+    if (!el || price === null) return;
+    const y = candleSeries.priceToCoordinate(price);
+    if (y === null) return;
+    el.style.top = y + "px";
+    el.classList.remove("hidden");
+  });
+}
+async function startOrderTrainerRound() {
+  renderGameScreen("ordertrainer");
+  const content = document.getElementById("content");
+  if (content) content.innerHTML = `<div class="loading">Loading a setup…</div>`;
+  const pool = await resolvePracticePool(); // Order Trainer reuses the classic breakout dataset, filtered by market/session/timeframe
+  otDrill = pool[Math.floor(Math.random() * pool.length)];
+  currentDrill = otDrill;
+  setDrillInProgress(true);
+  renderShell();
+
+  if (chart) { try { chart.remove(); } catch (e) {} chart = null; }
+  const container = document.getElementById("chartContainer");
+  initChart(container);
+  const candleData = otDrill.candles.map(c => ({ time: toEasternChartTime(c.time), open: c.open, high: c.high, low: c.low, close: c.close }));
+  const volumeData = otDrill.candles.map(c => ({ time: toEasternChartTime(c.time), value: c.volume, color: c.close >= c.open ? "rgba(38,166,154,0.7)" : "rgba(239,83,80,0.7)" }));
+  candleSeries.setData(candleData);
+  volumeSeries.setData(volumeData);
+  vwapSeries.setData(otDrill.vwap.slice(0, otDrill.candles.length).map(v => ({ time: toEasternChartTime(v.time), value: v.value })));
+  const chartSettings = appState.chartSettings || { showVwap: true, showVolume: true };
+  vwapSeries.applyOptions({ visible: chartSettings.showVwap !== false });
+  applyVolumePaneVisibility(chartSettings.showVolume !== false);
+  chart.timeScale().scrollToRealTime();
+
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    resetOtLinesToDefault();
+  }));
+}
+function validateOtOrder() {
+  if (otEntryPrice === null || otStopPrice === null || otTargetPrice === null) return "Set all three lines first.";
+  if (otDirection === "long") {
+    if (otStopPrice >= otEntryPrice) return "For a LONG, your stop must be below your entry.";
+    if (otTargetPrice <= otEntryPrice) return "For a LONG, your target must be above your entry.";
+  } else {
+    if (otStopPrice <= otEntryPrice) return "For a SHORT, your stop must be above your entry.";
+    if (otTargetPrice >= otEntryPrice) return "For a SHORT, your target must be below your entry.";
+  }
+  return null;
+}
+function runOrderTrainerFill(drill) {
+  const dir = otDirection, orderType = otOrderType;
+  const entryLevel = otEntryPrice, stop = otStopPrice, target = otTargetPrice;
+  const playout = drill.playout_candles || [];
+  const lastClose = drill.candles[drill.candles.length - 1].close;
+
+  let filled = false, fillPrice = null, fillIndex = -1;
+  if (orderType === "market") {
+    filled = true; fillPrice = lastClose; fillIndex = -1;
+  } else {
+    for (let i = 0; i < playout.length; i++) {
+      const c = playout[i];
+      if (orderType === "limit") {
+        if (dir === "long" && c.low <= entryLevel) { filled = true; fillPrice = entryLevel; fillIndex = i; }
+        else if (dir === "short" && c.high >= entryLevel) { filled = true; fillPrice = entryLevel; fillIndex = i; }
+        if (filled) break;
+      } else if (orderType === "stop") {
+        if (dir === "long" && c.high >= entryLevel) { filled = true; fillPrice = entryLevel; fillIndex = i; }
+        else if (dir === "short" && c.low <= entryLevel) { filled = true; fillPrice = entryLevel; fillIndex = i; }
+        if (filled) break;
+      } else if (orderType === "stoplimit") {
+        if (dir === "long" && c.high >= entryLevel) { if (c.open <= entryLevel) { filled = true; fillPrice = entryLevel; fillIndex = i; } break; }
+        if (dir === "short" && c.low <= entryLevel) { if (c.open >= entryLevel) { filled = true; fillPrice = entryLevel; fillIndex = i; } break; }
+      }
+    }
+  }
+
+  if (!filled) return { filled: false, dir, orderType };
+
+  let exitPrice = null, exitReason = null;
+  const startIdx = orderType === "market" ? 0 : fillIndex + 1;
+  for (let i = startIdx; i < playout.length; i++) {
+    const c = playout[i];
+    if (dir === "long") {
+      if (c.low <= stop) { exitPrice = stop; exitReason = "stop"; break; }
+      if (c.high >= target) { exitPrice = target; exitReason = "target"; break; }
+    } else {
+      if (c.high >= stop) { exitPrice = stop; exitReason = "stop"; break; }
+      if (c.low <= target) { exitPrice = target; exitReason = "target"; break; }
+    }
+  }
+  if (exitPrice === null) {
+    exitPrice = playout.length ? playout[playout.length - 1].close : fillPrice;
+    exitReason = "time";
+  }
+
+  const risk = Math.abs(fillPrice - stop);
+  const reward = dir === "long" ? (exitPrice - fillPrice) : (fillPrice - exitPrice);
+  const rMultiple = risk > 0 ? reward / risk : 0;
+  return { filled: true, dir, orderType, fillPrice, stop, target, exitPrice, exitReason, rMultiple };
+}
+function placeOrder() {
+  const err = validateOtOrder();
+  const errEl = document.getElementById("otError");
+  if (err) { errEl.textContent = err; errEl.classList.remove("hidden"); return; }
+  errEl.classList.add("hidden");
+  document.getElementById("otPlaceBtn").disabled = true;
+  document.querySelectorAll(".ot-line").forEach(el => el.style.pointerEvents = "none");
+
+  const result = runOrderTrainerFill(otDrill);
+  const playoutCandles = otDrill.playout_candles || [];
+  let i = 0;
+  function stepFn() {
+    if (i >= playoutCandles.length) { finishOrderTrainerRound(result); return; }
+    const c = playoutCandles[i];
+    const vwapIdx = otDrill.candles.length + i;
+    candleSeries.update({ time: toEasternChartTime(c.time), open: c.open, high: c.high, low: c.low, close: c.close });
+    volumeSeries.update({ time: toEasternChartTime(c.time), value: c.volume, color: c.close >= c.open ? "rgba(38,166,154,0.7)" : "rgba(239,83,80,0.7)" });
+    if (vwapIdx < otDrill.vwap.length) vwapSeries.update({ time: toEasternChartTime(otDrill.vwap[vwapIdx].time), value: otDrill.vwap[vwapIdx].value });
+    playTick();
+    chart.timeScale().scrollToRealTime();
+    positionOtLines();
+    i++;
+    playoutHandle = setTimeout(stepFn, 350);
+  }
+  stepFn();
+}
+function otOrderTypeLabel(t) { return { market: "Market", limit: "Limit", stop: "Stop", stoplimit: "Stop-Limit" }[t] || t; }
+function finishOrderTrainerRound(result) {
+  setDrillInProgress(false);
+  appState.orderTrainerStats = appState.orderTrainerStats || { totalOrders: 0, filled: 0, wins: 0 };
+  appState.orderTrainerStats.totalOrders++;
+  if (result.filled) {
+    appState.orderTrainerStats.filled++;
+    if (result.rMultiple > 0) appState.orderTrainerStats.wins++;
+    awardTicks(10 + (result.rMultiple > 0 ? 10 : 0));
+  } else {
+    awardTicks(5);
+  }
+  saveState();
+  if (authReady()) tlSyncStats(appState);
+
+  const content = document.getElementById("content");
+  let bodyHtml;
+  if (!result.filled) {
+    bodyHtml = `
+      <div class="ot-result-r neutral">NO FILL</div>
+      <p style="color:var(--muted);margin:10px 0 0;">Your ${otOrderTypeLabel(result.orderType)} order never filled — price ran without you.
+      ${result.orderType === "limit" ? "Sometimes paying up (a market order) beats being cheap." : "A stop-limit can miss the fill entirely if price gaps past your level — that's the tradeoff for price control."}</p>
+    `;
+  } else {
+    const rText = (result.rMultiple >= 0 ? "+" : "") + result.rMultiple.toFixed(2) + "R";
+    const cls = result.rMultiple > 0 ? "pos" : result.rMultiple < 0 ? "neg" : "neutral";
+    const reasonText = result.exitReason === "target" ? "Target hit ✅" : result.exitReason === "stop" ? "Stopped out ❌" : "Time exit — window ended before stop or target";
+    bodyHtml = `
+      <div class="ot-result-r ${cls}">${rText}</div>
+      <p style="color:var(--muted);margin:10px 0 0;">${reasonText} · filled at ${result.fillPrice.toFixed(2)}, exited at ${result.exitPrice.toFixed(2)}</p>
+    `;
+  }
+  content.innerHTML = `
+    <div class="ot-result-card">
+      <h2 style="font-family:var(--font-display);margin:0 0 14px;">Order Result</h2>
+      ${bodyHtml}
+      <button class="trade-again-btn" id="otAgainBtn" style="margin-top:18px;">TRY ANOTHER SETUP</button>
+      <button class="text-link-btn" id="otBackBtn">← Back to start</button>
+    </div>
+  `;
+  document.getElementById("otAgainBtn").onclick = startOrderTrainerRound;
+  document.getElementById("otBackBtn").onclick = renderStartScreen;
 }
 
 /* ============================= SPEED RUN MODE ============================= */
@@ -2727,7 +3199,49 @@ function renderTimeframePills() {
     };
   });
 }
+const DRILL_STYLE_OPTIONS = [
+  ["classic", "Classic"],
+  ["longshortwait", "Long/Short/Wait"],
+  ["ordertrainer", "Order Trainer"],
+];
+function renderDrillStylePills() {
+  const wrap = document.getElementById("drillStylePills");
+  if (!wrap) return;
+  const style = appState.drillStyle || "classic";
+  wrap.innerHTML = DRILL_STYLE_OPTIONS.map(([key, label]) =>
+    `<button class="pill-btn ${style === key ? "active" : ""}" data-style="${key}">${label}</button>`
+  ).join("");
+  wrap.querySelectorAll(".pill-btn").forEach(btn => {
+    btn.onclick = () => {
+      appState.drillStyle = btn.dataset.style;
+      saveState();
+      renderDrillStylePills();
+      applyDrillStyleGroupVisibility();
+      updatePracticeButtonLabel();
+    };
+  });
+  applyDrillStyleGroupVisibility();
+}
+function practiceButtonLabel() {
+  const style = appState.drillStyle || "classic";
+  return style === "longshortwait" ? "PRACTICE — LONG / SHORT / WAIT"
+    : style === "ordertrainer" ? "PRACTICE — ORDER TRAINER"
+    : "PRACTICE — 10 DRILL SESSION";
+}
+function updatePracticeButtonLabel() {
+  const btn = document.getElementById("practiceBtn");
+  if (btn) btn.textContent = practiceButtonLabel();
+}
+function applyDrillStyleGroupVisibility() {
+  const style = appState.drillStyle || "classic";
+  const showMarketGroups = style === "classic" || style === "ordertrainer";
+  ["marketGroup", "sessionGroup", "timeframeGroup"].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.classList.toggle("hidden", !showMarketGroups);
+  });
+}
 function initCustomizePanel() {
+  renderDrillStylePills();
   renderMarketPills();
   renderSessionPills();
   renderTimeframePills();
@@ -2787,14 +3301,18 @@ function renderStartScreen() {
         <button class="customize-toggle" id="customizeToggle">⚙ Customize your drills <span class="customize-caret">▾</span></button>
         <div class="customize-body hidden" id="customizeBody">
           <div class="customize-group">
+            <div class="customize-label">Drill Style</div>
+            <div class="customize-pills" id="drillStylePills"></div>
+          </div>
+          <div class="customize-group" id="marketGroup">
             <div class="customize-label">Market</div>
             <div class="customize-pills" id="marketPills"></div>
           </div>
-          <div class="customize-group">
+          <div class="customize-group" id="sessionGroup">
             <div class="customize-label">Session</div>
             <div class="customize-pills" id="sessionPills"></div>
           </div>
-          <div class="customize-group">
+          <div class="customize-group" id="timeframeGroup">
             <div class="customize-label">Timeframe</div>
             <div class="customize-pills" id="timeframePills"></div>
           </div>
@@ -2807,7 +3325,7 @@ function renderStartScreen() {
         </div>
       </div>
 
-      <button class="mode-btn practice-btn" id="practiceBtn">PRACTICE — 10 DRILL SESSION</button>
+      <button class="mode-btn practice-btn" id="practiceBtn">${practiceButtonLabel()}</button>
       <button class="mode-btn speedrun-btn" id="speedRunBtn">⚡ SPEED RUN — 5 DRILLS, 5s EACH</button>
       ${appState.missedDrills.length ? `<button class="text-link-btn" id="missReviewBtn">📕 Review your misses (${appState.missedDrills.length})</button>` : ""}
 
@@ -2998,6 +3516,8 @@ async function initAccountSync() {
               appState.practiceTimerSeconds = result.merged.practice_timer_seconds || PRACTICE_TIMER_START;
               if (result.merged.onboarding_profile) appState.onboardingProfile = result.merged.onboarding_profile;
               if (result.merged.chart_settings) appState.chartSettings = result.merged.chart_settings;
+              appState.lswStats = { totalAnswered: result.merged.lsw_total_answered || 0, totalCorrect: result.merged.lsw_total_correct || 0 };
+              appState.orderTrainerStats = { totalOrders: result.merged.ot_total_orders || 0, filled: result.merged.ot_total_filled || 0, wins: result.merged.ot_total_wins || 0 };
               appState.dailyPlayStreak = recomputed.dailyPlayStreak;
               appState.dailyWinStreak = recomputed.dailyWinStreak;
               if (recomputed.lastDailyDate) appState.lastDailyDate = recomputed.lastDailyDate;

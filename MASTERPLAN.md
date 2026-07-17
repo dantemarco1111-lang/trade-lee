@@ -40,21 +40,46 @@ Status legend: `[ ]` not started · `[~]` in progress · `[x]` done and verified
       run/challenge all regression-checked with the new chart code, zero console
       errors.
 
-## PHASE 2: Decision Modes — beyond real/fake
-- [ ] Mode framework so a drill can ask different questions; "Drill style" selector
-      on the practice screen.
-- [ ] CLASSIC: existing real breakout/fakeout, unchanged.
-- [ ] LONG / SHORT / WAIT mode: pauses at decision moments beyond breakouts
-      (pullbacks to VWAP, prior-day level tests, mid-range chop). WAIT is correct
-      when price fails to move 0.75x the reference range in either direction within
-      the window. Generator labels each scenario including genuine wait-scenarios
-      (~30% of the deck).
-- [ ] Order Execution Trainer mode: interactive order-ticket simulator — order type
-      picker (MARKET/LIMIT/STOP/STOP-LIMIT with plain-language tooltips), drag lines
-      on the chart for entry/stop/take-profit (bracket/OCO explained), honest
-      fill/no-fill mechanics (limits can miss, stops can gap), scored on R-multiple
-      + order-logic correctness.
-- [ ] Each mode tracks its own stats, synced to cloud. Daily drill stays CLASSIC only.
+## PHASE 2: Decision Modes — beyond real/fake — DONE
+- [x] Mode framework + "Drill style" selector (Classic/Long-Short-Wait/Order
+      Trainer pills) on the practice customize panel; Market/Session/Timeframe
+      groups stay visible for Classic + Order Trainer, hidden for LSW (its own
+      dedicated stocks-only deck).
+- [x] CLASSIC: existing real breakout/fakeout, unchanged.
+- [x] LONG / SHORT / WAIT mode: generate_drills.py's find_lsw_scenarios_in_pack()
+      detects 3 scenario sub-types (VWAP pullback, prior-period test, mid-range
+      chop) sharing a 0.75x-reference-range resolution rule; WAIT is correct when
+      price fails to move that much either direction within the window. New
+      drills-lsw.json (60 stocks/5m drills, 21 long/21 short/18 wait — ~30% wait
+      as required). 15s decision timer, own P&L (WAIT correct=+$20/-$15, else
+      scaled to 0.75x range), own stats (lswStats), Ticks on session completion.
+- [x] Order Execution Trainer mode: renderOrderTrainerShell() draws 3 pointer-events
+      draggable lines (entry/stop/target) over the classic breakout chart, synced
+      to the price scale every playout tick via priceToCoordinate/coordinateToPrice;
+      order-ticket panel with direction (LONG/SHORT) and order-type
+      (MARKET/LIMIT/STOP/STOP-LIMIT, each with a plain-language tooltip) pills.
+      runOrderTrainerFill() simulates honest fill mechanics per type (limits can
+      miss entirely, stop-limits can fail to fill if price gaps past the limit)
+      and scores filled trades on R-multiple (reward/risk); validateOtOrder()
+      rejects illogical brackets (e.g. a long's stop above its entry) before
+      submission. Reuses the classic breakout dataset via resolvePracticePool()
+      so it respects the Market/Session/Timeframe pickers.
+- [x] Each mode tracks its own stats (lswStats, orderTrainerStats), MAX-merged
+      into Supabase on sign-in/sync (migrations: phase2-decision-modes-schema.sql,
+      phase2-order-trainer-schema.sql). Daily drill stays CLASSIC only.
+- [x] Verified live in-browser: LSW full 10-drill session incl. a WAIT-correct
+      scenario; Order Trainer market fill+loss, limit no-fill, short+target-hit
+      win (R-multiple math checked by hand), invalid-bracket validation error,
+      direction/order-type selection persisting correctly across rounds, 375px
+      mobile layout. Caught and fixed two real bugs found only through this live
+      testing: (1) LSW's timer/timeout fell through to the generic 10s duration
+      and skipped the WHY card on timeout instead of dispatching to
+      advanceOrEndLsw(); (2) the practice-button label and the Order Trainer
+      direction pills' "active" class were hardcoded at render time instead of
+      reading appState.drillStyle/otDirection, so switching styles or completing
+      a round didn't visually update them. Also added the Ticks award LSW's
+      session-end screen was missing (classic practice awards 25; LSW now does
+      too), for parity with the rest of the app's power-ups economy.
 
 ## PHASE 3: Strategy Packs — including ICT/SMC
 - [ ] DETECTION.md created documenting every pack's detection rule in plain,

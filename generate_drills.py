@@ -347,6 +347,204 @@ def _within_minutes(hhmm_a, hhmm_b, max_minutes):
     return abs((ha * 60 + ma) - (hb * 60 + mb)) <= max_minutes
 
 
+# ============================================================
+# LONG / SHORT / WAIT scenario detection (Phase 2)
+# ============================================================
+LSW_REFERENCE_BARS = 9
+LSW_RESOLUTION_MULTIPLE = 0.75   # correct direction = price moves >= this x the reference range
+LSW_VWAP_PROXIMITY_PCT = 0.0015
+LSW_COOLDOWN_BARS = 10
+
+
+def find_lsw_scenarios_in_pack(df, symbol, pack_key, pack_cfg, outcome_window_bars):
+    scenarios = []
+    for session_key, start_str, end_str in pack_cfg["sessions"]:
+        instances = split_into_session_instances(df, start_str, end_str)
+        for inst_i, (label, period_df) in enumerate(instances):
+            n = len(period_df)
+            if n < LSW_REFERENCE_BARS + 5:
+                continue
+            highs = period_df["High"].values
+            lows = period_df["Low"].values
+            closes = period_df["Close"].values
+            times = period_df.index
+
+            prior_period_stats = None
+            if inst_i > 0:
+                _, prev_df = instances[inst_i - 1]
+                if not prev_df.empty:
+                    prior_period_stats = {"high": prev_df["High"].max(), "low": prev_df["Low"].min()}
+
+            # Running VWAP for this period (session-scoped, same convention as compute_context).
+            typical_price = (period_df["High"] + period_df["Low"] + period_df["Close"]) / 3
+            if pack_cfg["has_volume"]:
+                weight = period_df["Volume"]
+                vwap_running = (typical_price * weight).cumsum() / weight.cumsum().replace(0, np.nan)
+            else:
+                vwap_running = typical_price.expanding().mean()
+            vwap_vals = vwap_running.values
+
+            j = LSW_REFERENCE_BARS
+            while j < n - 1:
+                window_hi = highs[j - LSW_REFERENCE_BARS + 1: j + 1].max()
+                window_lo = lows[j - LSW_REFERENCE_BARS + 1: j + 1].min()
+                ref_range = window_hi - window_lo
+                if ref_range <= 0:
+                    j += 1
+                    continue
+
+                sub_type = None
+                # 1) VWAP pullback: close is now near VWAP after being clearly away from it a few bars ago.
+                if not math.isnan(vwap_vals[j]) and not math.isnan(vwap_vals[j - 3]):
+                    now_dist = abs(closes[j] - vwap_vals[j]) / closes[j]
+                    was_dist = abs(closes[j - 3] - vwap_vals[j - 3]) / closes[j - 3]
+                    if now_dist < LSW_VWAP_PROXIMITY_PCT and was_dist > now_dist * 2.5:
+                        sub_type = "vwap_pullback"
+                # 2) Prior-period level test.
+                if sub_type is None and prior_period_stats is not None:
+                    if prior_period_stats["high"] > 0 and abs(closes[j] - prior_period_stats["high"]) / closes[j] < PRIOR_PERIOD_PROXIMITY_PCT:
+                        sub_type = "prior_period_test"
+                    elif prior_period_stats["low"] > 0 and abs(closes[j] - prior_period_stats["low"]) / closes[j] < PRIOR_PERIOD_PROXIMITY_PCT:
+                        sub_type = "prior_period_test"
+                # 3) Mid-range chop: sitting near the midpoint of the recent range.
+                if sub_type is None:
+                    range_mid = (window_hi + window_lo) / 2
+                    if abs(closes[j] - range_mid) / ref_range < 0.25:
+                        sub_type = "mid_range_chop"
+
+                if sub_type is None:
+                    j += 1
+                    continue
+
+                decision_idx = times[j]
+                entry_price = closes[j]
+                target_up = entry_price + LSW_RESOLUTION_MULTIPLE * ref_range
+                target_down = entry_price - LSW_RESOLUTION_MULTIPLE * ref_range
+                forward_end = min(j + outcome_window_bars, n - 1)
+                correct_answer, resolution_bar_index = "wait", None
+                for k in range(j + 1, forward_end + 1):
+                    if highs[k] >= target_up:
+                        correct_answer, resolution_bar_index = "long", k - j - 1
+                        break
+                    if lows[k] <= target_down:
+                        correct_answer, resolution_bar_index = "short", k - j - 1
+                        break
+
+                playout_end = min(j + 1 + outcome_window_bars, n)
+                full_loc = df.index.get_loc(decision_idx)
+                context_start = max(0, full_loc - MIN_CONTEXT_BARS + 1)
+                chart_df = df.iloc[context_start: full_loc + 1]
+                playout_df = period_df.iloc[j + 1: playout_end]
+                vwap_series = vwap_running.iloc[: j + 1 + outcome_window_bars]
+
+                scenarios.append({
+                    "symbol": symbol, "pack": pack_key, "session": session_key, "period_label": label,
+                    "sub_type": sub_type, "correct_answer": correct_answer,
+                    "resolution_bar_index": resolution_bar_index,
+                    "decision_ts": decision_idx, "entry_price": round(float(entry_price), 6),
+                    "range_high": window_hi, "range_low": window_lo,
+                    "chart_df": chart_df, "playout_df": playout_df, "vwap_series": vwap_series,
+                })
+
+                j += LSW_COOLDOWN_BARS
+    return scenarios
+
+
+def compute_lsw_context(s, pack_cfg):
+    notes = []
+    sub_type = s["sub_type"]
+    if sub_type == "vwap_pullback":
+        notes.append("Price pulled back to the day's average price (VWAP) after being away from it")
+    elif sub_type == "prior_period_test":
+        notes.append("Price is testing a prior session's high or low")
+    else:
+        notes.append("Price is sitting mid-range — no clear edge either way yet")
+    notes.append(f"Reference range for this call: {round(s['range_high'] - s['range_low'], 4)}")
+    notes.append("Correct = price moves at least 0.75x that range in one direction; otherwise WAIT is correct")
+    return notes[0], notes
+
+
+def build_lsw_pack(pack_key, pack_cfg, timeframe, interval, output_file):
+    print(f"\n=== LSW PACK: {pack_cfg['label']} ({timeframe}) ===")
+    outcome_window_bars = pack_cfg["outcome_window_min"] // 5
+    all_scenarios = []
+    for symbol in pack_cfg["tickers"]:
+        df = download_data(symbol, interval)
+        if df is None:
+            continue
+        found = find_lsw_scenarios_in_pack(df, symbol, pack_key, pack_cfg, outcome_window_bars)
+        all_scenarios.extend(found)
+        longs = sum(1 for s in found if s["correct_answer"] == "long")
+        shorts = sum(1 for s in found if s["correct_answer"] == "short")
+        waits = sum(1 for s in found if s["correct_answer"] == "wait")
+        print(f"    {symbol}: {len(found)} scenarios -> {longs} long / {shorts} short / {waits} wait")
+
+    long_pool = [s for s in all_scenarios if s["correct_answer"] == "long"]
+    short_pool = [s for s in all_scenarios if s["correct_answer"] == "short"]
+    wait_pool = [s for s in all_scenarios if s["correct_answer"] == "wait"]
+
+    random.seed(RANDOM_SEED)
+    target_wait = round(MAX_DECK_SIZE * 0.30)
+    target_dir = (MAX_DECK_SIZE - target_wait) // 2
+    n_wait = min(len(wait_pool), target_wait)
+    n_long = min(len(long_pool), target_dir)
+    n_short = min(len(short_pool), target_dir)
+    deck = (
+        random.sample(wait_pool, n_wait) + random.sample(long_pool, n_long) + random.sample(short_pool, n_short)
+    )
+    random.shuffle(deck)
+
+    print(f"  Pools: long={len(long_pool)} short={len(short_pool)} wait={len(wait_pool)}  Deck: {len(deck)} "
+          f"(long={n_long}, short={n_short}, wait={n_wait})")
+
+    if len(deck) < MIN_SHIPPABLE_DECK_SIZE:
+        print(f"  SKIPPING LSW pack '{pack_key}': deck size {len(deck)} below shippable floor.")
+        return None
+
+    records = []
+    for i, s in enumerate(deck, start=1):
+        candles, playout_candles, vwap = build_candle_payload(s, pack_cfg["has_volume"])
+        context, context_all = compute_lsw_context(s, pack_cfg)
+        records.append({
+            "id": f"lsw_{i:03d}",
+            "ticker": s["symbol"],
+            "market": pack_key,
+            "drill_style": "long_short_wait",
+            "session": s["session"],
+            "timeframe": timeframe,
+            "has_volume": pack_cfg["has_volume"],
+            "date": s["period_label"],
+            "sub_type": s["sub_type"],
+            "correct_answer": s["correct_answer"],
+            "resolution_bar_index": s["resolution_bar_index"],
+            "entry_price": s["entry_price"],
+            "context": context,
+            "context_all": context_all,
+            "range_high": round(float(s["range_high"]), 6),
+            "range_low": round(float(s["range_low"]), 6),
+            "breakout_time": int(s["decision_ts"].timestamp()),
+            "candles": candles,
+            "playout_candles": playout_candles,
+            "vwap": vwap,
+        })
+
+    out_path = os.path.join(DRILLS_DIR, output_file)
+    with open(out_path, "w", encoding="utf-8") as f:
+        json.dump(records, f, indent=2, ensure_ascii=False)
+
+    total = len(records)
+    longs = sum(1 for r in records if r["correct_answer"] == "long")
+    shorts = sum(1 for r in records if r["correct_answer"] == "short")
+    waits = sum(1 for r in records if r["correct_answer"] == "wait")
+    print(f"  --- LSW deck composition ({out_path}) ---")
+    print(f"  Total: {total} (long={longs}, short={shorts}, wait={waits} -- wait pct={100*waits/total:.0f}%)")
+    for symbol in pack_cfg["tickers"]:
+        t = [r for r in records if r["ticker"] == symbol]
+        if t:
+            print(f"    {symbol}: {len(t)} scenarios")
+    return records
+
+
 def _candles_from_df(df, has_volume):
     candles = []
     for ts, row in df.iterrows():
@@ -486,7 +684,7 @@ TIMEFRAMES = {
 }
 
 
-def main():
+def generate_market_packs():
     if os.path.exists(DRILLS_DIR):
         shutil.rmtree(DRILLS_DIR)
     os.makedirs(DRILLS_DIR)
@@ -510,5 +708,20 @@ def main():
             print(f"  {pack_key} ({timeframe}): {len(records)} drills -> {output_file}")
 
 
+def generate_lsw_pack():
+    """Additive — does not touch the existing market-pack files."""
+    os.makedirs(DRILLS_DIR, exist_ok=True)
+    build_lsw_pack("stocks", MARKET_PACKS["stocks"], "5m", "5m", "drills-lsw.json")
+
+
+def main():
+    generate_market_packs()
+    generate_lsw_pack()
+
+
 if __name__ == "__main__":
-    main()
+    import sys
+    if len(sys.argv) > 1 and sys.argv[1] == "lsw":
+        generate_lsw_pack()
+    else:
+        main()
