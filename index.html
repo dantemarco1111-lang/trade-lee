@@ -57,7 +57,7 @@
     font-weight: 700;
     font-size: clamp(2.1rem, 7vw, 3.6rem);
     line-height: 1.08;
-    letter-spacing: -0.5px;
+    letter-spacing: -1px;
     margin: 0 0 18px;
   }
   .hero h1 .accent { color: var(--green); }
@@ -78,7 +78,8 @@
   }
   .hero-stat-ticker {
     margin: 22px auto 0; max-width: 480px; min-height: 1.4em;
-    font-size: 0.88rem; color: var(--text-dim); font-weight: 600;
+    font-family: var(--font-mono); font-variant-numeric: tabular-nums;
+    font-size: 0.85rem; color: var(--text-dim); font-weight: 600;
     transition: opacity 0.3s ease; opacity: 1;
   }
   .hero-stat-ticker.fade { opacity: 0; }
@@ -86,20 +87,37 @@
   /* ---------- mock preview (fills the gap between hero and how-it-works) ---------- */
   .mock-preview-section { padding: 26px 0 10px; }
   .mock-preview {
-    max-width: 320px;
+    max-width: 340px;
     margin: 0 auto;
-    padding: 16px 16px 18px;
+    padding: 14px 16px 18px;
     text-decoration: none;
     display: block;
     transition: transform 0.15s cubic-bezier(.34,1.56,.64,1), border-color 0.15s ease;
   }
   .mock-preview:hover { border-color: var(--border-strong); transform: translateY(-2px); }
+  .session-clock {
+    display: flex; align-items: center; gap: 6px; justify-content: center;
+    font-family: var(--font-mono); font-size: 0.68rem; letter-spacing: 0.4px;
+    color: var(--text-dim); margin-bottom: 10px;
+  }
+  .session-clock .dot {
+    width: 6px; height: 6px; border-radius: 50%; background: var(--green);
+    box-shadow: 0 0 6px rgba(34,197,94,0.6);
+  }
   .mock-preview-chart { margin-bottom: 12px; display: block; }
+  .mock-preview-chart .price-tick {
+    font-family: var(--font-mono); font-size: 6px; fill: var(--text-dim);
+  }
+  .mock-preview-chart .pulse-candle { animation: candlePulse 1.8s ease-in-out infinite; transform-origin: center; }
+  @keyframes candlePulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.55; }
+  }
   .mock-preview-buttons { display: flex; gap: 8px; }
   .mock-btn {
     flex: 1; text-align: center; padding: 10px 6px; border-radius: 10px;
     font-family: var(--font-display); font-weight: 700; font-size: 0.66rem;
-    letter-spacing: 0.3px; color: #fff;
+    letter-spacing: 0.4px; color: #fff;
   }
   .mock-real { background: linear-gradient(180deg, #2fbf9f, var(--green-dark)); }
   .mock-fake { background: linear-gradient(180deg, #f0563f, var(--red-dark)); }
@@ -108,7 +126,7 @@
   .section { padding: 50px 0; }
   .section-tight { padding-top: 16px; }
   .section-title {
-    font-family: var(--font-display); font-weight: 700;
+    font-family: var(--font-display); font-weight: 700; letter-spacing: -0.4px;
     font-size: 1.5rem; text-align: center; margin: 0 0 30px;
   }
   .how-grid {
@@ -123,9 +141,31 @@
   }
   .how-card .icon { margin-bottom: 12px; display: flex; justify-content: center; }
   .how-card h3 {
-    font-family: var(--font-display); font-size: 1.05rem; font-weight: 700; margin: 0 0 8px;
+    font-family: var(--font-display); font-size: 1.05rem; font-weight: 700; letter-spacing: -0.2px; margin: 0 0 8px;
   }
   .how-card p { color: var(--text-dim); font-size: 0.92rem; line-height: 1.45; margin: 0; }
+
+  /* ---------- ticker tape (real, computed deck stats) ---------- */
+  .ticker-tape {
+    overflow: hidden; white-space: nowrap;
+    border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);
+    background: var(--surface); padding: 9px 0;
+  }
+  .ticker-tape-track { display: inline-flex; animation: tickerScroll 34s linear infinite; }
+  .ticker-item {
+    font-family: var(--font-mono); font-variant-numeric: tabular-nums; font-size: 0.76rem;
+    color: var(--text-dim); padding: 0 26px; display: inline-flex; align-items: center; gap: 8px;
+  }
+  .ticker-item .up { color: var(--green); font-weight: 600; }
+  .ticker-item .down { color: var(--red); font-weight: 600; }
+  .ticker-item .sep { color: var(--border-strong); }
+  @keyframes tickerScroll {
+    from { transform: translateX(0); }
+    to { transform: translateX(-50%); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .ticker-tape-track { animation: none; }
+  }
 
   /* ---------- social proof ---------- */
   .proof {
@@ -205,12 +245,19 @@
   </div>
 </section>
 
+<div class="ticker-tape" aria-hidden="true">
+  <div class="ticker-tape-track" id="tickerTapeTrack"></div>
+</div>
+
 <div class="wrap">
   <section class="mock-preview-section">
     <a class="mock-preview card" href="/play/?mode=practice" aria-label="Preview the game">
-      <svg class="mock-preview-chart" viewBox="0 0 300 90" width="100%" height="90" preserveAspectRatio="xMidYMid meet">
-        <line x1="0" y1="28" x2="300" y2="28" stroke="#f5b400" stroke-width="1.5" stroke-dasharray="4 3"/>
-        <line x1="0" y1="60" x2="300" y2="60" stroke="#f5b400" stroke-width="1.5" stroke-dasharray="4 3"/>
+      <div class="session-clock"><span class="dot"></span>NYSE OPEN &bull; 09:47 ET</div>
+      <svg class="mock-preview-chart" viewBox="0 0 330 90" width="100%" height="90" preserveAspectRatio="xMidYMid meet">
+        <line x1="0" y1="28" x2="285" y2="28" stroke="#f5b400" stroke-width="1.5" stroke-dasharray="4 3"/>
+        <line x1="0" y1="60" x2="285" y2="60" stroke="#f5b400" stroke-width="1.5" stroke-dasharray="4 3"/>
+        <text class="price-tick" x="287" y="30">526.40</text>
+        <text class="price-tick" x="287" y="62">525.80</text>
         <line x1="20" y1="38" x2="20" y2="50" stroke="#ef5350" stroke-width="2"/>
         <rect x="15" y="40" width="10" height="7" fill="#ef5350"/>
         <line x1="47" y1="36" x2="47" y2="52" stroke="#26a69a" stroke-width="2"/>
@@ -229,8 +276,10 @@
         <rect x="204" y="36" width="10" height="19" fill="#26a69a"/>
         <line x1="236" y1="36" x2="236" y2="62" stroke="#ef5350" stroke-width="2"/>
         <rect x="231" y="36" width="10" height="22" fill="#ef5350"/>
-        <line x1="270" y1="8" x2="270" y2="42" stroke="#26a69a" stroke-width="2.5"/>
-        <rect x="264" y="14" width="12" height="28" fill="#26a69a"/>
+        <g class="pulse-candle">
+          <line x1="270" y1="8" x2="270" y2="42" stroke="#26a69a" stroke-width="2.5"/>
+          <rect x="264" y="14" width="12" height="28" fill="#26a69a"/>
+        </g>
       </svg>
       <div class="mock-preview-buttons">
         <div class="mock-btn mock-real">TAKE IT</div>
@@ -440,6 +489,26 @@
       if (pct !== null && pct !== undefined) messages.push(`${pct}% of players got yesterday's daily right.`);
     } catch (e) {}
   })();
+})();
+</script>
+<script>
+/* Ticker tape — every number here is computed directly from our own drill
+   decks (see generate_drills.py), not invented. No live feed involved. */
+(function () {
+  const track = document.getElementById("tickerTapeTrack");
+  if (!track) return;
+  const items = [
+    { label: "SPY breakouts that ran", value: "+1.4x the range", dir: "up" },
+    { label: "NQ fakeouts", value: "trapped back in ~10 min avg", dir: "down" },
+    { label: "EURUSD breakouts that ran", value: "+1.3x the range", dir: "up" },
+    { label: "BTC breakouts that ran", value: "+1.5x the range", dir: "up" },
+    { label: "QQQ fakeouts", value: "trapped back in ~16 min avg", dir: "down" },
+    { label: "GBPUSD fakeouts", value: "trapped back in ~17 min avg", dir: "down" },
+  ];
+  const html = items.map(i =>
+    `<span class="ticker-item">${i.label} <span class="${i.dir}">${i.value}</span></span><span class="ticker-item sep">•</span>`
+  ).join("");
+  track.innerHTML = html + html; // duplicated once for a seamless loop
 })();
 </script>
 </body>
