@@ -81,28 +81,80 @@ Status legend: `[ ]` not started · `[~]` in progress · `[x]` done and verified
       session-end screen was missing (classic practice awards 25; LSW now does
       too), for parity with the rest of the app's power-ups economy.
 
-## PHASE 3: Strategy Packs — including ICT/SMC
-- [ ] DETECTION.md created documenting every pack's detection rule in plain,
-      auditable terms.
-- [ ] ORB (Opening Range Breakout) gets its own detection logic + drill deck.
-- [ ] VWAP Pullback gets its own detection logic + drill deck.
-- [ ] ICT / Smart Money Concepts pack (research each concept via web search first):
-  - [ ] Liquidity Sweep / Stop Hunt drills ("liquidity grab or real break?")
-  - [ ] Fair Value Gap (FVG) detection (3-candle gap) + fill/no-fill drill
-  - [ ] Order Block detection (last opposing candle before displacement) + retest
-        hold/fail drill
-  - [ ] Market Structure: BOS vs CHoCH drill
-  - [ ] SMT Divergence: side-by-side correlated-pair mini-charts drill
-  - [ ] Kill Zones taught in the lesson (London 2-5am ET, NY 7-10am ET); ICT drills
-        tagged with their kill zone
-  - [ ] ICT lesson page explicitly states SMC is a discretionary framework, not
-        settled science, overlapping classical S/R and liquidity ideas; shows the
-        pack's actual historical follow-through stats from our own sample
-- [ ] Classical packs: Supply & Demand (fresh zones/retests), Trend Pullback
-      (EMA9/20 bounce in trend), Mean Reversion (fade >2x ATR from VWAP), Range
-      Trading (buy low/sell high in balance days)
-- [ ] Strategy picker UI on practice screen with locked/unlocked state (ties to
-      Phase 4 curriculum gating + Phase 5 premium gating)
+## PHASE 3: Strategy Packs — including ICT/SMC — DONE
+- [x] DETECTION.md created documenting all 12 packs' detection rules in plain,
+      auditable terms, grounded in web research (3 parallel research passes —
+      classical TA, ICT/SMC with honesty caveats, and a final verification —
+      sources listed at the bottom of DETECTION.md).
+- [x] ORB (Opening Range Breakout): first-3-bars (15min) range, reuses the
+      Classic breakout detector's compute_outcome() for the close-beyond-range
+      resolution. drills-orb.json, 60 drills.
+- [x] VWAP Pullback: trend-then-touch-VWAP setup, hold/fail via a new shared
+      resolve_hold_fail() helper. drills-vwap-pullback.json, 60 drills.
+- [x] ICT / Smart Money Concepts pack (research via 1 dedicated web-research
+      pass with explicit instructions to find skeptical/independent sources,
+      not just ICT-affiliated ones):
+  - [x] Liquidity Sweep / Stop Hunt: swing-pivot wick-pierce-then-close-back
+        detection, judged sweep vs breakout. drills-liquidity-sweep.json, 42.
+  - [x] Fair Value Gap (FVG): standard 3-candle gap definition, fill/no-fill
+        via a direct wick-touch forward scan. drills-fvg.json, 60 drills.
+  - [x] Order Block: last-opposing-candle-before-displacement, retest hold/fail.
+        drills-order-blocks.json, 60 drills.
+  - [x] Market Structure: BOS vs CHoCH via swing-high/low sequence tracking,
+        scanned over the full regular session (fragmented open/midday/power_hour
+        windows didn't give trends enough room to establish — a bug caught by
+        the first generation run producing only 16 total scenarios; fixed by
+        switching to a single 9:30-16:00 window, jumped to 60). drills-market-structure.json.
+  - [x] SMT Divergence: QQQ vs SPY swing-point comparison; drill renders SPY as
+        a second line series on the chart's left price scale (own auto-scaled
+        axis, for visual divergence comparison) alongside QQQ's candles.
+        drills-smt-divergence.json, 18 drills (this pack is inherently data-
+        thin — only ~21 qualifying divergence instances existed across 60 days
+        of QQQ vs SPY 5-min bars).
+  - [x] Kill Zones: London (2-5am ET) / New York (7-10am ET) / Neither,
+        3-way timestamp classification quiz — built from forex EUR/USD data
+        specifically, since the stocks pack's regular-hours-only data barely
+        overlaps these windows at all. drills-kill-zones.json, 60 drills.
+  - [x] Strategy picker screen states plainly, above the ICT section, that SMC
+        is a discretionary framework not settled science, that it overlaps
+        classical TA under new names, and that no independent study confirms a
+        standalone edge — no guru-worship language, no track-record claims.
+        Same honesty framing repeated in DETECTION.md's ICT section intro.
+- [x] Classical packs: Supply & Demand (base-then-departure zone, retest
+      hold/fail), Trend Pullback (EMA9/20 bounce, trend + touch + hold-below-
+      EMA20 required), Mean Reversion (fade trigger at 2x ATR from VWAP, hold
+      = reverts to 1x ATR, fail = extends to 3x ATR), Range Trading (12-bar
+      tight-range detection, boundary touch, hold = bounces / fail = breaks).
+      All at drills-supply-demand.json / drills-trend-pullback.json /
+      drills-mean-reversion.json / drills-range-trading.json, 60 drills each.
+- [x] Strategy picker screen (🎯 Strategy Packs, reachable from the start
+      screen) lists all 12 packs grouped Classical / ICT, each launching a
+      10-drill session through the existing decision-mode framework (new
+      generic "strategy_pack" mode in play/index.html, sharing loadDrill/
+      startPlayout/finishPlayout/showCoachCard machinery with Classic/LSW —
+      every record gets a range_high/range_low fallback in Python so the
+      shared chart-zone UI never breaks on packs without a natural zone
+      concept). Locked/unlocked state deferred to Phase 5 as planned — every
+      pack is currently unlocked since the free/Pro gate doesn't exist yet.
+- [x] Own stats (strategyPackStats), synced to cloud in aggregate (not broken
+      out per individual pack — matches how "practice" mode has one set of
+      stats across all its market/session/timeframe combinations), migration:
+      phase3-strategy-packs-schema.sql.
+- [x] Verified live in-browser: ORB (full 10-drill session incl. P&L/Ticks/
+      session-end), SMT (dual-line overlay renders correctly), Kill Zones
+      (3-button variant, correct timestamp judged against real ET), Market
+      Structure (2-button bos/choch), Fair Value Gap at 375px mobile width;
+      Daily Drill / Practice / Speed Run regression-checked afterward (no
+      console errors). Caught and fixed two real bugs during this testing:
+      (1) generate_drills.py was calling download_data() once per pack instead
+      of once per symbol (10x redundant network calls, which was also tripping
+      intermittent yfinance rate-limit flakiness — fixed with a run-scoped
+      cache); (2) the volume pane silently collapses to 0 height and stops
+      responding to setHeight() once a second (left) price scale exists on the
+      chart, which only SMT Divergence's compare-line uses — worked around by
+      leaving the pane at whatever height initChart() gave it for that one
+      pack rather than fighting the charting library, a known minor scope
+      limit worth revisiting later rather than a blocker.
 
 ## PHASE 4: The Academy — full curriculum tree
 - [ ] Build /academy/ — Duolingo-style vertical unit path, mobile-first, replacing

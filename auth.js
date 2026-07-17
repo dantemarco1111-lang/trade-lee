@@ -153,6 +153,8 @@ async function tlMergeLocalIntoCloud(appState) {
       ot_total_orders: Math.max(appState.orderTrainerStats ? appState.orderTrainerStats.totalOrders : 0, existingStats ? existingStats.ot_total_orders : 0),
       ot_total_filled: Math.max(appState.orderTrainerStats ? appState.orderTrainerStats.filled : 0, existingStats ? existingStats.ot_total_filled : 0),
       ot_total_wins: Math.max(appState.orderTrainerStats ? appState.orderTrainerStats.wins : 0, existingStats ? existingStats.ot_total_wins : 0),
+      sp_total_answered: Math.max(appState.strategyPackStats ? appState.strategyPackStats.totalAnswered : 0, existingStats ? existingStats.sp_total_answered : 0),
+      sp_total_correct: Math.max(appState.strategyPackStats ? appState.strategyPackStats.totalCorrect : 0, existingStats ? existingStats.sp_total_correct : 0),
     };
     await sbClient.from("stats").upsert(merged);
 
@@ -223,6 +225,8 @@ async function tlSyncStats(appState) {
       ot_total_orders: appState.orderTrainerStats ? appState.orderTrainerStats.totalOrders : 0,
       ot_total_filled: appState.orderTrainerStats ? appState.orderTrainerStats.filled : 0,
       ot_total_wins: appState.orderTrainerStats ? appState.orderTrainerStats.wins : 0,
+      sp_total_answered: appState.strategyPackStats ? appState.strategyPackStats.totalAnswered : 0,
+      sp_total_correct: appState.strategyPackStats ? appState.strategyPackStats.totalCorrect : 0,
     });
   } catch (e) {}
 }

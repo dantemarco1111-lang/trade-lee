@@ -301,6 +301,7 @@ async function initAccounts() {
                 if (result.merged.chart_settings) full.chartSettings = result.merged.chart_settings;
                 full.lswStats = { totalAnswered: result.merged.lsw_total_answered || 0, totalCorrect: result.merged.lsw_total_correct || 0 };
                 full.orderTrainerStats = { totalOrders: result.merged.ot_total_orders || 0, filled: result.merged.ot_total_filled || 0, wins: result.merged.ot_total_wins || 0 };
+                full.strategyPackStats = { totalAnswered: result.merged.sp_total_answered || 0, totalCorrect: result.merged.sp_total_correct || 0 };
                 full.dailyPlayStreak = recomputed.dailyPlayStreak;
                 full.dailyWinStreak = recomputed.dailyWinStreak;
                 full.lastDailyDate = recomputed.lastDailyDate || full.lastDailyDate;

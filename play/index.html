@@ -384,6 +384,25 @@
   .ot-result-r.neg { color: var(--red); }
   .ot-result-r.neutral { color: var(--muted); }
 
+  /* ---------- strategy packs (Phase 3) ---------- */
+  .strategy-section-label {
+    font-family: var(--font-display); font-size: 0.95rem; color: var(--text-dim);
+    margin: 18px 4px 8px; text-transform: uppercase; letter-spacing: 0.04em;
+  }
+  .ict-honesty-banner {
+    background: rgba(245, 180, 0, 0.08); border: 1px solid rgba(245, 180, 0, 0.35);
+    border-radius: 12px; padding: 10px 14px; font-size: 0.78rem; color: var(--text-dim);
+    line-height: 1.4; margin: 0 4px 12px;
+  }
+  .strategy-pack-grid { display: flex; flex-direction: column; gap: 8px; padding: 0 4px; }
+  .strategy-pack-card {
+    background: var(--card); border: 1px solid var(--border); border-radius: 14px;
+    padding: 12px 14px; text-align: left; cursor: pointer;
+  }
+  .strategy-pack-card:active { transform: scale(0.98); }
+  .spc-label { font-family: var(--font-display); font-size: 0.95rem; margin-bottom: 3px; }
+  .spc-desc { font-size: 0.78rem; color: var(--muted); line-height: 1.35; }
+
   .legend-row {
     display: flex; flex-wrap: wrap; gap: 10px; justify-content: center;
     font-size: 0.68rem; color: var(--muted); margin: 3px 0 2px;
@@ -857,6 +876,8 @@ const PRACTICE_TIMER_SLOWDOWN_ACCURACY = 0.45;
 const LSW_DRILLS_PER_SESSION = 10;
 const LSW_RESOLUTION_MULTIPLE = 0.75;
 const LSW_DECISION_SECONDS = 15;
+const STRATEGY_PACK_DRILLS_PER_SESSION = 10;
+const STRATEGY_PACK_DECISION_SECONDS = 15;
 const STARTING_BANKROLL = 10000;
 const POSITION_SIZE = 5000;
 const PNL_CAP_PCT = 0.03;
@@ -910,6 +931,8 @@ function defaultState() {
     drillStyle: "classic",
     lswStats: { totalAnswered: 0, totalCorrect: 0 },
     orderTrainerStats: { totalOrders: 0, filled: 0, wins: 0 },
+    // strategy packs (Phase 3)
+    strategyPackStats: { totalAnswered: 0, totalCorrect: 0 },
   };
 }
 function loadPersistedState() {
@@ -946,6 +969,7 @@ let lastSessionTimeMs = 0;
 let activeChallenge = null; // the challenge row being replayed, if any
 let reviewQueue = []; // missed drills being replayed in review mode
 let currentDrill = null;
+let currentStrategyPack = null; // the STRATEGY_PACKS entry currently being drilled, if any
 let currentDrillMultiplier = 1;
 let drillInProgress = false;
 let timeExtendUsedThisDrill = false;
@@ -953,7 +977,7 @@ let doubleDownActiveThisDrill = false;
 let secondChanceUsedThisSession = false;
 let preDrillSnapshot = null;
 
-let chart = null, candleSeries = null, volumeSeries = null, vwapSeries = null;
+let chart = null, candleSeries = null, volumeSeries = null, vwapSeries = null, compareSeries = null;
 let priceLinesList = [];
 
 /* ============================= AUDIO ============================= */
@@ -1270,6 +1294,7 @@ function initChart(container) {
     grid: { vertLines: { color: "#1d2330" }, horzLines: { color: "#1d2330" } },
     timeScale: { timeVisible: true, secondsVisible: false, borderColor: "#262b36", rightOffset: 8, barSpacing: 9, rightBarStaysOnScroll: true },
     rightPriceScale: { borderColor: "#262b36" },
+    leftPriceScale: { visible: false, borderColor: "#262b36" },
     crosshair: { mode: LightweightCharts.CrosshairMode.Normal },
   });
   candleSeries = addSeriesCompat(chart, "Candlestick", {
@@ -1430,6 +1455,19 @@ function renderGameScreen(mode) {
           <div class="bankroll-value" style="font-size:1.15rem;">Build a real bracket order</div>
         </div>
       </div>`;
+  } else if (mode === "strategy_pack") {
+    headerHtml = `
+      <div class="topbar">
+        <div class="bankroll">
+          <div class="bankroll-label">${escapeHtml(currentStrategyPack.label)}</div>
+          <div class="bankroll-value" id="bankrollValue">${formatMoney(bankroll)}</div>
+        </div>
+      </div>
+      <div class="statsbar">
+        <div class="stat-chip"><span class="stat-value" id="pnlValue">$0</span><span class="stat-label">Session P&L</span></div>
+        <div class="stat-chip"><span class="stat-value" id="spCorrectValue">0</span><span class="stat-label">Correct</span></div>
+        <div class="stat-chip"><span class="stat-value" id="drillCounter">1/${STRATEGY_PACK_DRILLS_PER_SESSION}</span><span class="stat-label">Drill</span></div>
+      </div>`;
   } else {
     const label = mode === "daily" ? "Daily Drill" : "Quick Tutorial";
     const sub = mode === "daily" ? getEtDateHuman() : "Learn the basics";
@@ -1470,8 +1508,9 @@ function renderShell() {
       </div>
     </div>
     <div class="legend-row">
-      <span><span class="swatch" style="background:#f5b400"></span>Range High/Low (the zone price is stuck in)</span>
+      <span><span class="swatch" style="background:#f5b400"></span>${currentMode === "strategy_pack" ? "Recent range" : "Range High/Low (the zone price is stuck in)"}</span>
       <span><span class="swatch" style="background:#c792ea"></span>VWAP</span>
+      ${currentMode === "strategy_pack" && currentStrategyPack.key === "smt_divergence" ? `<span><span class="swatch" style="background:#5c9eff"></span>${SMT_COMPARE_SYMBOL}</span>` : ""}
     </div>
     <div class="powerup-bar hidden" id="powerupBar"></div>
     <div class="timer-bar-wrap ${currentMode === "review" ? "hidden" : ""}"><div class="timer-fill" id="timerFill"></div></div>
@@ -1480,6 +1519,8 @@ function renderShell() {
         <button class="btn real" id="longBtn">LONG</button>
         <button class="btn wait" id="waitBtn">WAIT</button>
         <button class="btn fake" id="shortBtn">SHORT</button>
+      ` : currentMode === "strategy_pack" ? `
+        ${currentStrategyPack.buttons.map((b, i) => `<button class="btn ${i === 0 ? "real" : i === currentStrategyPack.buttons.length - 1 ? "fake" : "wait"}" id="spBtn${i}">${b[1]}</button>`).join("")}
       ` : `
         <button class="btn real" id="realBtn">REAL BREAKOUT</button>
         <button class="btn fake" id="fakeBtn">FAKEOUT</button>
@@ -1497,6 +1538,10 @@ function renderShell() {
     document.getElementById("longBtn").onclick = () => answer("long");
     document.getElementById("waitBtn").onclick = () => answer("wait");
     document.getElementById("shortBtn").onclick = () => answer("short");
+  } else if (currentMode === "strategy_pack") {
+    currentStrategyPack.buttons.forEach((b, i) => {
+      document.getElementById(`spBtn${i}`).onclick = () => answer(b[0]);
+    });
   } else {
     document.getElementById("realBtn").onclick = () => answer("real");
     document.getElementById("fakeBtn").onclick = () => answer("fake");
@@ -1506,6 +1551,7 @@ function renderShell() {
     if (currentMode === "speedrun") advanceOrEndSpeedRun();
     else if (currentMode === "review") advanceOrEndReview();
     else if (currentMode === "longshortwait") advanceOrEndLsw();
+    else if (currentMode === "strategy_pack") advanceOrEndStrategyPack();
     else advanceOrEnd();
   };
   initChartSettingsUI();
@@ -1548,7 +1594,15 @@ function applyVolumePaneVisibility(visible) {
   try {
     volumeSeries.applyOptions({ visible });
     const panes = chart.panes();
-    if (panes[1]) panes[1].setHeight(visible ? Math.round(document.getElementById("chartContainer").clientHeight * 0.32) : 0);
+    // Setting the LAST pane's height directly silently no-ops once a second
+    // price scale exists on an earlier pane (as SMT Divergence's compare-line
+    // overlay does) — setting the price pane's height instead and letting the
+    // volume pane auto-fill the remainder works reliably in both cases.
+    if (panes[0] && panes[1]) {
+      const total = document.getElementById("chartContainer").clientHeight;
+      const volHeight = visible ? Math.round(total * 0.32) : 0;
+      panes[0].setHeight(Math.max(1, total - volHeight));
+    }
   } catch (e) {}
 }
 function clearVolumeProfile() {
@@ -1637,9 +1691,16 @@ function loadDrill(drill, opts) {
   volumeSeries.setData(volumeData);
   vwapSeries.setData(drill.vwap.slice(0, drill.candles.length).map(v => ({ time: toEasternChartTime(v.time), value: v.value })));
 
+  if (drill.compare_series && drill.compare_series.length) {
+    compareSeries = addSeriesCompat(chart, "Line", { color: "#5c9eff", lineWidth: 2, priceScaleId: "left", priceLineVisible: false, lastValueVisible: false }, 0);
+    chart.priceScale("left").applyOptions({ visible: true });
+    compareSeries.setData(drill.compare_series.map(v => ({ time: toEasternChartTime(v.time), value: v.value })));
+  } else {
+    compareSeries = null;
+  }
+
   const chartSettings = appState.chartSettings || { volumeProfile: false, showVwap: true, showVolume: true };
   vwapSeries.applyOptions({ visible: chartSettings.showVwap !== false });
-  applyVolumePaneVisibility(chartSettings.showVolume !== false);
 
   clearPriceLines();
   // native axis badge disabled — the custom "RANGE HIGH/LOW <price>" tags
@@ -1656,13 +1717,17 @@ function loadDrill(drill, opts) {
 
   chart.timeScale().scrollToRealTime();
   requestAnimationFrame(() => requestAnimationFrame(() => {
+    // A compare-line series on its own left price scale (SMT Divergence) makes
+    // the volume pane stop responding to setHeight() afterward — leave whatever
+    // height initChart() already gave it rather than fight the chart library.
+    if (!compareSeries) applyVolumePaneVisibility(chartSettings.showVolume !== false);
     updateRangeZone(drill);
     updateRangeLabels(drill);
     positionFormingMarker(drill);
     if (chartSettings.volumeProfile) renderVolumeProfile(drill); else clearVolumeProfile();
   }));
 
-  if (currentMode !== "longshortwait") document.getElementById("formingMarker").classList.remove("hidden");
+  if (currentMode !== "longshortwait" && currentMode !== "strategy_pack") document.getElementById("formingMarker").classList.remove("hidden");
 
   if (!opts.deferTimer) startTimer();
 }
@@ -1673,6 +1738,7 @@ function startTimer() {
   const decisionSeconds = currentMode === "speedrun" ? SPEEDRUN_SECONDS
     : currentMode === "practice" ? (appState.practiceTimerSeconds || PRACTICE_TIMER_START)
     : currentMode === "longshortwait" ? LSW_DECISION_SECONDS
+    : currentMode === "strategy_pack" ? STRATEGY_PACK_DECISION_SECONDS
     : DECISION_SECONDS;
   timerDeadline = performance.now() + decisionSeconds * 1000;
   const fill = document.getElementById("timerFill");
@@ -1690,7 +1756,7 @@ function startTimer() {
 }
 function clearTimer() { if (timerHandle) cancelAnimationFrame(timerHandle); timerHandle = null; }
 function disableButtons() {
-  ["realBtn", "fakeBtn", "longBtn", "waitBtn", "shortBtn"].forEach(id => {
+  ["realBtn", "fakeBtn", "longBtn", "waitBtn", "shortBtn", "spBtn0", "spBtn1", "spBtn2"].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.disabled = true;
   });
@@ -1716,6 +1782,8 @@ function handleTimeout() {
     sessionResults.push({ pnl: 0, correct: null, skipped: true });
   } else if (currentMode === "longshortwait") {
     sessionResults.push({ pnl: 0, correct: null, skipped: true });
+  } else if (currentMode === "strategy_pack") {
+    sessionResults.push({ pnl: 0, correct: null, skipped: true });
   }
   const skipMsg = document.getElementById("skipMessage");
   if (skipMsg) skipMsg.classList.remove("hidden");
@@ -1723,6 +1791,7 @@ function handleTimeout() {
     if (currentMode === "practice") advanceOrEnd();
     else if (currentMode === "speedrun") advanceOrEndSpeedRun();
     else if (currentMode === "longshortwait") advanceOrEndLsw();
+    else if (currentMode === "strategy_pack") advanceOrEndStrategyPack();
     else if (currentMode === "daily") renderStartScreen();
     else renderStartScreen();
   }, 1500);
@@ -1843,10 +1912,10 @@ function applyResultJuice(isCorrect, isFizzle) {
 
 /* ============================= RESOLUTION ============================= */
 function finishPlayout(drill, choice) {
-  const isCorrect = currentMode === "longshortwait" ? choice === drill.correct_answer : choice === drill.outcome;
-  const isFizzle = currentMode !== "longshortwait" && drill.outcome === "fake" && drill.reversal_minutes === null && drill.resolution_bar_index === null;
+  const isCorrect = (currentMode === "longshortwait" || currentMode === "strategy_pack") ? choice === drill.correct_answer : choice === drill.outcome;
+  const isFizzle = currentMode !== "longshortwait" && currentMode !== "strategy_pack" && drill.outcome === "fake" && drill.reversal_minutes === null && drill.resolution_bar_index === null;
 
-  if (currentMode !== "tutorial" && currentMode !== "longshortwait") recordMissOrClear(drill, isCorrect);
+  if (currentMode !== "tutorial" && currentMode !== "longshortwait" && currentMode !== "strategy_pack") recordMissOrClear(drill, isCorrect);
   applyResultJuice(isCorrect, isFizzle);
 
   if (currentMode === "practice") {
@@ -1913,7 +1982,57 @@ function finishPlayout(drill, choice) {
     if (correctEl) correctEl.textContent = correctSoFar;
 
     showLswCoachCard(drill, choice, isCorrect, pnl);
+  } else if (currentMode === "strategy_pack") {
+    const pnl = computeStrategyPackPnl(drill, isCorrect);
+    sessionResults.push({ pnl, correct: isCorrect, skipped: false, choice });
+    appState.strategyPackStats = appState.strategyPackStats || { totalAnswered: 0, totalCorrect: 0 };
+    appState.strategyPackStats.totalAnswered++;
+    if (isCorrect) appState.strategyPackStats.totalCorrect++;
+    saveState();
+    if (authReady()) tlSyncStats(appState);
+
+    const prevBankroll = bankroll, prevSessionPnl = sessionPnl;
+    bankroll += pnl; sessionPnl += pnl;
+    const bankrollEl = document.getElementById("bankrollValue");
+    const pnlEl = document.getElementById("pnlValue");
+    animateNumber(prevBankroll, bankroll, 600, v => bankrollEl.textContent = formatMoney(v));
+    animateNumber(prevSessionPnl, sessionPnl, 600, v => {
+      pnlEl.textContent = formatMoney(v);
+      pnlEl.classList.toggle("pnl-up", v >= 0);
+      pnlEl.classList.toggle("pnl-down", v < 0);
+    });
+    const correctSoFar = sessionResults.filter(r => r.correct === true).length;
+    const correctEl = document.getElementById("spCorrectValue");
+    if (correctEl) correctEl.textContent = correctSoFar;
+
+    showStrategyPackCoachCard(drill, choice, isCorrect, pnl);
   }
+}
+function computeStrategyPackPnl(drill, isCorrect) {
+  const lastClose = drill.candles[drill.candles.length - 1].close;
+  const refRange = (drill.range_high || 0) - (drill.range_low || 0);
+  const magnitudePct = lastClose > 0 && refRange > 0
+    ? Math.min((0.75 * refRange) / lastClose, PNL_CAP_PCT)
+    : 0.01;
+  return POSITION_SIZE * magnitudePct * (isCorrect ? 1 : -1);
+}
+function showStrategyPackCoachCard(drill, choice, isCorrect, pnl) {
+  const card = document.getElementById("coachCard");
+  const outcomeEl = document.getElementById("coachOutcome");
+  const whyEl = document.getElementById("coachWhy");
+  const pnlEl = document.getElementById("coachPnl");
+
+  const btnMatch = currentStrategyPack.buttons.find(b => b[0] === drill.correct_answer);
+  const answerLabel = btnMatch ? btnMatch[1] : drill.correct_answer.toUpperCase();
+  outcomeEl.textContent = `${answerLabel} WAS CORRECT ${isCorrect ? "✅" : "❌"}`;
+  outcomeEl.className = "coach-outcome " + (isCorrect ? "correct" : "wrong");
+  whyEl.innerHTML = renderWhyBullets(coachWhyBullets(drill));
+  pnlEl.classList.remove("hidden");
+  pnlEl.textContent = (pnl >= 0 ? "+" : "") + formatMoney(pnl);
+  pnlEl.className = "coach-pnl " + (pnl >= 0 ? "pos" : "neg");
+
+  card.classList.remove("hidden");
+  document.getElementById("buttonsRow").classList.add("hidden");
 }
 function computeLswPnl(drill, choice, isCorrect) {
   if (choice === "wait") return isCorrect ? 20 : -15;
@@ -2449,6 +2568,158 @@ function finishOrderTrainerRound(result) {
   `;
   document.getElementById("otAgainBtn").onclick = startOrderTrainerRound;
   document.getElementById("otBackBtn").onclick = renderStartScreen;
+}
+
+/* ============================= STRATEGY PACKS (Phase 3) ============================= */
+// See DETECTION.md for exactly how every pack's correct_answer is computed.
+const SMT_COMPARE_SYMBOL = "SPY";
+const STRATEGY_PACKS = [
+  { key: "orb", label: "Opening Range Breakout", file: "drills-orb.json", category: "classical",
+    description: "The first 15 minutes set a range. Does a break of it hold, or snap back?",
+    buttons: [["hold", "HOLD"], ["fail", "FAIL"]] },
+  { key: "vwap_pullback", label: "VWAP Pullback", file: "drills-vwap-pullback.json", category: "classical",
+    description: "Price pulled back to VWAP inside a trend. Does the trend hold, or fail here?",
+    buttons: [["hold", "HOLD"], ["fail", "FAIL"]] },
+  { key: "supply_demand", label: "Supply & Demand", file: "drills-supply-demand.json", category: "classical",
+    description: "Price is retesting a zone left behind by a sharp move. Hold, or fail?",
+    buttons: [["hold", "HOLD"], ["fail", "FAIL"]] },
+  { key: "trend_pullback", label: "Trend Pullback (EMA9/20)", file: "drills-trend-pullback.json", category: "classical",
+    description: "Price pulled back to the EMA9/20 inside a trend. Hold, or fail?",
+    buttons: [["hold", "HOLD"], ["fail", "FAIL"]] },
+  { key: "mean_reversion", label: "Mean Reversion", file: "drills-mean-reversion.json", category: "classical",
+    description: "Price is 2x+ ATR away from VWAP. Does the fade back work, or does it fail?",
+    buttons: [["hold", "HOLD"], ["fail", "FAIL"]] },
+  { key: "range_trading", label: "Range Trading", file: "drills-range-trading.json", category: "classical",
+    description: "Price is testing a range boundary. Does the range hold, or break?",
+    buttons: [["hold", "HOLD"], ["fail", "FAIL"]] },
+  { key: "liquidity_sweep", label: "Liquidity Sweep", file: "drills-liquidity-sweep.json", category: "ict",
+    description: "Price pierced a prior swing high/low and closed back inside. Sweep, or real breakout?",
+    buttons: [["sweep", "SWEEP"], ["breakout", "BREAKOUT"]] },
+  { key: "fair_value_gap", label: "Fair Value Gap", file: "drills-fvg.json", category: "ict",
+    description: "A 3-candle gap just formed. Does price come back to fill it, or leave it alone?",
+    buttons: [["no_fill", "NO-FILL"], ["fill", "FILL"]] },
+  { key: "order_blocks", label: "Order Blocks", file: "drills-order-blocks.json", category: "ict",
+    description: "Price is retesting the last opposing candle before a sharp move. Hold, or fail?",
+    buttons: [["hold", "HOLD"], ["fail", "FAIL"]] },
+  { key: "market_structure", label: "Market Structure", file: "drills-market-structure.json", category: "ict",
+    description: "A structure break just happened. Is it a Break of Structure, or a Change of Character?",
+    buttons: [["bos", "BOS"], ["choch", "CHoCH"]] },
+  { key: "smt_divergence", label: "SMT Divergence", file: "drills-smt-divergence.json", category: "ict",
+    description: `QQQ and ${SMT_COMPARE_SYMBOL} just diverged at a swing point. Does the divergence confirm, or fail?`,
+    buttons: [["confirmed", "CONFIRMS"], ["failed", "FAILS"]] },
+  { key: "kill_zones", label: "Kill Zones", file: "drills-kill-zones.json", category: "ict",
+    description: "Is this candle's timestamp inside a Kill Zone?",
+    buttons: [["london", "LONDON"], ["new_york", "NEW YORK"], ["neither", "NEITHER"]] },
+];
+const ICT_HONESTY_BLURB = "Smart Money Concepts is a discretionary framework, not settled science. These setups map closely onto older classical ideas under new names, and no independent study confirms a standalone edge for any of them — see the About page for the full picture. We teach the vocabulary honestly, not as gospel.";
+
+let strategyPackCache = {};
+async function loadStrategyPackPool(pack) {
+  if (strategyPackCache[pack.file]) return strategyPackCache[pack.file];
+  try {
+    const res = await fetch(`../drills/${pack.file}`, { cache: "no-store" });
+    if (!res.ok) throw new Error("not found");
+    strategyPackCache[pack.file] = await res.json();
+    return strategyPackCache[pack.file];
+  } catch (e) {
+    return null;
+  }
+}
+
+async function startStrategyPackSession(packKey) {
+  const pack = STRATEGY_PACKS.find(p => p.key === packKey);
+  if (!pack) return;
+  currentStrategyPack = pack;
+  renderGameScreen("strategy_pack");
+  const content = document.getElementById("content");
+  if (content) content.innerHTML = `<div class="loading">Loading drills…</div>`;
+  const pool = await loadStrategyPackPool(pack);
+  if (!pool || !pool.length) {
+    showToast("Couldn't load that pack — try again in a moment.");
+    renderStartScreen();
+    return;
+  }
+  sessionIndex = 0; sessionPnl = 0; bankroll = STARTING_BANKROLL;
+  streak = 0; bestStreak = 0; multiplier = 1; sessionResults = [];
+  secondChanceUsedThisSession = false;
+  sessionDeck = shuffleArray(pool.slice()).slice(0, STRATEGY_PACK_DRILLS_PER_SESSION);
+  document.getElementById("bankrollValue").textContent = formatMoney(bankroll);
+  document.getElementById("pnlValue").textContent = "$0";
+  document.getElementById("pnlValue").className = "stat-value";
+  loadDrill(sessionDeck[sessionIndex]);
+}
+function advanceOrEndStrategyPack() {
+  clearTimeout(autoAdvanceHandle);
+  sessionIndex++;
+  if (sessionIndex >= sessionDeck.length) showStrategyPackEnd();
+  else loadDrill(sessionDeck[sessionIndex]);
+}
+function showStrategyPackEnd() {
+  setDrillInProgress(false);
+  const content = document.getElementById("content");
+  const correctCount = sessionResults.filter(r => r.correct === true).length;
+  const total = sessionDeck.length;
+  const accuracy = total ? Math.round(100 * correctCount / total) : 0;
+  appState.practiceSessionsCompleted = (appState.practiceSessionsCompleted || 0) + 1;
+  awardTicks(25);
+  saveState();
+  if (authReady()) tlSyncStats(appState);
+
+  content.innerHTML = `
+    <div class="end-of-day">
+      <h2>${escapeHtml(currentStrategyPack.label)} — Complete</h2>
+      <div class="eod-pnl ${sessionPnl >= 0 ? "pos" : "neg"}">${(sessionPnl >= 0 ? "+" : "")}${formatMoney(sessionPnl)}</div>
+      <div style="color:var(--muted);font-size:0.85rem;margin-bottom:6px;">Session P&L</div>
+      <div class="eod-grid">
+        <div class="cell"><div class="v">${correctCount}/${total}</div><div class="l">Correct</div></div>
+        <div class="cell"><div class="v">${accuracy}%</div><div class="l">Accuracy</div></div>
+        <div class="cell"><div class="v">${appState.strategyPackStats ? appState.strategyPackStats.totalAnswered : 0}</div><div class="l">All-Time</div></div>
+      </div>
+      <button class="trade-again-btn" id="spAgainBtn">RUN IT AGAIN</button>
+      <button class="text-link-btn" id="spOtherPackBtn">← Choose another pack</button>
+      <button class="text-link-btn" id="spBackBtn">Back to start</button>
+    </div>
+  `;
+  document.getElementById("spAgainBtn").onclick = () => startStrategyPackSession(currentStrategyPack.key);
+  document.getElementById("spOtherPackBtn").onclick = renderStrategyPickerScreen;
+  document.getElementById("spBackBtn").onclick = renderStartScreen;
+}
+
+function renderStrategyPickerScreen() {
+  currentMode = null;
+  setDrillInProgress(false);
+  clearTimer();
+  clearTimeout(playoutHandle);
+  clearTimeout(autoAdvanceHandle);
+  const root = document.getElementById("screenRoot");
+  const classical = STRATEGY_PACKS.filter(p => p.category === "classical");
+  const ict = STRATEGY_PACKS.filter(p => p.category === "ict");
+  const packCard = (p) => `
+    <button class="strategy-pack-card" data-pack="${p.key}">
+      <div class="spc-label">${escapeHtml(p.label)}</div>
+      <div class="spc-desc">${escapeHtml(p.description)}</div>
+    </button>
+  `;
+  root.innerHTML = `
+    <div class="topbar">
+      <div class="bankroll">
+        <div class="bankroll-label">🎯 Strategy Packs</div>
+        <div class="bankroll-value" style="font-size:1.15rem;">Pick a setup to drill</div>
+      </div>
+    </div>
+    <div id="content">
+      <div class="strategy-section-label">Classical</div>
+      <div class="strategy-pack-grid">${classical.map(packCard).join("")}</div>
+      <div class="strategy-section-label">ICT / Smart Money Concepts</div>
+      <div class="ict-honesty-banner">⚠️ ${escapeHtml(ICT_HONESTY_BLURB)}</div>
+      <div class="strategy-pack-grid">${ict.map(packCard).join("")}</div>
+      <button class="text-link-btn" id="strategyBackBtn" style="margin:14px 0 24px;">← Back to start</button>
+    </div>
+  `;
+  document.querySelectorAll(".strategy-pack-card").forEach(btn => {
+    btn.onclick = () => startStrategyPackSession(btn.dataset.pack);
+  });
+  document.getElementById("strategyBackBtn").onclick = renderStartScreen;
 }
 
 /* ============================= SPEED RUN MODE ============================= */
@@ -3327,6 +3598,7 @@ function renderStartScreen() {
 
       <button class="mode-btn practice-btn" id="practiceBtn">${practiceButtonLabel()}</button>
       <button class="mode-btn speedrun-btn" id="speedRunBtn">⚡ SPEED RUN — 5 DRILLS, 5s EACH</button>
+      <button class="text-link-btn" id="strategyPacksBtn" style="padding:4px 0;">🎯 Strategy Packs (ORB, VWAP, ICT/SMC & more)</button>
       ${appState.missedDrills.length ? `<button class="text-link-btn" id="missReviewBtn">📕 Review your misses (${appState.missedDrills.length})</button>` : ""}
 
       <div class="start-stats-row">
@@ -3338,6 +3610,7 @@ function renderStartScreen() {
   `;
   document.getElementById("dailyBtn").onclick = handleDailyButtonClick;
   document.getElementById("practiceBtn").onclick = startNewPracticeSession;
+  document.getElementById("strategyPacksBtn").onclick = renderStrategyPickerScreen;
   const missBtn = document.getElementById("missReviewBtn");
   if (missBtn) missBtn.onclick = startMissReview;
   document.getElementById("speedRunBtn").onclick = () => startNewSpeedRun();
@@ -3518,6 +3791,7 @@ async function initAccountSync() {
               if (result.merged.chart_settings) appState.chartSettings = result.merged.chart_settings;
               appState.lswStats = { totalAnswered: result.merged.lsw_total_answered || 0, totalCorrect: result.merged.lsw_total_correct || 0 };
               appState.orderTrainerStats = { totalOrders: result.merged.ot_total_orders || 0, filled: result.merged.ot_total_filled || 0, wins: result.merged.ot_total_wins || 0 };
+              appState.strategyPackStats = { totalAnswered: result.merged.sp_total_answered || 0, totalCorrect: result.merged.sp_total_correct || 0 };
               appState.dailyPlayStreak = recomputed.dailyPlayStreak;
               appState.dailyWinStreak = recomputed.dailyWinStreak;
               if (recomputed.lastDailyDate) appState.lastDailyDate = recomputed.lastDailyDate;
