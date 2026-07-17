@@ -3599,6 +3599,7 @@ function renderStartScreen() {
       <button class="mode-btn practice-btn" id="practiceBtn">${practiceButtonLabel()}</button>
       <button class="mode-btn speedrun-btn" id="speedRunBtn">⚡ SPEED RUN — 5 DRILLS, 5s EACH</button>
       <button class="text-link-btn" id="strategyPacksBtn" style="padding:4px 0;">🎯 Strategy Packs (ORB, VWAP, ICT/SMC & more)</button>
+      <a class="text-link-btn" href="/academy/" style="padding:4px 0;display:block;">📚 Academy — lessons, quizzes &amp; a learning path</a>
       ${appState.missedDrills.length ? `<button class="text-link-btn" id="missReviewBtn">📕 Review your misses (${appState.missedDrills.length})</button>` : ""}
 
       <div class="start-stats-row">
@@ -3873,16 +3874,19 @@ document.getElementById("exitLeaveBtn").onclick = confirmExitDrill;
 /* ============================= DEEP LINKS ============================= */
 let pendingDeepLinkMode = (function () {
   const m = new URLSearchParams(location.search).get("mode");
-  return (m === "daily" || m === "practice") ? m : null;
+  return (m === "daily" || m === "practice" || m === "ordertrainer" || m === "longshortwait") ? m : null;
 })();
 const pendingChallengeId = new URLSearchParams(location.search).get("challenge");
 const pendingReview = new URLSearchParams(location.search).get("review") === "1";
+const pendingStrategyPack = new URLSearchParams(location.search).get("strategyPack");
 function goToStartOrDeepLink() {
   const mode = pendingDeepLinkMode;
   pendingDeepLinkMode = null;
   if (pendingReview && appState.missedDrills.length) { history.replaceState(null, "", location.pathname); startMissReview(); }
+  else if (pendingStrategyPack && STRATEGY_PACKS.some(p => p.key === pendingStrategyPack)) { startStrategyPackSession(pendingStrategyPack); }
   else if (mode === "daily") handleDailyButtonClick();
   else if (mode === "practice") startNewPracticeSession();
+  else if (mode === "ordertrainer" || mode === "longshortwait") { appState.drillStyle = mode; saveState(); startNewPracticeSession(); }
   else renderStartScreen();
 }
 

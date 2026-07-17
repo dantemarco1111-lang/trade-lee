@@ -156,24 +156,59 @@ Status legend: `[ ]` not started · `[~]` in progress · `[x]` done and verified
       pack rather than fighting the charting library, a known minor scope
       limit worth revisiting later rather than a blocker.
 
-## PHASE 4: The Academy — full curriculum tree
-- [ ] Build /academy/ — Duolingo-style vertical unit path, mobile-first, replacing
-      the flat /learn/ page (old lesson content absorbed into units, not deleted)
-- [ ] U1 Foundations
-- [ ] U2 Candles
-- [ ] U3 Volume (ties to Phase 1's volume profile)
-- [ ] U4 Support/Resistance & Levels
-- [ ] U5 Breakouts & Fakeouts (links the core game)
-- [ ] U6 VWAP & Trend
-- [ ] U7 Risk Management (absorbs /risk/ content + position-size calculator)
-- [ ] U8 Order Types & Execution (quiz + Phase 2's order-execution trainer as drill)
-- [ ] U9 Sessions & Time (premarket/open/lunch/power hour, FX sessions, kill zones)
-- [ ] U10 Smart Money Concepts (Phase 3 ICT content, honesty framing intact)
-- [ ] U11 Trading Psychology (interactive scored scenarios)
-- [ ] U12 Prop Firm Path (links /funded/)
-- [ ] Progress UI: unit bubbles, progress rings, locked/greyed, current unit
-      pulsing; badges tie into existing tiers; 3-6 lessons + 5-question quiz +
-      linked drill set per unit; unlocks next unit; XP + Ticks rewards; synced
+## PHASE 4: The Academy — full curriculum tree — DONE
+- [x] Built /academy/index.html — a vertical unit path (12 numbered nodes,
+      connecting line, locked/current-pulsing/completed states) as a
+      single-file SPA matching the rest of the site's no-build-step
+      convention. Old /learn/, /risk/, /funded/ pages were NOT deleted —
+      their prose (and risk/'s position-size calculator, ported with its
+      exact formula) was absorbed into Academy units; all 3 pages stay live
+      and linked from the nav. Added /academy/ as the first "Learn" dropdown
+      link (desktop + mobile) across all 9 site pages, plus a nav button
+      inside the game itself.
+- [x] U1 Foundations — new orientation content (real data, how the drill
+      loop works, chart anatomy, scoring/Ticks).
+- [x] U2 Candles — ported from learn/'s candlestick section.
+- [x] U3 Volume — ported from learn/'s volume section.
+- [x] U4 Support/Resistance & Levels — ported from learn/'s S/R section.
+- [x] U5 Breakouts & Fakeouts — ported from learn/'s breakout section, links
+      the Daily Drill.
+- [x] U6 VWAP & Trend — ported from learn/'s VWAP section + a new VWAP
+      Pullback lesson grounded in Phase 3's research; links that Strategy
+      Pack directly (?strategyPack=vwap_pullback deep link).
+- [x] U7 Risk Management — ported all of risk/'s content including the exact
+      calcRisk() formula/UI, re-tested live (changing account size correctly
+      recomputes max shares/dollar risk).
+- [x] U8 Order Types & Execution — new content (market/limit/stop/stop-limit,
+      bracket/OCO), links the Order Execution Trainer (?mode=ordertrainer).
+- [x] U9 Sessions & Time — new content (US session structure, FX sessions)
+      plus Kill Zones using the exact honesty framing from DETECTION.md;
+      links the Kill Zones pack.
+- [x] U10 Smart Money Concepts — draws directly on DETECTION.md's ICT
+      section, opens with the same discretionary/not-settled-science framing
+      before any mechanical explanation; links Liquidity Sweep.
+- [x] U11 Trading Psychology — scored scenario-style quiz questions (revenge
+      trading, FOMO, overconfidence after a streak, analysis paralysis)
+      instead of plain factual recall, per the plan's "interactive scored
+      scenarios" requirement.
+- [x] U12 Prop Firm Path — ported from funded/'s reality-check + evaluation
+      content, links /funded/.
+- [x] Progress UI: unit nodes with locked (greyed, lock badge) / current
+      (pulsing gold ring) / completed (green, checkmark badge) states, a
+      connecting path line, and a lessons-read counter per unit. Each unit:
+      2-4 lessons (kept lean rather than forcing 6 where the material didn't
+      need it) + a 5-question quiz (pass = 3/5, matching a friendly beginner
+      bar) + a linked drill deep-link. Passing a quiz unlocks the next unit,
+      awards +30 Ticks, and is tracked in a shared `academyProgress` field in
+      the same localStorage blob every other page already reads/writes (so
+      Ticks earned in Academy show up everywhere else immediately, verified
+      live: 80 Ticks carried across an Academy session).
+- [x] Verified live in-browser: full Unit 1 lesson→quiz→pass→unlock loop,
+      Risk Management's calculator recomputing on input change, the SMC
+      honesty framing rendering correctly, mobile 375px readability
+      (path view + calculator), hamburger/dropdown nav still working on both
+      Academy and a spot-checked existing page (root index.html) after the
+      9-file nav edit, and the game's own new Academy nav link resolving.
 
 ## PHASE 5: Freemium Structure
 - [ ] Free tier locked in as genuinely great: daily drill forever, 3 practice

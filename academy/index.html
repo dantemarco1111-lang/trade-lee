@@ -1,0 +1,809 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Academy — Trade Lee</title>
+<meta name="description" content="A 12-unit, Duolingo-style path from chart basics to prop-firm-ready — lessons, quizzes, and linked drills for every concept.">
+<meta property="og:title" content="Academy — Trade Lee">
+<meta property="og:description" content="A 12-unit, Duolingo-style path from chart basics to prop-firm-ready — lessons, quizzes, and linked drills for every concept.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://trade-lee.vercel.app/academy/">
+<meta property="og:image" content="https://trade-lee.vercel.app/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Academy — Trade Lee">
+<meta name="twitter:description" content="A 12-unit path from chart basics to prop-firm-ready.">
+<meta name="twitter:image" content="https://trade-lee.vercel.app/og-image.png">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230b0e14'/%3E%3Cline x1='11' y1='4' x2='11' y2='28' stroke='%2326a69a' stroke-width='2.2'/%3E%3Crect x='7' y='10' width='8' height='10' rx='1' fill='%2326a69a'/%3E%3Cline x1='23' y1='6' x2='23' y2='25' stroke='%23ef5350' stroke-width='2.2'/%3E%3Crect x='19' y='12' width='8' height='7' rx='1' fill='%23ef5350'/%3E%3C/svg%3E">
+<link rel="manifest" href="/manifest.json">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta name="theme-color" content="#0b0e14">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@500;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@500;700&display=swap">
+<link rel="stylesheet" href="/theme.css">
+<style>
+  html, body { margin: 0; padding: 0; color: var(--text); font-family: var(--font-body); overflow-x: hidden; -webkit-tap-highlight-color: transparent; min-height: 100vh; }
+  a { color: inherit; }
+  .wrap { max-width: 1100px; margin: 0 auto; padding: 0 20px; }
+  .acad-main { max-width: 720px; margin: 0 auto; padding: 0 16px 60px; }
+
+  /* ---------- unit path ---------- */
+  .acad-hero { text-align: center; margin: 34px 0 30px; }
+  .acad-hero .badge {
+    display: inline-block; font-family: var(--font-mono); font-size: 0.7rem; letter-spacing: 1.5px;
+    color: var(--green); background: rgba(34,197,94,0.1); border: 1px solid rgba(34,197,94,0.3);
+    border-radius: 20px; padding: 5px 14px; margin-bottom: 14px;
+  }
+  .acad-hero h1 { font-family: var(--font-display); font-weight: 700; font-size: clamp(1.8rem, 6vw, 2.5rem); margin: 0 0 8px; }
+  .acad-hero p { color: var(--text-dim); font-size: 1rem; line-height: 1.5; margin: 0; }
+
+  .unit-path { position: relative; padding-left: 6px; }
+  .unit-path::before {
+    content: ""; position: absolute; left: 29px; top: 30px; bottom: 30px; width: 2px;
+    background: var(--border-strong);
+  }
+  .unit-card {
+    position: relative; display: flex; gap: 16px; align-items: flex-start;
+    padding: 16px 16px 16px 0; margin-bottom: 4px; cursor: pointer; border-radius: 14px;
+    background: transparent; border: none; text-align: left; width: 100%; color: inherit; font-family: inherit;
+  }
+  .unit-card:disabled { cursor: default; opacity: 0.55; }
+  .unit-card:not(:disabled):active { transform: scale(0.99); }
+  .unit-node {
+    flex-shrink: 0; width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center;
+    justify-content: center; font-size: 1.6rem; position: relative; z-index: 1;
+    background: var(--surface-2); border: 2px solid var(--border-strong);
+  }
+  .unit-card.completed .unit-node { background: rgba(34,197,94,0.15); border-color: var(--green); }
+  .unit-card.current .unit-node { background: rgba(245,180,0,0.15); border-color: #f5b400; box-shadow: 0 0 0 4px rgba(245,180,0,0.12); animation: acadPulse 2s ease-in-out infinite; }
+  @keyframes acadPulse { 0%,100% { box-shadow: 0 0 0 4px rgba(245,180,0,0.12); } 50% { box-shadow: 0 0 0 8px rgba(245,180,0,0.05); } }
+  .unit-node .check { position: absolute; bottom: -2px; right: -2px; background: var(--green); color: #04140a; width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: 700; }
+  .unit-node .lock { position: absolute; bottom: -2px; right: -2px; background: var(--surface); border: 1px solid var(--border-strong); color: var(--text-dim); width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.6rem; }
+  .unit-body { flex: 1; padding-top: 4px; }
+  .unit-num { font-family: var(--font-mono); font-size: 0.68rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.5px; }
+  .unit-title { font-family: var(--font-display); font-size: 1.05rem; margin: 2px 0 4px; }
+  .unit-desc { font-size: 0.82rem; color: var(--text-dim); line-height: 1.4; }
+  .unit-progress { font-size: 0.72rem; color: var(--green); font-family: var(--font-mono); margin-top: 6px; }
+
+  /* ---------- unit detail / lesson / quiz shared chrome ---------- */
+  .acad-topbar { display: flex; align-items: center; gap: 12px; margin: 22px 0 18px; }
+  .acad-back { background: var(--surface); border: 1px solid var(--border-strong); color: var(--text); border-radius: 10px; padding: 8px 14px; font-size: 0.85rem; cursor: pointer; font-family: var(--font-body); }
+  .acad-topbar .unit-title { margin: 0; font-size: 1.15rem; }
+
+  .lesson-list-item {
+    display: flex; align-items: center; gap: 12px; background: var(--surface); border: 1px solid var(--border);
+    border-radius: 12px; padding: 14px 16px; margin-bottom: 8px; cursor: pointer;
+  }
+  .lesson-list-item .li-num { font-family: var(--font-mono); font-size: 0.75rem; color: var(--text-dim); width: 20px; }
+  .lesson-list-item .li-title { flex: 1; font-size: 0.92rem; }
+  .lesson-list-item .li-check { color: var(--green); font-size: 0.9rem; }
+
+  .quiz-cta-btn, .acad-primary-btn {
+    display: block; width: 100%; margin-top: 18px; padding: 15px; border: none; border-radius: 12px;
+    font-family: var(--font-display); font-size: 1rem; font-weight: 700; cursor: pointer; text-align: center;
+    background: linear-gradient(180deg, #2fbf9f, var(--green-dark)); color: #04140a;
+  }
+  .quiz-cta-btn:disabled { background: var(--surface-2); color: var(--text-dim); cursor: not-allowed; }
+  .acad-secondary-btn {
+    display: block; width: 100%; margin-top: 10px; padding: 13px; border: 1px solid var(--border-strong);
+    border-radius: 12px; background: transparent; color: var(--text); font-size: 0.9rem; cursor: pointer; text-align: center;
+    font-family: var(--font-body);
+  }
+
+  .lesson-content { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 22px 20px; }
+  .lesson-content h2 { font-family: var(--font-display); font-size: 1.2rem; margin: 0 0 14px; }
+  .lesson-content p { line-height: 1.6; font-size: 0.95rem; margin: 0 0 12px; }
+  .lesson-content p:last-of-type { margin-bottom: 0; }
+  .lesson-content .formula { font-family: var(--font-mono); font-size: 0.85rem; background: var(--surface-2); border: 1px solid var(--border-strong); border-radius: 10px; padding: 12px 14px; margin: 14px 0; }
+  .lesson-nav { display: flex; gap: 10px; margin-top: 18px; }
+  .lesson-nav button { flex: 1; }
+
+  .ict-callout {
+    background: rgba(245, 180, 0, 0.08); border: 1px solid rgba(245, 180, 0, 0.35);
+    border-radius: 12px; padding: 12px 14px; font-size: 0.85rem; color: var(--text-dim); line-height: 1.45; margin: 14px 0;
+  }
+
+  .acad-calc-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 14px 0 4px; }
+  .acad-calc-field label { display: block; font-size: 0.68rem; color: var(--text-dim); margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.4px; }
+  .acad-calc-field input { width: 100%; background: var(--surface-2); border: 1px solid var(--border-strong); border-radius: 8px; padding: 9px 10px; color: var(--text); font-family: var(--font-mono); font-size: 0.9rem; outline: none; box-sizing: border-box; }
+  .acad-calc-field input:focus { border-color: var(--green); }
+  .acad-calc-output { display: flex; gap: 10px; margin-top: 14px; }
+  .acad-calc-output .out-cell { flex: 1; background: rgba(34,197,94,0.08); border: 1px solid rgba(34,197,94,0.3); border-radius: 10px; padding: 12px 8px; text-align: center; }
+  .acad-calc-output .out-val { font-family: var(--font-mono); font-variant-numeric: tabular-nums; font-size: 1.35rem; font-weight: 700; color: var(--green); }
+  .acad-calc-output .out-label { font-size: 0.62rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.4px; margin-top: 3px; }
+
+  .data-table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 0.85rem; }
+  .data-table th, .data-table td { padding: 8px 10px; text-align: left; border-bottom: 1px solid var(--border); }
+  .data-table th { color: var(--text-dim); font-weight: 600; font-size: 0.68rem; text-transform: uppercase; }
+  .data-table td { font-family: var(--font-mono); }
+  .checklist { list-style: none; padding: 0; margin: 0; }
+  .checklist li { display: flex; gap: 8px; padding: 9px 0; border-bottom: 1px solid var(--border); font-size: 0.88rem; line-height: 1.5; }
+  .checklist li:last-child { border-bottom: none; }
+  .checklist li .check-icon { color: var(--green); flex-shrink: 0; font-weight: 700; }
+
+  /* ---------- quiz ---------- */
+  .quiz-progress { font-family: var(--font-mono); font-size: 0.72rem; color: var(--text-dim); margin-bottom: 10px; }
+  .quiz-q { font-family: var(--font-display); font-size: 1.05rem; margin: 0 0 16px; line-height: 1.4; }
+  .quiz-choice {
+    display: block; width: 100%; text-align: left; background: var(--surface); border: 1px solid var(--border-strong);
+    border-radius: 12px; padding: 13px 16px; margin-bottom: 9px; font-size: 0.9rem; color: var(--text);
+    cursor: pointer; font-family: var(--font-body);
+  }
+  .quiz-choice:hover:not(:disabled) { border-color: var(--text-dim); }
+  .quiz-choice.correct { background: rgba(34,197,94,0.12); border-color: var(--green); }
+  .quiz-choice.wrong { background: rgba(239,68,68,0.1); border-color: var(--red); }
+  .quiz-choice:disabled { cursor: default; }
+  .quiz-explain { font-size: 0.85rem; color: var(--text-dim); line-height: 1.5; margin-top: 12px; padding: 12px 14px; background: var(--surface-2); border-radius: 10px; }
+
+  .quiz-result { text-align: center; padding: 30px 10px; }
+  .quiz-result .qr-score { font-family: var(--font-display); font-size: 2.4rem; margin: 10px 0; }
+  .quiz-result .qr-score.pass { color: var(--green); }
+  .quiz-result .qr-score.fail { color: var(--text-dim); }
+  .quiz-result .qr-msg { color: var(--text-dim); font-size: 0.95rem; margin-bottom: 6px; }
+  .quiz-result .qr-reward { font-family: var(--font-mono); font-size: 0.85rem; color: #f5b400; margin: 10px 0 4px; }
+
+  @media (max-width: 480px) {
+    .unit-node { width: 50px; height: 50px; font-size: 1.35rem; }
+    .unit-path::before { left: 24px; }
+    .acad-calc-grid { grid-template-columns: 1fr 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="wrap site-header-inner">
+    <a class="nav-wordmark" href="/">📈 Trade Lee</a>
+    <nav class="nav-links-desktop">
+      <div class="nav-dropdown" id="playDropdown">
+        <button class="nav-dropdown-trigger" type="button">Play <span class="caret">▾</span></button>
+        <div class="nav-dropdown-menu">
+          <a href="/play/?mode=daily">Daily Drill</a>
+          <a href="/play/?mode=practice">Practice</a>
+        </div>
+      </div>
+      <div class="nav-dropdown" id="learnDropdown">
+        <button class="nav-dropdown-trigger" type="button">Learn <span class="caret">▾</span></button>
+        <div class="nav-dropdown-menu">
+          <a href="/academy/">Academy</a>
+          <a href="/risk/">Risk</a>
+          <a href="/strategies/">Strategies</a>
+          <a href="/learn/">Lessons</a>
+        </div>
+      </div>
+      <a href="/funded/">Get Funded</a>
+      <a href="/leaderboard/">Leaderboard</a>
+      <a href="/premium/">Premium <span class="soon-tag">PRO</span></a>
+    </nav>
+    <button class="hamburger-btn" id="hamburgerBtn" aria-label="Open menu">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</header>
+
+<div class="mobile-menu-overlay" id="mobileMenuOverlay">
+  <button class="mobile-menu-close" id="mobileMenuClose" aria-label="Close menu">✕</button>
+  <div class="mobile-menu-label">Play</div>
+  <a href="/play/?mode=daily">Daily Drill</a>
+  <a href="/play/?mode=practice">Practice</a>
+  <div class="mobile-menu-label">Learn</div>
+  <a href="/academy/">Academy</a>
+  <a href="/risk/">Risk</a>
+  <a href="/strategies/">Strategies</a>
+  <a href="/learn/">Lessons</a>
+  <div class="mobile-menu-label">More</div>
+  <a href="/funded/">Get Funded</a>
+  <a href="/leaderboard/">Leaderboard</a>
+  <a href="/premium/">Premium <span class="soon-tag">PRO</span></a>
+</div>
+
+<main class="acad-main" id="academyRoot"></main>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <div class="footer-wordmark">📈 Trade Lee</div>
+    <div class="footer-tagline">Trade Lee — train your eye. © 2026</div>
+    <div class="footer-links">
+      <a href="#" data-social="tiktok">TikTok</a>
+      <a href="#" data-social="x">X</a>
+      <a href="#" data-social="instagram">Instagram</a>
+      <a href="#" data-social="youtube">YouTube</a>
+    </div>
+    <div class="footer-disclaimer">Educational content, not financial advice.</div>
+  </div>
+</footer>
+
+<script src="/social-links.js"></script>
+<script>
+(function () {
+  const overlay = document.getElementById("mobileMenuOverlay");
+  document.getElementById("hamburgerBtn").onclick = () => overlay.classList.add("open");
+  document.getElementById("mobileMenuClose").onclick = () => overlay.classList.remove("open");
+  overlay.querySelectorAll("a").forEach(a => a.addEventListener("click", () => overlay.classList.remove("open")));
+
+  document.querySelectorAll(".nav-dropdown").forEach(dd => {
+    const trigger = dd.querySelector(".nav-dropdown-trigger");
+    trigger.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const isOpen = dd.classList.contains("open");
+      document.querySelectorAll(".nav-dropdown.open").forEach(o => o.classList.remove("open"));
+      if (!isOpen) dd.classList.add("open");
+    });
+  });
+  document.addEventListener("click", () => {
+    document.querySelectorAll(".nav-dropdown.open").forEach(o => o.classList.remove("open"));
+  });
+})();
+
+/* ============================= SHARED STATE (same key as the game) ============================= */
+const STORAGE_KEY = "tradeLeeState_v1";
+function defaultState() {
+  return {
+    ticks: 0, ticksEarnedAllTime: 0,
+    academyProgress: { unitsCompleted: [], lessonsRead: {}, quizBestScore: {} },
+  };
+}
+function loadState() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return defaultState();
+    const parsed = JSON.parse(raw);
+    const merged = Object.assign(defaultState(), parsed);
+    merged.academyProgress = Object.assign(defaultState().academyProgress, parsed.academyProgress || {});
+    return merged;
+  } catch (e) { return defaultState(); }
+}
+function saveState() {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch (e) {}
+}
+let state = loadState();
+
+function escapeHtml(str) {
+  return String(str).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+}
+
+/* ============================= UNIT DATA ============================= */
+const ICT_NOTE = "Smart Money Concepts is a discretionary framework, not settled science. It overlaps classical technical analysis under new names, and no independent study confirms a standalone edge for any of it — we teach the vocabulary honestly, not as gospel.";
+
+const ACADEMY_UNITS = [
+  {
+    key: "foundations", icon: "🎯", title: "Foundations",
+    desc: "What Trade Lee actually trains, and how to read the screen.",
+    drillLink: { label: "Play the Daily Drill", href: "/play/?mode=daily" },
+    lessons: [
+      { title: "Welcome to Trade Lee", body: [
+        "Every drill in this app is built from real historical market data — actual candles from actual trading days, not randomly generated patterns. When you judge a chart, you're judging something that really happened.",
+        "The loop is simple: you're shown a chart up to a decision point, you make a call, and the chart plays forward so you see exactly what happened next. Do this enough times across enough real examples, and your eye starts recognizing the patterns before your conscious brain catches up — the same way flashcards build recall.",
+        "Nothing here risks real money. Every bankroll and P&L number you see in Practice, Daily Drill, or any Strategy Pack is simulated — it exists purely to make the scoring feel real while you build the underlying skill." ] },
+      { title: "The Anatomy of a Chart", body: [
+        "Every chart is candlesticks on a 5-minute timeframe (some drills use 15-minute) — each candle is one chunk of time. The bars underneath are volume: how much traded during that candle.",
+        "The purple line running through the candles is VWAP (Volume-Weighted Average Price) — you'll learn exactly what that means in Unit 6, but for now just know it's a running average price line, present on almost every chart in the app.",
+        "Tap the gear icon in the top-left of any chart to toggle VWAP, volume, and a volume profile histogram on or off — use whatever combination helps you read the chart, not what looks the busiest." ] },
+      { title: "How Scoring Works", body: [
+        "Streaks and multipliers reward consistency: string together correct calls in Practice mode and your P&L multiplier climbs. Miss one and it resets — there's no punishment beyond that, just an incentive to stay sharp.",
+        "Ticks are the app's currency, earned by completing sessions and drills across the whole site — Daily Drill, Practice, Speed Run, Strategy Packs, and the Academy all pay out Ticks. Spend them on power-ups from the Powerups page.",
+        "There's no wrong way to lose a drill. Getting a call wrong and seeing exactly why is the entire point — that's the rep that actually moves your skill." ] },
+    ],
+    quiz: [
+      { q: "What kind of data powers Trade Lee's drills?", choices: ["Randomly generated candles", "Real historical market data", "Data made up for teaching purposes", "Live streaming data only"], correct: 1, explain: "Every drill is built from real candles pulled from actual trading days — you're training your eye on the real thing." },
+      { q: "What does the purple line on most charts represent?", choices: ["The daily high", "A resistance level", "VWAP (Volume-Weighted Average Price)", "The prior day's close"], correct: 2, explain: "VWAP shows up throughout the app — Unit 6 covers exactly what it means and why traders watch it." },
+      { q: "Is the bankroll shown in Practice mode real money?", choices: ["Yes, it's connected to a real account", "No — it's simulated, purely for scoring feel", "Only in Speed Run mode", "Only for signed-in users"], correct: 1, explain: "Nothing in Trade Lee risks real money. Every P&L number is simulated to make the scoring feel tangible while you build skill." },
+      { q: "What do you earn by completing drills and sessions?", choices: ["Ticks", "Real cash", "Nothing, it's purely for fun", "Only XP, no other reward"], correct: 0, explain: "Ticks are the app's in-game currency, spendable on power-ups — earned across Daily Drill, Practice, Speed Run, Strategy Packs, and the Academy." },
+      { q: "What's the fastest way to actually get better at spotting patterns?", choices: ["Reading about patterns without practicing", "Repetition across many real examples", "Memorizing one perfect example", "Watching other people play"], correct: 1, explain: "Pattern recognition is a rep-based skill — the more real examples you judge and then see resolved, the faster your eye calibrates." },
+    ],
+  },
+  {
+    key: "candles", icon: "🕯️", title: "Candles",
+    desc: "Reading a single candlestick at a glance.",
+    drillLink: { label: "Play the Daily Drill", href: "/play/?mode=daily" },
+    lessons: [
+      { title: "Anatomy of a Candle", body: [
+        "Each candlestick shows four prices for one period: open, high, low, and close. The thick part is the \"body\" — it spans from the open price to the close price. The thin lines above and below are \"wicks\" (or \"shadows\") — they show the highest and lowest prices reached, even if price didn't close there.",
+        "Color tells you direction: a green candle means the close was HIGHER than the open — buyers won that period. A red candle means the close was LOWER than the open — sellers won." ] },
+      { title: "What Wicks Tell You", body: [
+        "A long wick tells a story. A long lower wick means price dropped hard, but buyers stepped in and pushed it back up before the period closed — often a sign of rejection at that level. A long upper wick is the opposite: an attempt higher that got sold back down.",
+        "Once you can read a single candle at a glance — direction, body size, wick length — you're reading the market's mood, not just a shape on a chart." ] },
+    ],
+    quiz: [
+      { q: "What does the body of a candlestick represent?", choices: ["The highest and lowest price of the period", "The span from open to close", "Total volume traded", "The average price"], correct: 1, explain: "The body spans open to close; the wicks above/below show the high/low that didn't hold." },
+      { q: "A green candle means:", choices: ["The close was lower than the open", "The close was higher than the open", "Volume was unusually high", "The candle has no wick"], correct: 1, explain: "Green (or a similar 'up' color) = close above open, buyers won that period." },
+      { q: "What do the thin lines above/below the body show?", choices: ["Average volume", "The wicks — highest/lowest price reached", "The prior candle's close", "Nothing meaningful"], correct: 1, explain: "Wicks show price extremes that didn't hold by the close." },
+      { q: "A long lower wick after a sharp drop often signals:", choices: ["Certain further decline", "Buyers stepped in and rejected the lower price", "A data error", "High volume only"], correct: 1, explain: "A long lower wick shows sellers pushed price down, but buyers reclaimed it before the close — a rejection signal." },
+      { q: "Why learn to read a single candle well?", choices: ["It's required to see the chart at all", "It lets you read market mood at a glance, not just shapes", "It replaces needing to check volume", "It only matters on daily charts"], correct: 1, explain: "Direction, body size, and wick length together tell you what actually happened in that window of time." },
+    ],
+  },
+  {
+    key: "volume", icon: "📊", title: "Volume",
+    desc: "Conviction, not direction — what the bars beneath the chart mean.",
+    drillLink: { label: "Play the Daily Drill", href: "/play/?mode=daily" },
+    lessons: [
+      { title: "What Volume Measures", body: [
+        "Volume is simply how many shares (or contracts) traded during a given period — shown as the bars beneath a price chart. On its own, volume doesn't tell you direction. It tells you conviction.",
+        "A big price move on HIGH volume means a lot of participants agreed and acted — that move is more likely to hold. The same size move on LOW volume is thinner, easier to reverse, and often just noise." ] },
+      { title: "Volume Confirms (or Denies) a Move", body: [
+        "This is exactly why the breakout drill cares about volume: a breakout candle that closes beyond a range on 2x average volume has real buyers or sellers behind it. The identical-looking breakout on weak volume is a common fakeout — it often snaps back into the range once the initial push fades.",
+        "Rule of thumb: don't just ask \"did price move?\" Ask \"did volume confirm it?\" Volume is the market showing its hand." ] },
+    ],
+    quiz: [
+      { q: "What does volume measure?", choices: ["Price direction", "How many shares/contracts traded", "The size of the wick", "VWAP's slope"], correct: 1, explain: "Volume is a raw count of activity — it says nothing about direction by itself." },
+      { q: "A big price move on HIGH volume suggests:", choices: ["The move is likely noise", "Strong conviction — more likely to hold", "A data glitch", "Low participation"], correct: 1, explain: "High volume means many participants acted together, giving the move real backing." },
+      { q: "A breakout on weak volume is a classic sign of:", choices: ["A guaranteed real breakout", "A possible fakeout", "Higher VWAP", "Nothing significant"], correct: 1, explain: "Weak-volume breakouts often snap back — real breakouts tend to bring a surge in participation." },
+      { q: "What's the better question to ask about any big move?", choices: ["\"Did price move?\"", "\"Did volume confirm it?\"", "\"Was it a green candle?\"", "\"Did it happen in the morning?\""], correct: 1, explain: "Volume confirmation is what separates a real move from noise." },
+      { q: "In the Classic breakout drill, what volume ratio is often treated as a strong confirming signal?", choices: ["0.5x average", "Exactly average", "About 2x the consolidation's average volume", "Volume is never used"], correct: 2, explain: "A breakout candle trading around 2x the recent average volume is treated as a real conviction signal in the drill's detection logic." },
+    ],
+  },
+  {
+    key: "levels", icon: "📐", title: "Support & Resistance",
+    desc: "Zones traders remember, and what happens when they break.",
+    drillLink: { label: "Play the Daily Drill", href: "/play/?mode=daily" },
+    lessons: [
+      { title: "Support and Resistance", body: [
+        "Support is a price level where a stock has repeatedly stopped falling and bounced back up — think of it as a floor. Resistance is the opposite: a level where price has repeatedly stopped rising and turned back down — a ceiling.",
+        "These levels form because traders remember them. If a stock bounced hard off $50 twice before, buyers start watching for a third bounce there, and sellers who regret not buying earlier may jump in too — the level becomes self-fulfilling." ] },
+      { title: "Zones, Not Lines", body: [
+        "Support and resistance aren't exact lines — think of them as zones. Price often pokes slightly through before reversing, which is why many traders wait for a candle to CLOSE beyond a level, not just touch it, before believing it broke.",
+        "Once resistance finally breaks with real volume, it often flips roles and becomes NEW support on the next pullback — and vice versa for broken support. Watching this flip is one of the most reliable tools in a trader's kit." ] },
+    ],
+    quiz: [
+      { q: "Support is best described as:", choices: ["A ceiling price stops rising through", "A floor price has repeatedly bounced off", "The day's opening price", "The VWAP line"], correct: 1, explain: "Support = a floor; resistance = a ceiling." },
+      { q: "Why do support/resistance levels tend to work?", choices: ["They're set by exchanges", "Traders remember them, making them self-fulfilling", "They're randomly generated", "They only matter on Mondays"], correct: 1, explain: "Shared trader memory of a level is what makes it act as a level going forward." },
+      { q: "Why do many traders wait for a CLOSE beyond a level rather than just a touch?", choices: ["Closes are easier to see", "A touch/wick through the level can be a false break", "It's a regulatory requirement", "Volume doesn't matter on a touch"], correct: 1, explain: "Price often wicks through a level before reversing — a close confirms the level actually gave way." },
+      { q: "When resistance breaks with real volume, it often:", choices: ["Disappears completely", "Flips to become new support", "Becomes irrelevant forever", "Turns into VWAP"], correct: 1, explain: "The classic role-flip: broken resistance often becomes support on the next pullback, and vice versa." },
+      { q: "Are support/resistance levels best thought of as exact prices or zones?", choices: ["Exact single prices", "Zones — price often pokes through a bit", "Only relevant on weekly charts", "Fixed by the exchange"], correct: 1, explain: "Levels behave more like zones than laser-precise lines." },
+    ],
+  },
+  {
+    key: "breakouts", icon: "🚀", title: "Breakouts & Fakeouts",
+    desc: "The core skill this whole app trains.",
+    drillLink: { label: "Play the Daily Drill", href: "/play/?mode=daily" },
+    lessons: [
+      { title: "What a Breakout Is", body: [
+        "A breakout happens when price pushes beyond a level it had been struggling to clear — the top or bottom of a consolidation range, a prior high, or a well-known support/resistance zone. The idea is simple: once price clears an obstacle, it should be free to run further in that direction." ] },
+      { title: "Why Most Breakouts Fail", body: [
+        "In reality, most breakouts fail. Price pokes through the level, traders pile in expecting a big move, and then it reverses right back inside the range — leaving late entries stuck. This is called a \"fakeout,\" and it's common enough that skilled traders build entire strategies around fading weak breakouts." ] },
+      { title: "Real vs Fake: The Tells", body: [
+        "What separates a real breakout from a fakeout? Usually volume (a real breakout brings a surge of participation) and the CLOSE of the breakout candle (closing solidly beyond the level, not just wicking through it). This exact judgment call — real or fake — is what the daily drill trains you to make quickly, using the same signals professional traders check." ] },
+    ],
+    quiz: [
+      { q: "A breakout is:", choices: ["Any red candle", "Price pushing beyond a level it struggled to clear", "A candle with no wick", "A drop in volume"], correct: 1, explain: "A breakout is price clearing an obstacle it had been consolidating against." },
+      { q: "What's a \"fakeout\"?", choices: ["A breakout that reverses back inside the range", "A candle with two wicks", "A breakout on huge volume", "Any losing trade"], correct: 0, explain: "A fakeout pokes through a level, then snaps back — leaving late breakout-chasers stuck." },
+      { q: "Which two signals most separate a real breakout from a fakeout?", choices: ["Time of day and candle color", "Volume and where the candle closes", "The stock's ticker symbol", "Whether VWAP is visible"], correct: 1, explain: "Strong volume plus a solid close beyond the level are the two classic real-breakout tells." },
+      { q: "Are most breakouts real or fake?", choices: ["Most are real", "Most fail (fakeouts)", "It's exactly 50/50 always", "Fakeouts don't really happen"], correct: 1, explain: "Fakeouts are common enough that entire strategies exist to fade weak breakouts." },
+      { q: "What is the daily drill training you to judge quickly?", choices: ["Stock ticker recognition", "Real breakout vs. fakeout", "VWAP formula memorization", "Candle color counting"], correct: 1, explain: "That real-vs-fake judgment call is the exact skill the whole app is built to train." },
+    ],
+  },
+  {
+    key: "vwap_trend", icon: "📈", title: "VWAP & Trend",
+    desc: "The average price line every institution watches.",
+    drillLink: { label: "Try the VWAP Pullback pack", href: "/play/?strategyPack=vwap_pullback" },
+    lessons: [
+      { title: "What VWAP Is", body: [
+        "VWAP stands for Volume-Weighted Average Price. It's the average price a stock has traded at during the day SO FAR, weighted by how much volume traded at each price. Unlike a simple moving average, VWAP gives more weight to price levels where more shares actually changed hands.",
+        "VWAP resets at the start of every session — it's a single-day indicator, not a multi-day one." ] },
+      { title: "VWAP as Magnet or Trampoline", body: [
+        "Institutions care about VWAP because it's often used to judge trade quality — a fund that buys below VWAP or sells above it got a \"good\" fill relative to the day's average participant. Because so many large players benchmark against it, VWAP often acts like a magnet or a trampoline: stocks trending strongly tend to pull back TO VWAP and bounce, rather than crash through it.",
+        "For an intraday trader, VWAP is a quick gut-check: price above VWAP generally favors buyers for the day; price below favors sellers." ] },
+      { title: "The VWAP Pullback Setup", body: [
+        "A VWAP pullback is exactly what it sounds like: price extends away from VWAP in a clear direction, then retraces back to touch or nearly touch it, before (hopefully) continuing the original move. Traders watch for a rejection candle right at VWAP as their confirmation.",
+        "The setup fails when price closes through VWAP on the wrong side instead of bouncing — that flip is usually treated as the invalidation signal, not just a pause." ] },
+    ],
+    quiz: [
+      { q: "VWAP stands for:", choices: ["Volume-Weighted Average Price", "Variable Weekly Average Point", "Volatility-Weighted Asset Price", "Value-Weighted Average Percentage"], correct: 0, explain: "It's the session's average price, weighted by how much volume traded at each price level." },
+      { q: "How often does VWAP reset?", choices: ["Every minute", "At the start of every session (it's a single-day indicator)", "Once a week", "Never — it's cumulative forever"], correct: 1, explain: "VWAP is session-scoped — it starts fresh each trading day." },
+      { q: "Why do institutions care about VWAP?", choices: ["It's required by regulation", "It's often used to judge whether a fill was a 'good' price", "It predicts news events", "It only matters for options"], correct: 1, explain: "A fund buying below VWAP (or selling above it) got a favorable fill relative to the day's average participant." },
+      { q: "In a VWAP pullback setup, what confirms the trade?", choices: ["Any touch of the VWAP line", "A rejection candle right at VWAP, continuing the original trend", "A candle with no volume", "Price crossing the prior day's high"], correct: 1, explain: "Traders look for a rejection/bounce candle at VWAP as confirmation the pullback is holding, not failing." },
+      { q: "What invalidates a VWAP pullback trade?", choices: ["Price touching VWAP at all", "A close through VWAP on the wrong side of the original trend", "High volume on the pullback candle", "The session ending"], correct: 1, explain: "A close through VWAP against the trend is treated as the setup failing, not just pausing." },
+    ],
+  },
+  {
+    key: "risk", icon: "🛡️", title: "Risk Management",
+    desc: "The rules that keep you funded — with a live position-size calculator.",
+    drillLink: { label: "Play Practice mode", href: "/play/?mode=practice" },
+    lessons: [
+      { title: "The 1% Rule", body: [
+        "Never risk more than 1% of your account on a single trade. On a $10,000 account, that's a $100 max loss — no exceptions, no \"this one's different.\"",
+        "FORMULA::Position size = (Account × Risk %) ÷ Stop distance",
+        "CALC" ] },
+      { title: "Why Most Funded Traders Fail", body: [
+        "About 86% of prop firm evaluations fail — and most of those failures aren't bad entries, they're risk violations: oversizing a position, revenge trading right after a loss, or blowing through the daily loss limit.",
+        "The evaluation isn't really testing your ability to pick trades. It's testing your discipline." ] },
+      { title: "Trailing Drawdown & the Daily Loss Limit", body: [
+        "Some futures prop firms use a trailing max drawdown — it rises with your equity peak (including unrealized profit on open trades) and locks in at that level. Example: on a $50,000 account with a $2,500 trailing drawdown, a trade that runs up $1,000 before drifting back to breakeven still burns $1,000 of your cushion, even though you didn't lose real money.",
+        "Decide your max daily loss BEFORE the session starts — commonly 2-3% of the account, or after 2-3 losing trades, whichever comes first. Hit it? Close the platform. The math of digging out of a hole gets brutal fast:",
+        "TABLE_DRAWDOWN" ] },
+      { title: "Risk-Reward Reality", body: [
+        "You don't need to be right most of the time to be profitable — you need your average win to beat your average loss. At a 1:2 risk-reward ratio, you're profitable winning just 40% of your trades. This is exactly why cutting losers fast matters more than being right.",
+        "TABLE_RR",
+        "CHECKLIST_RISK" ] },
+    ],
+    quiz: [
+      { q: "The 1% rule means:", choices: ["Risk 1% of each winning trade back", "Never risk more than 1% of your account on a single trade", "Only take trades with 1% spread", "Risk 1% of your daily volume"], correct: 1, explain: "On a $10,000 account, that's a $100 max loss per trade — no exceptions." },
+      { q: "Most funded-account evaluation failures come from:", choices: ["Bad entries specifically", "Risk violations — oversizing, revenge trading, blowing the daily limit", "Slow internet connections", "Picking the wrong broker"], correct: 1, explain: "Evaluations mostly test discipline, not trade-picking skill." },
+      { q: "A trailing drawdown moves with:", choices: ["Only your realized closed-trade P&L", "Your equity peak, including unrealized profit on open trades", "The calendar month", "Your account's starting balance only"], correct: 1, explain: "It locks in at your highest peak — even an open trade drifting back to breakeven can burn cushion." },
+      { q: "At a 1:2 risk-reward ratio, what win rate is needed to be profitable?", choices: ["Above 50%", "Above 33% (about 40% works)", "100%", "Exactly 50%"], correct: 1, explain: "A 1:2 R:R means you only need to be right roughly a third of the time or more to come out ahead." },
+      { q: "What should you decide BEFORE a trading session starts?", choices: ["Which stock will move the most", "Your max daily loss limit", "The day's news catalyst", "Your broker's server location"], correct: 1, explain: "Deciding your daily loss limit in advance — and honoring it — is one of the highest-leverage discipline habits." },
+    ],
+  },
+  {
+    key: "order_types", icon: "🎟️", title: "Order Types & Execution",
+    desc: "Market, limit, stop, stop-limit, and how a bracket order works.",
+    drillLink: { label: "Try the Order Execution Trainer", href: "/play/?mode=ordertrainer" },
+    lessons: [
+      { title: "Market vs Limit Orders", body: [
+        "A MARKET order fills immediately at whatever price is currently available — you're guaranteed a fill, but not a specific price. It's the right tool when getting in or out matters more than the exact price.",
+        "A LIMIT order only fills at your specified price or better — you control the price, but you might not get filled at all if the market never trades there. Limits are the right tool when price matters more than certainty of a fill." ] },
+      { title: "Stop and Stop-Limit Orders", body: [
+        "A STOP order sits dormant until price reaches your trigger level, then becomes a MARKET order — commonly used for stop-losses or for entering a breakout once it actually happens. Because it becomes a market order, it can fill at a worse price than your trigger if price is moving fast (this is called slippage or a gap-through).",
+        "A STOP-LIMIT order is the same trigger idea, but once triggered it becomes a LIMIT order instead of a market order — giving you price control on the way out, at the cost that it might not fill at all if price gaps straight past your limit price." ] },
+      { title: "Bracket Orders & OCO", body: [
+        "A bracket order submits your stop-loss and take-profit at the same time as your entry — both orders are live the instant you're filled, so you're never in a trade without protection defined. This is the professional-standard way to enter, not an optional extra.",
+        "The stop and target are linked as OCO — One-Cancels-the-Other: whichever one fills first automatically cancels the other, so you never end up with both a filled stop AND a filled target on the same position." ] },
+    ],
+    quiz: [
+      { q: "A market order:", choices: ["Fills at your exact chosen price only", "Fills immediately at whatever price is available", "Never fills until triggered", "Is only used for stop-losses"], correct: 1, explain: "Market orders guarantee a fill, not a specific price." },
+      { q: "A limit order guarantees:", choices: ["An instant fill", "Your price or better — but maybe no fill at all", "Protection from all slippage always", "That it becomes a market order"], correct: 1, explain: "Limits control price, at the cost of possibly never filling." },
+      { q: "What does a stop order become once triggered?", choices: ["A limit order", "A market order", "It stays a stop order", "It cancels automatically"], correct: 1, explain: "A stop order triggers into a market order — which can mean slippage on a fast-moving market." },
+      { q: "What's the key difference between a stop and a stop-limit order?", choices: ["There is no difference", "A stop-limit becomes a limit order on trigger instead of a market order", "Stop-limits can't be used for stop-losses", "Stop orders never trigger"], correct: 1, explain: "Stop-limit trades fill-certainty for price control after the trigger." },
+      { q: "In a bracket order, what does OCO mean?", choices: ["Order Cancels Order — both always cancel", "One-Cancels-the-Other — whichever fills first cancels the other", "Only Close Orders", "Order Confirmation Only"], correct: 1, explain: "OCO links your stop and target so you can never end up with both filled on the same position." },
+    ],
+  },
+  {
+    key: "sessions", icon: "🕒", title: "Sessions & Time",
+    desc: "When markets move — and the honest truth about Kill Zones.",
+    drillLink: { label: "Try the Kill Zones pack", href: "/play/?strategyPack=kill_zones" },
+    lessons: [
+      { title: "The US Trading Day", body: [
+        "The regular US stock session runs 9:30 AM–4:00 PM ET. The open (9:30–11:00) is usually the choppiest and most volatile window — overnight news and gaps all resolve here. Midday (11:00–2:00) tends to be quieter and range-bound as institutional lunch hours thin out participation. Power hour (2:00–4:00) often builds momentum into the close as day traders and funds square up positions." ] },
+      { title: "Forex Sessions", body: [
+        "Forex trades nearly 24 hours, split into overlapping regional sessions: Asian, London, and New York. Volatility tends to pick up at session opens and especially during the London/New York overlap, when both major desks are active simultaneously." ] },
+      { title: "ICT Kill Zones — the Honest Version", body: [
+        "\"Kill Zones\" is ICT/SMC terminology for specific time windows — commonly cited as London ≈ 2:00–5:00 AM ET and New York ≈ 7:00–10:00 AM ET — claimed to have higher-probability, more directional price action.",
+        ICT_NOTE + " What IS well-established, and much older than this specific terminology, is that trading volume and volatility genuinely do pick up around session opens and overlaps — that broader fact is real; the precise hour-by-hour boundaries and the specific claims of these being 'highest probability' windows are not independently verified." ] },
+    ],
+    quiz: [
+      { q: "Which US session window is typically the choppiest?", choices: ["Midday", "The open (9:30–11:00 ET)", "Power hour", "After 8pm ET"], correct: 1, explain: "The open concentrates overnight news, gaps, and order flow into a short, volatile window." },
+      { q: "Forex trading hours are best described as:", choices: ["9:30-4:00 ET only", "Nearly 24 hours, in overlapping regional sessions", "Only active on weekends", "A single global session"], correct: 1, explain: "FX runs through Asian, London, and New York sessions with real overlap." },
+      { q: "When does forex volatility often pick up most?", choices: ["During the London/New York session overlap", "At 3am with no sessions active", "Only during the Asian session", "Randomly, with no pattern"], correct: 0, explain: "Overlapping major-desk activity tends to bring the most volume and movement." },
+      { q: "According to Trade Lee's own honesty standard, what should you know about 'Kill Zones'?", choices: ["They're scientifically proven high-probability windows", "They're an ICT/SMC term with heuristic (not independently verified) boundaries, though session-open volume effects are real", "They only apply to stocks", "They guarantee profitable trades"], correct: 1, explain: "The broader session-open-volume effect is real and old; the specific Kill Zone hour boundaries are a heuristic, not a proven law." },
+      { q: "Roughly what ET window is commonly cited for the London Kill Zone?", choices: ["2:00–5:00 AM ET", "12:00–3:00 PM ET", "6:00–9:00 PM ET", "Midnight–2:00 AM ET"], correct: 0, explain: "That's the commonly-cited window, though sources vary by up to an hour on the exact boundaries." },
+    ],
+  },
+  {
+    key: "smc", icon: "🔍", title: "Smart Money Concepts",
+    desc: "ICT vocabulary, explained honestly — discretionary, not settled science.",
+    drillLink: { label: "Try the Liquidity Sweep pack", href: "/play/?strategyPack=liquidity_sweep" },
+    lessons: [
+      { title: "What Is SMC, Really?", body: [
+        ICT_NOTE,
+        "With that said, here's what the vocabulary actually claims mechanically — because a huge number of traders use these terms, and you deserve a straight, mechanical explanation of what they mean." ] },
+      { title: "Liquidity & Fair Value Gaps", body: [
+        "A Liquidity Sweep is when price briefly pierces a prior swing high/low — where stop orders likely cluster — then closes back on the original side and reverses. What's real and well-studied: stop orders do cluster near obvious levels and can cause brief price cascades. What's unproven: the specific claim that this happens because 'smart money' deliberately engineered it.",
+        "A Fair Value Gap (FVG) is a 3-candle pattern: a gap between candle 1's high/low and candle 3's low/high, with a strong 'displacement' candle in between. The claim is that price tends to later revisit and 'fill' that gap. Independent commentary notes this looks structurally similar to older 'low-volume node' concepts from Market Profile analysis." ] },
+      { title: "Order Blocks & Market Structure", body: [
+        "An Order Block is the last opposing-color candle right before a sharp displacement move — treated as a zone that, if retested, should hold. This is mechanically very close to the classical Supply & Demand concept you'll find in the Strategy Packs, just anchored to a single candle instead of a multi-bar base.",
+        "Market Structure tracks swing highs/lows to define BOS (Break of Structure — a new high/low continuing the trend) vs. CHoCH (Change of Character — the first break against the trend, an early reversal signal). This is mechanically identical to Dow Theory's century-old definition of a trend and a trend change." ] },
+      { title: "SMT Divergence", body: [
+        "SMT Divergence compares two correlated instruments (Trade Lee uses QQQ vs. SPY) at matched swing points — if one makes a new high/low and the other fails to confirm it, that's read as a possible reversal signal for both. The underlying idea (divergence between correlated markets) is classical intermarket analysis, decades older than the 'SMT' label ICT put on it.",
+        "Reliability depends entirely on the two instruments staying correlated at that moment — correlation regimes shift, and this detector (like the concept in practice) doesn't check for that." ] },
+    ],
+    quiz: [
+      { q: "According to Trade Lee's own stated position, is Smart Money Concepts settled, validated science?", choices: ["Yes, fully proven by independent studies", "No — it's a discretionary framework without independent statistical validation", "It's a regulatory standard", "It only applies to crypto"], correct: 1, explain: "We teach the vocabulary honestly — no guru-worship, no claim of proven edge." },
+      { q: "A Liquidity Sweep is mechanically defined as:", choices: ["Any candle with high volume", "Price piercing a prior swing high/low, then closing back inside and reversing", "A gap between two candles", "A moving average crossover"], correct: 1, explain: "The close-back-inside-then-reverse behavior is what distinguishes a sweep from a genuine breakout." },
+      { q: "What do independent critics say Fair Value Gaps resemble?", choices: ["A totally new discovery with no precedent", "Older 'low-volume node' concepts from Market Profile analysis", "A type of candlestick pattern from Japan", "Nothing — they're unrelated to any prior concept"], correct: 1, explain: "FVGs are argued by independent commentary to be a rebrand of a decades-older volume-profile concept." },
+      { q: "Market Structure's BOS vs. CHoCH framework is mechanically similar to:", choices: ["Modern portfolio theory", "Dow Theory's century-old trend/trend-change definition", "The Black-Scholes options model", "Nothing in classical technical analysis"], correct: 1, explain: "Higher-highs/higher-lows (trend) and the first failure to make one (trend change) is straight out of Dow Theory." },
+      { q: "What does SMT Divergence's reliability depend entirely on?", choices: ["The time of day", "The two instruments staying meaningfully correlated", "Which broker you use", "The candle color"], correct: 1, explain: "If the correlation between the two instruments breaks down, the whole signal loses its basis." },
+    ],
+  },
+  {
+    key: "psychology", icon: "🧠", title: "Trading Psychology",
+    desc: "The real edge — scored scenarios, not just facts.",
+    drillLink: { label: "Play the Daily Drill", href: "/play/?mode=daily" },
+    lessons: [
+      { title: "Why Psychology Is the Real Edge", body: [
+        "You can know every pattern in this app perfectly and still lose money — because trading decisions happen under real emotional pressure that a quiz can't fully replicate. The gap between knowing a rule and following it in the moment is where most trading results are actually decided.",
+        "This unit's quiz is a little different: instead of factual questions, you'll face short scenarios and have to pick the disciplined response — even when the tempting answer feels reasonable in the moment." ] },
+      { title: "Common Traps", body: [
+        "Revenge trading: taking an oversized or off-plan trade immediately after a loss, trying to \"win it back.\" It almost always compounds the damage instead of fixing it.",
+        "FOMO (fear of missing out): chasing a move that's already extended because you don't want to miss further upside — usually buying exactly where the move is running out of steam.",
+        "Overconfidence after a win streak: sizing up or abandoning your plan because you feel like you \"can't lose\" right now. Streaks end, and they tend to end expensively for traders who just changed their own rules.",
+        "Analysis paralysis: waiting for a \"perfect,\" zero-risk setup that doesn't exist, and missing genuinely good setups while waiting for certainty that trading never offers." ] },
+    ],
+    quiz: [
+      { q: "You just took 3 losses in a row trading your plan correctly. What's the right move?", choices: ["Double your position size to make it back faster", "Take a break or continue at your normal plan size", "Switch to a completely different strategy immediately", "Stop trading forever"], correct: 1, explain: "Losses within your plan aren't a signal to size up — that's exactly the revenge-trading trap. Stepping back or continuing at normal size protects you." },
+      { q: "A stock you were watching just ran 8% without you, and it's still climbing. What's the disciplined move?", choices: ["Buy immediately at the market price to not miss more", "Let it go — chasing an extended move is how FOMO entries happen", "Buy 2x your normal size to make up for missing it", "Short it just because it moved a lot"], correct: 1, explain: "Chasing an already-extended move is the classic FOMO trap — the move is often closer to its end than its beginning by the time it feels urgent." },
+      { q: "You're up big after 5 winning trades in a row. What's the risk here?", choices: ["There is no risk — you've clearly figured it out", "Overconfidence — feeling like you can't lose and abandoning your risk rules", "You should immediately quit for the day", "You should tell everyone about your streak"], correct: 1, explain: "Win streaks often precede the biggest blowups specifically because traders loosen the exact rules that got them there." },
+      { q: "You keep passing on decent setups because none of them feel 'perfectly safe.' This is:", choices: ["Smart, disciplined patience", "Analysis paralysis — waiting for a certainty trading never offers", "A sign you should trade more aggressively", "Not a real problem"], correct: 1, explain: "No setup is risk-free. Waiting for one means missing genuinely good, imperfect opportunities indefinitely." },
+      { q: "What's the core reason trading psychology matters even if you know every pattern perfectly?", choices: ["It doesn't actually matter if you know the patterns", "Real decisions happen under emotional pressure a quiz can't fully replicate", "Psychology only matters for beginners", "Patterns work differently under stress"], correct: 1, explain: "The gap between knowing a rule and following it under real pressure is where most results are actually decided." },
+    ],
+  },
+  {
+    key: "prop_firm", icon: "🏆", title: "Prop Firm Path",
+    desc: "Trading with a firm's capital — and the reality check first.",
+    drillLink: { label: "Explore funded programs", href: "/funded/" },
+    lessons: [
+      { title: "Reality Check", body: [
+        "Prop firms stake you real trading capital and let you keep 80-90% of the profits — you pay an evaluation fee upfront to prove you can trade with discipline first. About 86% of evaluations fail, and most failures are risk violations, not bad strategies.",
+        "Do not buy an evaluation until you can pass this app's daily drills consistently and you know your target firm's drawdown rules cold — review Unit 7 (Risk Management) first if you haven't." ] },
+      { title: "How Evaluations Work", body: [
+        "Most evaluations set a profit target, a max drawdown, and sometimes a daily loss limit and a minimum number of trading days — pass all of them and you move to a funded (or simulated-funded) account. The specific numbers vary a lot by firm, so read the actual rules of whichever firm you're considering before paying for anything.",
+        "Consistency rules are common too — some firms void a payout if one single day accounts for too large a share of your total profit. Steady, repeatable performance is usually valued over one spectacular day." ] },
+      { title: "Picking a Firm", body: [
+        "Look for: transparent, published rules (not vague or constantly-changing ones), a drawdown model you actually understand (trailing vs. end-of-day — they behave very differently), and real trader reviews beyond the firm's own marketing.", "This app doesn't push any one firm — the point of this unit is that you walk in informed, not that you walk in fast." ] },
+    ],
+    quiz: [
+      { q: "Roughly what share of prop firm evaluations fail?", choices: ["About 10%", "About 86%", "About 50%", "Almost none"], correct: 1, explain: "The vast majority of evaluations fail — mostly from risk violations, not bad trade ideas." },
+      { q: "What should you do before paying for an evaluation?", choices: ["Nothing — just start immediately", "Be able to pass this app's daily drills consistently and know the firm's drawdown rules cold", "Only check the evaluation fee price", "Ask a friend who has never traded"], correct: 1, explain: "Discipline and rule-knowledge, not enthusiasm, are what an evaluation actually tests." },
+      { q: "What's a 'consistency rule' at many prop firms?", choices: ["You must trade every single day", "One day's profit can't be too large a share of your total, or your payout may be voided", "You must use the same stock every day", "It refers to consistent internet speed"], correct: 1, explain: "Firms often want steady, repeatable performance rather than one lucky spike." },
+      { q: "Trailing drawdown and end-of-day drawdown are:", choices: ["Exactly the same thing", "Different models that behave very differently — know which one your firm uses", "Only relevant for stock traders, not futures", "Not something you need to check before starting"], correct: 1, explain: "Trailing drawdown moves with your unrealized peak; end-of-day drawdown only locks in at day's close — mixing them up is a common costly mistake." },
+      { q: "What's the main point of this unit?", choices: ["To push you toward one specific firm", "To make sure you walk into an evaluation informed, not just fast", "To guarantee you'll pass an evaluation", "To discourage anyone from ever trying"], correct: 1, explain: "This app doesn't endorse a specific firm — the goal is an informed decision, not a rushed one." },
+    ],
+  },
+];
+
+/* ============================= NAVIGATION STATE ============================= */
+let currentView = { screen: "path" }; // {screen:"path"} | {screen:"unit", unitKey} | {screen:"lesson", unitKey, idx} | {screen:"quiz", unitKey} | {screen:"quizResult", unitKey, score}
+
+function isUnitUnlocked(i) {
+  if (i === 0) return true;
+  return state.academyProgress.unitsCompleted.includes(ACADEMY_UNITS[i - 1].key);
+}
+function unitLessonsRead(unitKey) {
+  return state.academyProgress.lessonsRead[unitKey] || [];
+}
+function markLessonRead(unitKey, idx) {
+  const read = state.academyProgress.lessonsRead[unitKey] || [];
+  if (!read.includes(idx)) read.push(idx);
+  state.academyProgress.lessonsRead[unitKey] = read;
+  saveState();
+}
+function allLessonsRead(unit) {
+  const read = unitLessonsRead(unit.key);
+  return unit.lessons.every((_, i) => read.includes(i));
+}
+
+function renderLessonBody(paragraphs) {
+  return paragraphs.map(p => {
+    if (p === "CALC") return renderCalcWidget();
+    if (p === "TABLE_DRAWDOWN") return `<table class="data-table"><thead><tr><th>Drawdown</th><th>Gain needed to recover</th></tr></thead><tbody><tr><td>10%</td><td>11%</td></tr><tr><td>25%</td><td>33%</td></tr><tr><td>50%</td><td>100%</td></tr></tbody></table>`;
+    if (p === "TABLE_RR") return `<table class="data-table"><thead><tr><th>Risk : Reward</th><th>Breakeven win rate</th></tr></thead><tbody><tr><td>1 : 1</td><td>&gt;50%</td></tr><tr><td>1 : 2</td><td>&gt;33%</td></tr><tr><td>1 : 3</td><td>&gt;25%</td></tr></tbody></table>`;
+    if (p === "CHECKLIST_RISK") return `<ul class="checklist"><li><span class="check-icon">✓</span>Bracket orders on every entry — stop and target placed WITH the trade</li><li><span class="check-icon">✓</span>One setup, one session window, max 2-3 trades a day</li><li><span class="check-icon">✓</span>Never add to a loser</li><li><span class="check-icon">✓</span>Flat before major news releases</li></ul>`;
+    if (p.startsWith("FORMULA::")) return `<div class="formula">${escapeHtml(p.slice(9))}</div>`;
+    return `<p>${escapeHtml(p)}</p>`;
+  }).join("");
+}
+function renderCalcWidget() {
+  return `
+    <div class="acad-calc-grid">
+      <div class="acad-calc-field"><label for="calcAccount">Account size ($)</label><input type="number" id="calcAccount" value="10000" min="0" step="100"></div>
+      <div class="acad-calc-field"><label for="calcRiskPct">Risk (%)</label><input type="number" id="calcRiskPct" value="1" min="0" step="0.1"></div>
+      <div class="acad-calc-field"><label for="calcEntry">Entry price ($)</label><input type="number" id="calcEntry" value="100" min="0" step="0.01"></div>
+      <div class="acad-calc-field"><label for="calcStop">Stop price ($)</label><input type="number" id="calcStop" value="99" min="0" step="0.01"></div>
+    </div>
+    <div class="acad-calc-output">
+      <div class="out-cell"><div class="out-val" id="calcShares">—</div><div class="out-label">Max shares</div></div>
+      <div class="out-cell"><div class="out-val" id="calcDollarRisk">—</div><div class="out-label">Dollar risk</div></div>
+    </div>
+  `;
+}
+function wireCalcWidget() {
+  const ids = ["calcAccount", "calcRiskPct", "calcEntry", "calcStop"];
+  if (!ids.every(id => document.getElementById(id))) return;
+  function calc() {
+    const account = parseFloat(document.getElementById("calcAccount").value) || 0;
+    const riskPct = parseFloat(document.getElementById("calcRiskPct").value) || 0;
+    const entry = parseFloat(document.getElementById("calcEntry").value) || 0;
+    const stop = parseFloat(document.getElementById("calcStop").value) || 0;
+    const stopDistance = Math.abs(entry - stop);
+    const riskBudget = account * (riskPct / 100);
+    const maxShares = stopDistance > 0 ? Math.floor(riskBudget / stopDistance) : 0;
+    const dollarRisk = maxShares * stopDistance;
+    document.getElementById("calcShares").textContent = maxShares.toLocaleString();
+    document.getElementById("calcDollarRisk").textContent = "$" + dollarRisk.toLocaleString(undefined, { maximumFractionDigits: 2 });
+  }
+  ids.forEach(id => document.getElementById(id).addEventListener("input", calc));
+  calc();
+}
+
+/* ============================= RENDER: PATH ============================= */
+function renderPath() {
+  currentView = { screen: "path" };
+  const root = document.getElementById("academyRoot");
+  const totalCompleted = state.academyProgress.unitsCompleted.length;
+  root.innerHTML = `
+    <div class="acad-hero">
+      <div class="badge">ACADEMY</div>
+      <h1>Your path to prop-firm-ready</h1>
+      <p>${totalCompleted}/${ACADEMY_UNITS.length} units complete. Twelve stops, each with lessons, a quiz, and a linked drill.</p>
+    </div>
+    <div class="unit-path">
+      ${ACADEMY_UNITS.map((u, i) => {
+        const unlocked = isUnitUnlocked(i);
+        const completed = state.academyProgress.unitsCompleted.includes(u.key);
+        const isCurrent = unlocked && !completed;
+        const read = unitLessonsRead(u.key).length;
+        const cls = completed ? "completed" : isCurrent ? "current" : "";
+        return `
+          <button class="unit-card ${cls}" data-unit="${u.key}" ${unlocked ? "" : "disabled"}>
+            <div class="unit-node">
+              ${u.icon}
+              ${completed ? `<span class="check">✓</span>` : !unlocked ? `<span class="lock">🔒</span>` : ""}
+            </div>
+            <div class="unit-body">
+              <div class="unit-num">Unit ${i + 1}</div>
+              <div class="unit-title">${escapeHtml(u.title)}</div>
+              <div class="unit-desc">${escapeHtml(u.desc)}</div>
+              ${unlocked ? `<div class="unit-progress">${completed ? "Complete ✓" : `${read}/${u.lessons.length} lessons read`}</div>` : ""}
+            </div>
+          </button>
+        `;
+      }).join("")}
+    </div>
+  `;
+  document.querySelectorAll(".unit-card:not(:disabled)").forEach(btn => {
+    btn.onclick = () => renderUnitDetail(btn.dataset.unit);
+  });
+}
+
+/* ============================= RENDER: UNIT DETAIL ============================= */
+function renderUnitDetail(unitKey) {
+  const unit = ACADEMY_UNITS.find(u => u.key === unitKey);
+  currentView = { screen: "unit", unitKey };
+  const root = document.getElementById("academyRoot");
+  const read = unitLessonsRead(unitKey);
+  const allRead = allLessonsRead(unit);
+  const completed = state.academyProgress.unitsCompleted.includes(unitKey);
+  const bestScore = state.academyProgress.quizBestScore[unitKey];
+  root.innerHTML = `
+    <div class="acad-topbar">
+      <button class="acad-back" id="backBtn">← Units</button>
+      <h2 class="unit-title">${unit.icon} ${escapeHtml(unit.title)}</h2>
+    </div>
+    <p style="color:var(--text-dim);font-size:0.9rem;margin:-8px 0 16px;">${escapeHtml(unit.desc)}</p>
+    ${unit.lessons.map((l, i) => `
+      <div class="lesson-list-item" data-idx="${i}">
+        <span class="li-num">${i + 1}</span>
+        <span class="li-title">${escapeHtml(l.title)}</span>
+        ${read.includes(i) ? `<span class="li-check">✓</span>` : ""}
+      </div>
+    `).join("")}
+    <button class="quiz-cta-btn" id="quizBtn" ${allRead ? "" : "disabled"}>${completed ? "Retake Quiz" : "Take the Quiz"} ${bestScore != null ? `(best ${bestScore}/5)` : ""}</button>
+    ${!allRead ? `<p style="color:var(--text-dim);font-size:0.78rem;text-align:center;margin-top:8px;">Read all lessons to unlock the quiz</p>` : ""}
+    ${unit.drillLink ? `<a class="acad-secondary-btn" href="${unit.drillLink.href}" style="display:block;">${escapeHtml(unit.drillLink.label)} →</a>` : ""}
+  `;
+  document.getElementById("backBtn").onclick = renderPath;
+  document.querySelectorAll(".lesson-list-item").forEach(el => {
+    el.onclick = () => renderLesson(unitKey, parseInt(el.dataset.idx, 10));
+  });
+  const quizBtn = document.getElementById("quizBtn");
+  if (quizBtn) quizBtn.onclick = () => renderQuiz(unitKey);
+}
+
+/* ============================= RENDER: LESSON ============================= */
+function renderLesson(unitKey, idx) {
+  const unit = ACADEMY_UNITS.find(u => u.key === unitKey);
+  const lesson = unit.lessons[idx];
+  currentView = { screen: "lesson", unitKey, idx };
+  markLessonRead(unitKey, idx);
+  const root = document.getElementById("academyRoot");
+  const isLast = idx === unit.lessons.length - 1;
+  root.innerHTML = `
+    <div class="acad-topbar">
+      <button class="acad-back" id="backBtn">← ${escapeHtml(unit.title)}</button>
+    </div>
+    <div class="lesson-content">
+      <h2>${escapeHtml(lesson.title)}</h2>
+      ${renderLessonBody(lesson.body)}
+    </div>
+    <div class="lesson-nav">
+      ${idx > 0 ? `<button class="acad-secondary-btn" id="prevBtn">← Previous</button>` : ""}
+      <button class="acad-primary-btn" id="nextBtn">${isLast ? "Back to Unit" : "Next →"}</button>
+    </div>
+  `;
+  document.getElementById("backBtn").onclick = () => renderUnitDetail(unitKey);
+  const prevBtn = document.getElementById("prevBtn");
+  if (prevBtn) prevBtn.onclick = () => renderLesson(unitKey, idx - 1);
+  document.getElementById("nextBtn").onclick = () => {
+    if (isLast) renderUnitDetail(unitKey); else renderLesson(unitKey, idx + 1);
+  };
+  wireCalcWidget();
+}
+
+/* ============================= RENDER: QUIZ ============================= */
+let quizState = null;
+function renderQuiz(unitKey) {
+  const unit = ACADEMY_UNITS.find(u => u.key === unitKey);
+  currentView = { screen: "quiz", unitKey };
+  quizState = { qIndex: 0, correctCount: 0, answered: false };
+  renderQuizQuestion(unitKey);
+}
+function renderQuizQuestion(unitKey) {
+  const unit = ACADEMY_UNITS.find(u => u.key === unitKey);
+  const q = unit.quiz[quizState.qIndex];
+  const root = document.getElementById("academyRoot");
+  root.innerHTML = `
+    <div class="acad-topbar">
+      <button class="acad-back" id="backBtn">← ${escapeHtml(unit.title)}</button>
+    </div>
+    <div class="lesson-content">
+      <div class="quiz-progress">QUESTION ${quizState.qIndex + 1} OF ${unit.quiz.length}</div>
+      <div class="quiz-q">${escapeHtml(q.q)}</div>
+      ${q.choices.map((c, i) => `<button class="quiz-choice" data-i="${i}">${escapeHtml(c)}</button>`).join("")}
+      <div id="quizExplainWrap"></div>
+    </div>
+  `;
+  document.getElementById("backBtn").onclick = () => renderUnitDetail(unitKey);
+  document.querySelectorAll(".quiz-choice").forEach(btn => {
+    btn.onclick = () => answerQuiz(unitKey, parseInt(btn.dataset.i, 10));
+  });
+}
+function answerQuiz(unitKey, choiceIdx) {
+  if (quizState.answered) return;
+  quizState.answered = true;
+  const unit = ACADEMY_UNITS.find(u => u.key === unitKey);
+  const q = unit.quiz[quizState.qIndex];
+  const isCorrect = choiceIdx === q.correct;
+  if (isCorrect) quizState.correctCount++;
+  document.querySelectorAll(".quiz-choice").forEach((btn, i) => {
+    btn.disabled = true;
+    if (i === q.correct) btn.classList.add("correct");
+    else if (i === choiceIdx) btn.classList.add("wrong");
+  });
+  document.getElementById("quizExplainWrap").innerHTML = `
+    <div class="quiz-explain">${escapeHtml(q.explain)}</div>
+    <button class="acad-primary-btn" id="quizNextBtn">${quizState.qIndex + 1 >= unit.quiz.length ? "See Results" : "Next Question →"}</button>
+  `;
+  document.getElementById("quizNextBtn").onclick = () => {
+    if (quizState.qIndex + 1 >= unit.quiz.length) {
+      renderQuizResult(unitKey);
+    } else {
+      quizState.qIndex++;
+      quizState.answered = false;
+      renderQuizQuestion(unitKey);
+    }
+  };
+}
+function renderQuizResult(unitKey) {
+  const unit = ACADEMY_UNITS.find(u => u.key === unitKey);
+  const score = quizState.correctCount;
+  const total = unit.quiz.length;
+  const passed = score >= Math.ceil(total * 0.6);
+  const unitIdx = ACADEMY_UNITS.findIndex(u => u.key === unitKey);
+  const wasAlreadyCompleted = state.academyProgress.unitsCompleted.includes(unitKey);
+
+  const prevBest = state.academyProgress.quizBestScore[unitKey] || 0;
+  if (score > prevBest) state.academyProgress.quizBestScore[unitKey] = score;
+
+  let ticksAwarded = 0;
+  let justUnlocked = false;
+  if (passed && !wasAlreadyCompleted) {
+    state.academyProgress.unitsCompleted.push(unitKey);
+    ticksAwarded = 30;
+    state.ticks = (state.ticks || 0) + ticksAwarded;
+    state.ticksEarnedAllTime = (state.ticksEarnedAllTime || 0) + ticksAwarded;
+    justUnlocked = unitIdx + 1 < ACADEMY_UNITS.length;
+  }
+  saveState();
+
+  const root = document.getElementById("academyRoot");
+  root.innerHTML = `
+    <div class="lesson-content quiz-result">
+      <div class="qr-score ${passed ? "pass" : "fail"}">${score}/${total}</div>
+      <div class="qr-msg">${passed ? "Passed! ✅" : "Not quite — review the lessons and try again."}</div>
+      ${ticksAwarded ? `<div class="qr-reward">+${ticksAwarded} Ticks earned</div>` : ""}
+      ${justUnlocked ? `<div class="qr-msg" style="color:var(--green);">Unit ${unitIdx + 2}: ${escapeHtml(ACADEMY_UNITS[unitIdx + 1].title)} is now unlocked!</div>` : ""}
+      <button class="acad-primary-btn" id="retakeBtn">${passed ? "Retake Quiz" : "Try Again"}</button>
+      <button class="acad-secondary-btn" id="pathBtn">Back to Units</button>
+    </div>
+  `;
+  document.getElementById("retakeBtn").onclick = () => renderQuiz(unitKey);
+  document.getElementById("pathBtn").onclick = renderPath;
+}
+
+renderPath();
+</script>
+</body>
+</html>
