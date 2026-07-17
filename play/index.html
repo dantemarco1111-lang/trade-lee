@@ -649,6 +649,13 @@
     padding: 12px; font-size: 0.9rem; margin-bottom: 12px; color: var(--text);
   }
   .daily-countdown { font-size: 0.82rem; color: var(--muted); margin-bottom: 18px; }
+  .next-action-nudge {
+    display: block; width: 100%; text-align: center; box-sizing: border-box;
+    background: rgba(199, 146, 234, 0.1); border: 1px solid rgba(199, 146, 234, 0.4); color: var(--purple);
+    font-family: var(--font-body); font-weight: 700; font-size: 0.88rem; padding: 12px 14px;
+    border-radius: 12px; margin-bottom: 14px; text-decoration: none; cursor: pointer;
+  }
+  .next-action-nudge.static { cursor: default; }
   .daily-countdown span { font-family: var(--font-mono); font-weight: 700; color: var(--text); font-variant-numeric: tabular-nums; }
 
   /* ---------- tutorial ---------- */
@@ -829,6 +836,9 @@ function defaultState() {
     practiceTimeframe: "5m",
     // onboarding quiz (Stage 5) — null until a first-time player completes or skips it
     onboardingProfile: null,
+    // professional hooks (Stage 6)
+    practiceSessionsCompleted: 0,
+    missedDrills: [],
   };
 }
 function loadPersistedState() {
@@ -863,6 +873,7 @@ let currentMode = null; // 'practice' | 'daily' | 'tutorial' | 'speedrun'
 let speedRunStartTime = 0;
 let lastSessionTimeMs = 0;
 let activeChallenge = null; // the challenge row being replayed, if any
+let reviewQueue = []; // missed drills being replayed in review mode
 let currentDrill = null;
 let currentDrillMultiplier = 1;
 let drillInProgress = false;
@@ -1316,6 +1327,17 @@ function renderGameScreen(mode) {
         <div class="stat-chip"><span class="stat-value" id="srCorrectValue">0</span><span class="stat-label">Correct</span></div>
         <div class="stat-chip"><span class="stat-value" id="drillCounter">1/${SPEEDRUN_DRILLS}</span><span class="stat-label">Drill</span></div>
       </div>`;
+  } else if (mode === "review") {
+    headerHtml = `
+      <div class="topbar">
+        <div class="bankroll">
+          <div class="bankroll-label">📕 Review Misses</div>
+          <div class="bankroll-value" style="font-size:1.15rem;">Untimed — no pressure</div>
+        </div>
+      </div>
+      <div class="statsbar">
+        <div class="stat-chip"><span class="stat-value" id="drillCounter">1/${reviewQueue.length}</span><span class="stat-label">Drill</span></div>
+      </div>`;
   } else {
     const label = mode === "daily" ? "Daily Drill" : "Quick Tutorial";
     const sub = mode === "daily" ? getEtDateHuman() : "Learn the basics";
@@ -1352,7 +1374,7 @@ function renderShell() {
       <span><span class="swatch" style="background:#c792ea"></span>VWAP</span>
     </div>
     <div class="powerup-bar hidden" id="powerupBar"></div>
-    <div class="timer-bar-wrap"><div class="timer-fill" id="timerFill"></div></div>
+    <div class="timer-bar-wrap ${currentMode === "review" ? "hidden" : ""}"><div class="timer-fill" id="timerFill"></div></div>
     <div class="buttons-row" id="buttonsRow">
       <button class="btn real" id="realBtn">REAL BREAKOUT</button>
       <button class="btn fake" id="fakeBtn">FAKEOUT</button>
@@ -1370,6 +1392,7 @@ function renderShell() {
   document.getElementById("nextBtn").onclick = () => {
     clearTimeout(autoAdvanceHandle);
     if (currentMode === "speedrun") advanceOrEndSpeedRun();
+    else if (currentMode === "review") advanceOrEndReview();
     else advanceOrEnd();
   };
 }
@@ -1597,6 +1620,7 @@ function finishPlayout(drill, choice) {
   const isCorrect = choice === drill.outcome;
   const isFizzle = drill.outcome === "fake" && drill.reversal_minutes === null && drill.resolution_bar_index === null;
 
+  if (currentMode !== "tutorial") recordMissOrClear(drill, isCorrect);
   applyResultJuice(isCorrect, isFizzle);
 
   if (currentMode === "practice") {
@@ -1636,6 +1660,8 @@ function finishPlayout(drill, choice) {
     const correctSoFar = sessionResults.filter(r => r.correct === true).length;
     const correctEl = document.getElementById("srCorrectValue");
     if (correctEl) correctEl.textContent = correctSoFar;
+    showCoachCard(drill, isCorrect, null, isFizzle);
+  } else if (currentMode === "review") {
     showCoachCard(drill, isCorrect, null, isFizzle);
   }
 }
@@ -1752,6 +1778,8 @@ function showEndOfDay() {
   const isNewBest = updateBestSessionPnl(sessionPnl);
   updateBestStreakEver(bestStreak);
   awardTicks(25);
+  appState.practiceSessionsCompleted = (appState.practiceSessionsCompleted || 0) + 1;
+  saveState();
   if (authReady()) tlSyncStats(appState);
 
   content.innerHTML = `
@@ -2080,6 +2108,73 @@ async function loadChallengeFromUrl(id) {
   renderChallengeIntro(row);
 }
 
+/* ============================= MISTAKE REVIEW ============================= */
+function recordMissOrClear(drill, isCorrect) {
+  const idx = appState.missedDrills.findIndex(m => m.id === drill.id);
+  if (!isCorrect) {
+    if (idx === -1) {
+      appState.missedDrills.push({ id: drill.id, market: drill.market || "stocks", timeframe: drill.timeframe || "5m" });
+      if (appState.missedDrills.length > 100) appState.missedDrills.shift();
+    }
+  } else if (idx !== -1) {
+    appState.missedDrills.splice(idx, 1);
+  }
+  saveState();
+}
+async function startMissReview() {
+  if (!appState.missedDrills.length) return;
+  renderGameScreen("review");
+  const content = document.getElementById("content");
+  if (content) content.innerHTML = `<div class="loading">Loading your misses…</div>`;
+
+  const byPack = {};
+  appState.missedDrills.forEach(m => {
+    const key = (m.market || "stocks") + "|" + (m.timeframe || "5m");
+    (byPack[key] = byPack[key] || []).push(m);
+  });
+  const queue = [];
+  for (const key in byPack) {
+    const [market, timeframe] = key.split("|");
+    const pool = (market === "stocks" && timeframe === "5m") ? allDrills : await loadDrillPack(market, timeframe);
+    if (!pool) continue;
+    byPack[key].forEach(m => {
+      const found = pool.find(d => d.id === m.id);
+      if (found) queue.push(found);
+    });
+  }
+  if (!queue.length) {
+    showToast("Couldn't load your missed drills — try again in a moment.");
+    renderStartScreen();
+    return;
+  }
+  reviewQueue = shuffleArray(queue);
+  sessionIndex = 0;
+  sessionDeck = reviewQueue;
+  sessionResults = [];
+  loadDrill(sessionDeck[0], { deferTimer: true });
+}
+function advanceOrEndReview() {
+  clearTimeout(autoAdvanceHandle);
+  sessionIndex++;
+  if (sessionIndex >= sessionDeck.length) renderReviewEnd();
+  else loadDrill(sessionDeck[sessionIndex], { deferTimer: true });
+}
+function renderReviewEnd() {
+  setDrillInProgress(false);
+  const content = document.getElementById("content");
+  const remaining = appState.missedDrills.length;
+  content.innerHTML = `
+    <div class="end-of-day">
+      <h2>📕 Review Complete</h2>
+      <div class="eod-verdict">${remaining
+        ? `${remaining} still on your miss list — every correct answer clears one.`
+        : "Clean sheet — no misses left to review! 🎉"}</div>
+      <button class="trade-again-btn" id="reviewBackBtn">← Back to start</button>
+    </div>
+  `;
+  document.getElementById("reviewBackBtn").onclick = renderStartScreen;
+}
+
 /* ============================= DAILY MODE ============================= */
 function handleDailyButtonClick() {
   const today = getEtDateString(0);
@@ -2117,6 +2212,7 @@ function renderDailyResultScreen(drill, isCorrect, isFizzle) {
       </div>
       <div class="daily-distribution" id="dailyDistribution"><div class="skeleton-line" style="width:80%;margin:0 auto;"></div></div>
       <div id="dailySigninPrompt"></div>
+      <div id="nextActionNudge"></div>
       <div class="daily-countdown">Next daily in <span id="countdownText">--:--:--</span></div>
       <button class="share-btn" id="shareBtnDaily">📤 SHARE</button>
       <button class="trade-again-btn" id="dailyBackBtn">BACK TO START</button>
@@ -2127,8 +2223,46 @@ function renderDailyResultScreen(drill, isCorrect, isFizzle) {
 
   loadDailyDistribution(getEtDateString(0), isCorrect);
   renderSigninPromptInto("dailySigninPrompt");
+  renderNextActionNudge();
 
   startCountdown();
+}
+// Picks one contextual nudge based on the player's current state — most
+// urgent (protect an active streak) first, falling back toward general
+// encouragement. Returns null if nothing qualifies yet.
+function pickNextActionNudge() {
+  const streak = appState.dailyPlayStreak || 0;
+  const accuracy = appState.totalDrillsAnswered ? appState.totalCorrect / appState.totalDrillsAnswered : 0;
+  if (streak >= 3 && (appState.ownedFreezes || 0) === 0) {
+    return { text: "🔥 Protect your streak — get a freeze", href: "/powerups/" };
+  }
+  if (appState.totalDrillsAnswered >= 10 && accuracy > 0.70) {
+    return { text: "You're above 70% — try Speed Run", onClick: () => startNewSpeedRun() };
+  }
+  if ((appState.practiceSessionsCompleted || 0) >= 3 && appState.practiceMarket !== "forex") {
+    return {
+      text: "Ready for harder reads? Try Forex →",
+      onClick: () => { appState.practiceMarket = "forex"; appState.practiceSession = null; saveState(); renderStartScreen(); },
+    };
+  }
+  if (streak === 0) {
+    return { text: "Start a streak — come back tomorrow", href: null };
+  }
+  return null;
+}
+function renderNextActionNudge() {
+  const el = document.getElementById("nextActionNudge");
+  if (!el) return;
+  const nudge = pickNextActionNudge();
+  if (!nudge) { el.innerHTML = ""; return; }
+  if (nudge.href) {
+    el.innerHTML = `<a class="next-action-nudge" href="${escapeHtml(nudge.href)}">${escapeHtml(nudge.text)}</a>`;
+  } else if (nudge.onClick) {
+    el.innerHTML = `<button class="next-action-nudge">${escapeHtml(nudge.text)}</button>`;
+    el.querySelector(".next-action-nudge").onclick = nudge.onClick;
+  } else {
+    el.innerHTML = `<div class="next-action-nudge static">${escapeHtml(nudge.text)}</div>`;
+  }
 }
 function startCountdown() {
   clearInterval(window.__countdownInterval);
@@ -2474,11 +2608,17 @@ function renderStartScreen() {
   const showFreezeNotice = !!appState.freezeConsumedPending;
   if (showFreezeNotice) { appState.freezeConsumedPending = false; saveState(); }
 
+  let subhead = "Can you spot the real breakout?";
+  if (authReady() && tlIsSignedIn() && tlProfile && (appState.dailyPlayStreak || 0) > 0) {
+    const greetDay = alreadyPlayedDaily ? appState.dailyPlayStreak : appState.dailyPlayStreak + 1;
+    subhead = `Back for day ${greetDay}, ${escapeHtml(tlProfile.display_name)}?`;
+  }
+
   const root = document.getElementById("screenRoot");
   root.innerHTML = `
     <div class="start-screen">
       <div class="start-wordmark">📈 Trade Lee</div>
-      <div class="start-sub">Can you spot the real breakout?</div>
+      <div class="start-sub">${subhead}</div>
 
       ${showFreezeNotice ? `<div class="freeze-notice">🧊 Streak saved by freeze! Your streak didn't reset.</div>` : ""}
 
@@ -2519,6 +2659,7 @@ function renderStartScreen() {
 
       <button class="mode-btn practice-btn" id="practiceBtn">PRACTICE — 10 DRILL SESSION</button>
       <button class="mode-btn speedrun-btn" id="speedRunBtn">⚡ SPEED RUN — 5 DRILLS, 5s EACH</button>
+      ${appState.missedDrills.length ? `<button class="text-link-btn" id="missReviewBtn">📕 Review your misses (${appState.missedDrills.length})</button>` : ""}
 
       <div class="start-stats-row">
         <div class="mini-stat"><div class="v">${accuracy}%</div><div class="l">Accuracy</div></div>
@@ -2529,6 +2670,8 @@ function renderStartScreen() {
   `;
   document.getElementById("dailyBtn").onclick = handleDailyButtonClick;
   document.getElementById("practiceBtn").onclick = startNewPracticeSession;
+  const missBtn = document.getElementById("missReviewBtn");
+  if (missBtn) missBtn.onclick = startMissReview;
   document.getElementById("speedRunBtn").onclick = () => startNewSpeedRun();
   initCustomizePanel();
 }
@@ -2679,6 +2822,11 @@ async function initAccountSync() {
   if (!authReady()) return;
   try { await tlInitSession(); } catch (e) {}
   renderNavAccountChip();
+  // Auth hydration is async and may resolve after the start screen's first
+  // paint — re-render once we know sign-in state so the returning-user
+  // greeting isn't missed on a fast reload. dailyBtn only exists in that
+  // screen's own template, so this never clobbers an active drill session.
+  if (document.getElementById("dailyBtn")) renderStartScreen();
 
   tlOnAuthChange(async (event) => {
     if (event === "SIGNED_IN") {
@@ -2776,10 +2924,12 @@ let pendingDeepLinkMode = (function () {
   return (m === "daily" || m === "practice") ? m : null;
 })();
 const pendingChallengeId = new URLSearchParams(location.search).get("challenge");
+const pendingReview = new URLSearchParams(location.search).get("review") === "1";
 function goToStartOrDeepLink() {
   const mode = pendingDeepLinkMode;
   pendingDeepLinkMode = null;
-  if (mode === "daily") handleDailyButtonClick();
+  if (pendingReview && appState.missedDrills.length) { history.replaceState(null, "", location.pathname); startMissReview(); }
+  else if (mode === "daily") handleDailyButtonClick();
   else if (mode === "practice") startNewPracticeSession();
   else renderStartScreen();
 }

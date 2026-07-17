@@ -76,6 +76,12 @@
     .hero-ctas { flex-direction: row; justify-content: center; }
     .hero-ctas .btn { width: auto; }
   }
+  .hero-stat-ticker {
+    margin: 22px auto 0; max-width: 480px; min-height: 1.4em;
+    font-size: 0.88rem; color: var(--text-dim); font-weight: 600;
+    transition: opacity 0.3s ease; opacity: 1;
+  }
+  .hero-stat-ticker.fade { opacity: 0; }
 
   /* ---------- mock preview (fills the gap between hero and how-it-works) ---------- */
   .mock-preview-section { padding: 26px 0 10px; }
@@ -191,6 +197,7 @@
       <a class="btn btn-primary" href="/play/?mode=daily">PLAY TODAY'S DRILL →</a>
       <a class="btn btn-ghost" href="/play/?mode=practice">Practice mode</a>
     </div>
+    <div class="hero-stat-ticker" id="heroStatTicker"></div>
   </div>
 </section>
 
@@ -289,6 +296,9 @@
 </footer>
 
 <script src="/social-links.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/supabase-config.js"></script>
+<script src="/auth.js"></script>
 <script>
 /* Decorative looping candlestick animation behind the hero — purely visual, no market data. */
 (function () {
@@ -389,6 +399,43 @@
   document.addEventListener("click", () => {
     document.querySelectorAll(".nav-dropdown.open").forEach(o => o.classList.remove("open"));
   });
+})();
+</script>
+<script>
+/* Rotating hero stat ticker — static facts always show; live Supabase stats
+   are appended to the rotation when reachable, so it degrades gracefully. */
+(function () {
+  const el = document.getElementById("heroStatTicker");
+  if (!el) return;
+  const messages = ["Only ~30% of breakouts follow through — can you spot them?"];
+  let idx = 0;
+
+  function showNext() {
+    el.classList.add("fade");
+    setTimeout(() => {
+      el.textContent = messages[idx % messages.length];
+      idx++;
+      el.classList.remove("fade");
+    }, 300);
+  }
+  el.textContent = messages[0];
+  idx = 1;
+  setInterval(showNext, 4500);
+
+  (async function loadDynamicStats() {
+    if (typeof tlFetchTotalDrillsAnswered !== "function") return;
+    try {
+      const total = await tlFetchTotalDrillsAnswered();
+      if (total) messages.push(`Traders have answered ${total.toLocaleString()} drills.`);
+    } catch (e) {}
+    try {
+      const yesterdayEt = new Intl.DateTimeFormat("en-CA", {
+        timeZone: "America/New_York", year: "numeric", month: "2-digit", day: "2-digit",
+      }).format(new Date(Date.now() - 86400000));
+      const pct = await tlFetchDailyPercentile(yesterdayEt);
+      if (pct !== null && pct !== undefined) messages.push(`${pct}% of players got yesterday's daily right.`);
+    } catch (e) {}
+  })();
 })();
 </script>
 </body>

@@ -114,6 +114,7 @@
   <section class="content-card card">
     <h2><span class="card-num">#</span>Personal Bests</h2>
     <div class="records-grid" id="recordsGrid"></div>
+    <div id="missReviewLink" style="margin-top:14px;"></div>
   </section>
 
   <section class="content-card card">
@@ -202,6 +203,14 @@ function renderRecords() {
       <div class="record-label">${r.label}</div>
     </div>
   `).join("");
+
+  const missEl = document.getElementById("missReviewLink");
+  if (missEl) {
+    const missCount = (state.missedDrills || []).length;
+    missEl.innerHTML = missCount
+      ? `<a class="text-link-btn" href="/play/?review=1" style="display:block;">📕 Review your misses (${missCount})</a>`
+      : `<p style="color:var(--text-dim);font-size:0.85rem;text-align:center;">No misses to review — go make some mistakes.</p>`;
+  }
 }
 renderRecords();
 

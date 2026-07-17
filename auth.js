@@ -225,6 +225,17 @@ async function tlFetchDailyPercentile(dateStr) {
   }
 }
 
+async function tlFetchTotalDrillsAnswered() {
+  if (!sbClient) return null;
+  try {
+    const { data, error } = await sbClient.rpc("get_total_drills_answered");
+    if (error) throw error;
+    return data;
+  } catch (e) {
+    return null;
+  }
+}
+
 // Works whether the visitor is signed in or anonymous — attaches user_id when available.
 async function tlJoinWaitlist(email) {
   if (!sbClient) throw new Error("offline");
