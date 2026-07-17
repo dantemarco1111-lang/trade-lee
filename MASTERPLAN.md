@@ -18,17 +18,27 @@ Status legend: `[ ]` not started · `[~]` in progress · `[x]` done and verified
 
 ---
 
-## PHASE 1: Chart Engine Upgrade
-- [ ] Bigger/clearer candles: increase default `barSpacing`; chart height ~60% of
-      viewport on phones.
-- [ ] Extend each drill's candle array to at least 60 candles before the decision
-      point (regenerate decks as needed via generate_drills.py).
-- [ ] Volume profile: horizontal histogram on the right of the price pane, computed
-      from visible candles. Value Area (70% of volume) shaded, POC line labeled,
-      VAH/VAL subtly marked.
-- [ ] Chart-settings gear: toggle volume profile on/off (default OFF), toggle VWAP
-      on/off, toggle volume pane on/off. Persist per-user (localStorage + cloud).
-- [ ] Verify readability at 390px with profile on and off, both mobile and desktop.
+## PHASE 1: Chart Engine Upgrade — DONE
+- [x] Bigger/clearer candles: barSpacing 9 (was default ~6), replaced fitContent()
+      with scrollToRealTime() so more candles doesn't shrink bar width; chart
+      height 60vh (58vh <400px), up from 50vh/46vh.
+- [x] Extend each drill's candle array to at least 60 candles before the decision
+      point — generate_drills.py now slices MIN_CONTEXT_BARS=60 from the full
+      continuous series (can reach back before the session boundary); all 8
+      pack/timeframe files regenerated (avg ~60 candles/drill, 1 edge-case
+      shortfall out of 480 total drills where <60 bars of history existed).
+- [x] Volume profile: horizontal histogram on the right of the price pane (24
+      buckets from visible candles), Value Area (70%) shaded gold, POC line +
+      VAH/VAL dotted lines, labeled. Works off the has_volume/activity field for
+      forex too.
+- [x] Chart-settings gear (top-left of chart): toggles volume profile (default
+      OFF), VWAP (default ON), volume pane (default ON, collapses pane height to
+      0 rather than just hiding the series). Persisted to localStorage +
+      Supabase (stats.chart_settings jsonb, migration:
+      supabase/phase1-chart-settings-schema.sql).
+- [x] Verified at 390px (profile on/off) and 1280px desktop; daily/practice/speed
+      run/challenge all regression-checked with the new chart code, zero console
+      errors.
 
 ## PHASE 2: Decision Modes — beyond real/fake
 - [ ] Mode framework so a drill can ask different questions; "Drill style" selector

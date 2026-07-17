@@ -33,6 +33,7 @@ TIGHTNESS_PERCENTILE = 35   # window must be tighter than this pct of the period
 COOLDOWN_BARS = 12          # after a detected breakout, skip 60 min before scanning again
 EXTENSION_MULTIPLE = 1.0    # "real breakout" = price extends >= 1x range height
 PRIOR_PERIOD_PROXIMITY_PCT = 0.0025  # 0.25%
+MIN_CONTEXT_BARS = 60       # chart always shows at least this many bars before the decision point
 
 # Futures session-open effects worth calling out in context lines.
 EQUITY_OPEN_ET = "09:30"
@@ -255,7 +256,13 @@ def find_breakouts_in_pack(df, symbol, pack_key, pack_cfg, outcome_window_bars):
                 else:
                     vwap_series = typical_price.expanding().mean()  # no real volume on FX — a plain average price line
 
-                chart_df = period_df.iloc[: j + 1]
+                # Chart context always shows >= MIN_CONTEXT_BARS candles before the decision
+                # point, pulled from the full continuous series (may reach back before the
+                # session boundary) — the outcome/VWAP logic above stays session-scoped, only
+                # the visual lookback is extended.
+                full_loc = df.index.get_loc(breakout_idx)
+                context_start = max(0, full_loc - MIN_CONTEXT_BARS + 1)
+                chart_df = df.iloc[context_start: full_loc + 1]
                 playout_df = period_df.iloc[j + 1: playout_end]
 
                 breakouts.append({

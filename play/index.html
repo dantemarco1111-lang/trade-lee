@@ -242,9 +242,9 @@
     border-radius: 14px;
     padding: 6px 6px 2px;
     position: relative;
-    height: 50vh;
-    min-height: 300px;
-    max-height: 460px;
+    height: 60vh;
+    min-height: 340px;
+    max-height: 540px;
     overflow: hidden;
   }
   .chart-card.slide-in { animation: slideIn 0.3s ease-out; }
@@ -322,6 +322,39 @@
     transition: top 0.1s linear;
   }
   .range-label.hidden { display: none; }
+
+  .chart-settings-gear {
+    position: absolute; top: 8px; left: 8px; z-index: 25;
+    width: 30px; height: 30px; border-radius: 50%;
+    background: rgba(20, 25, 34, 0.85); border: 1px solid var(--border-strong);
+    color: var(--text-dim); font-size: 0.95rem; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .chart-settings-gear:active { transform: scale(0.92); }
+  .chart-settings-panel {
+    position: absolute; top: 42px; left: 8px; z-index: 26;
+    background: var(--card2); border: 1px solid var(--border-strong); border-radius: 12px;
+    padding: 10px 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.5); min-width: 168px;
+  }
+  .chart-settings-panel label {
+    display: flex; align-items: center; gap: 8px; font-size: 0.82rem; color: var(--text);
+    padding: 6px 0; cursor: pointer; user-select: none;
+  }
+  .volume-profile-layer {
+    position: absolute; top: 0; right: 0; bottom: 0; width: 26%;
+    pointer-events: none; z-index: 5;
+  }
+  .vp-bucket {
+    position: absolute; right: 0; background: rgba(139, 149, 167, 0.28);
+  }
+  .vp-bucket.in-value-area { background: rgba(245, 180, 0, 0.32); }
+  .vp-bucket.poc { background: rgba(245, 180, 0, 0.65); }
+  .vp-poc-line {
+    position: absolute; left: 0; right: 26%; height: 0; border-top: 1px dashed rgba(245, 180, 0, 0.85);
+  }
+  .vp-va-line {
+    position: absolute; left: 0; right: 26%; height: 0; border-top: 1px dotted rgba(139, 149, 167, 0.5);
+  }
 
   .legend-row {
     display: flex; flex-wrap: wrap; gap: 10px; justify-content: center;
@@ -733,7 +766,7 @@
   @media (max-width: 400px) {
     .bankroll-value { font-size: 1.7rem; }
     .btn { font-size: 0.95rem; padding: 16px 6px; }
-    .chart-card { height: 46vh; }
+    .chart-card { height: 58vh; }
   }
   @media (min-width: 600px) {
     .timer-bar-wrap { margin: 6px 0 6px; }
@@ -839,6 +872,8 @@ function defaultState() {
     // professional hooks (Stage 6)
     practiceSessionsCompleted: 0,
     missedDrills: [],
+    // chart settings (Phase 1)
+    chartSettings: { volumeProfile: false, showVwap: true, showVolume: true },
   };
 }
 function loadPersistedState() {
@@ -1197,7 +1232,7 @@ function initChart(container) {
     height: container.clientHeight,
     layout: { background: { type: "solid", color: "#141922" }, textColor: "#c9d1d9" },
     grid: { vertLines: { color: "#1d2330" }, horzLines: { color: "#1d2330" } },
-    timeScale: { timeVisible: true, secondsVisible: false, borderColor: "#262b36", rightOffset: 8 },
+    timeScale: { timeVisible: true, secondsVisible: false, borderColor: "#262b36", rightOffset: 8, barSpacing: 9, rightBarStaysOnScroll: true },
     rightPriceScale: { borderColor: "#262b36" },
     crosshair: { mode: LightweightCharts.CrosshairMode.Normal },
   });
@@ -1368,6 +1403,13 @@ function renderShell() {
       <div class="range-label hidden" id="rangeHighLabel"></div>
       <div class="range-label hidden" id="rangeLowLabel"></div>
       <div class="forming-marker hidden" id="formingMarker"><span class="dot"></span>Breakout forming</div>
+      <div class="volume-profile-layer hidden" id="volumeProfileLayer"></div>
+      <button class="chart-settings-gear" id="chartSettingsGear" aria-label="Chart settings">⚙</button>
+      <div class="chart-settings-panel hidden" id="chartSettingsPanel">
+        <label><input type="checkbox" id="settingVolumeProfile"> Volume Profile</label>
+        <label><input type="checkbox" id="settingVwap"> VWAP</label>
+        <label><input type="checkbox" id="settingVolume"> Volume</label>
+      </div>
     </div>
     <div class="legend-row">
       <span><span class="swatch" style="background:#f5b400"></span>Range High/Low (the zone price is stuck in)</span>
@@ -1395,6 +1437,109 @@ function renderShell() {
     else if (currentMode === "review") advanceOrEndReview();
     else advanceOrEnd();
   };
+  initChartSettingsUI();
+}
+
+/* ============================= CHART SETTINGS (Phase 1) ============================= */
+function initChartSettingsUI() {
+  const gear = document.getElementById("chartSettingsGear");
+  const panel = document.getElementById("chartSettingsPanel");
+  if (!gear || !panel) return;
+  const settings = appState.chartSettings || { volumeProfile: false, showVwap: true, showVolume: true };
+
+  const vpBox = document.getElementById("settingVolumeProfile");
+  const vwapBox = document.getElementById("settingVwap");
+  const volBox = document.getElementById("settingVolume");
+  vpBox.checked = !!settings.volumeProfile;
+  vwapBox.checked = settings.showVwap !== false;
+  volBox.checked = settings.showVolume !== false;
+
+  gear.onclick = (e) => { e.stopPropagation(); panel.classList.toggle("hidden"); };
+
+  vpBox.onchange = () => {
+    appState.chartSettings.volumeProfile = vpBox.checked;
+    saveState();
+    if (vpBox.checked && currentDrill) renderVolumeProfile(currentDrill); else clearVolumeProfile();
+  };
+  vwapBox.onchange = () => {
+    appState.chartSettings.showVwap = vwapBox.checked;
+    saveState();
+    if (vwapSeries) vwapSeries.applyOptions({ visible: vwapBox.checked });
+  };
+  volBox.onchange = () => {
+    appState.chartSettings.showVolume = volBox.checked;
+    saveState();
+    applyVolumePaneVisibility(volBox.checked);
+  };
+}
+function applyVolumePaneVisibility(visible) {
+  if (!chart || !volumeSeries) return;
+  try {
+    volumeSeries.applyOptions({ visible });
+    const panes = chart.panes();
+    if (panes[1]) panes[1].setHeight(visible ? Math.round(document.getElementById("chartContainer").clientHeight * 0.32) : 0);
+  } catch (e) {}
+}
+function clearVolumeProfile() {
+  const layer = document.getElementById("volumeProfileLayer");
+  if (layer) { layer.innerHTML = ""; layer.classList.add("hidden"); }
+}
+function renderVolumeProfile(drill) {
+  const layer = document.getElementById("volumeProfileLayer");
+  if (!layer || !candleSeries) return;
+  const candles = drill.candles;
+  if (!candles || candles.length < 2) { clearVolumeProfile(); return; }
+
+  const BUCKETS = 24;
+  let lo = Infinity, hi = -Infinity;
+  candles.forEach(c => { lo = Math.min(lo, c.low); hi = Math.max(hi, c.high); });
+  const span = hi - lo;
+  if (!(span > 0)) { clearVolumeProfile(); return; }
+
+  const volumes = new Array(BUCKETS).fill(0);
+  candles.forEach(c => {
+    const bLo = Math.max(0, Math.floor(((c.low - lo) / span) * BUCKETS));
+    const bHi = Math.min(BUCKETS - 1, Math.floor(((c.high - lo) / span) * BUCKETS));
+    const spanBuckets = Math.max(1, bHi - bLo + 1);
+    const share = (c.volume || 0) / spanBuckets;
+    for (let b = bLo; b <= bHi; b++) volumes[b] += share;
+  });
+
+  const total = volumes.reduce((s, v) => s + v, 0);
+  if (!(total > 0)) { clearVolumeProfile(); return; }
+  const pocIdx = volumes.indexOf(Math.max(...volumes));
+
+  // Value Area: expand out from POC, each step taking whichever neighbor has more volume, until >=70%.
+  let vaLo = pocIdx, vaHi = pocIdx, vaSum = volumes[pocIdx];
+  while (vaSum / total < 0.70 && (vaLo > 0 || vaHi < BUCKETS - 1)) {
+    const nextLo = vaLo > 0 ? volumes[vaLo - 1] : -1;
+    const nextHi = vaHi < BUCKETS - 1 ? volumes[vaHi + 1] : -1;
+    if (nextHi >= nextLo) { vaHi++; vaSum += volumes[vaHi]; } else { vaLo--; vaSum += volumes[vaLo]; }
+  }
+
+  const maxVol = Math.max(...volumes);
+  const bucketPrice = (idx) => lo + (idx / BUCKETS) * span;
+  let html = "";
+  for (let b = 0; b < BUCKETS; b++) {
+    if (volumes[b] <= 0) continue;
+    const priceTop = bucketPrice(b + 1);
+    const priceBot = bucketPrice(b);
+    const yTop = candleSeries.priceToCoordinate(priceTop);
+    const yBot = candleSeries.priceToCoordinate(priceBot);
+    if (yTop === null || yBot === null) continue;
+    const widthPct = Math.max(4, (volumes[b] / maxVol) * 100);
+    const cls = b === pocIdx ? "vp-bucket poc" : (b >= vaLo && b <= vaHi) ? "vp-bucket in-value-area" : "vp-bucket";
+    html += `<div class="${cls}" style="top:${Math.min(yTop, yBot)}px;height:${Math.max(1, Math.abs(yBot - yTop))}px;width:${widthPct}%;"></div>`;
+  }
+  const pocY = candleSeries.priceToCoordinate(bucketPrice(pocIdx + 0.5));
+  const vahY = candleSeries.priceToCoordinate(bucketPrice(vaHi + 1));
+  const valY = candleSeries.priceToCoordinate(bucketPrice(vaLo));
+  if (pocY !== null) html += `<div class="vp-poc-line" style="top:${pocY}px;" title="POC"></div>`;
+  if (vahY !== null) html += `<div class="vp-va-line" style="top:${vahY}px;" title="VAH"></div>`;
+  if (valY !== null) html += `<div class="vp-va-line" style="top:${valY}px;" title="VAL"></div>`;
+
+  layer.innerHTML = html;
+  layer.classList.remove("hidden");
 }
 
 function loadDrill(drill, opts) {
@@ -1421,6 +1566,10 @@ function loadDrill(drill, opts) {
   volumeSeries.setData(volumeData);
   vwapSeries.setData(drill.vwap.slice(0, drill.candles.length).map(v => ({ time: toEasternChartTime(v.time), value: v.value })));
 
+  const chartSettings = appState.chartSettings || { volumeProfile: false, showVwap: true, showVolume: true };
+  vwapSeries.applyOptions({ visible: chartSettings.showVwap !== false });
+  applyVolumePaneVisibility(chartSettings.showVolume !== false);
+
   clearPriceLines();
   // native axis badge disabled — the custom "RANGE HIGH/LOW <price>" tags
   // (updateRangeLabels) fully replace it with combined title+price text
@@ -1434,11 +1583,12 @@ function loadDrill(drill, opts) {
     priceLinesList.push({ remove: () => volumeSeries.removePriceLine(avgLine) });
   }
 
-  chart.timeScale().fitContent();
+  chart.timeScale().scrollToRealTime();
   requestAnimationFrame(() => requestAnimationFrame(() => {
     updateRangeZone(drill);
     updateRangeLabels(drill);
     positionFormingMarker(drill);
+    if (chartSettings.volumeProfile) renderVolumeProfile(drill); else clearVolumeProfile();
   }));
 
   document.getElementById("formingMarker").classList.remove("hidden");
@@ -1531,7 +1681,7 @@ function startPlayout(drill, choice) {
     const distLow = Math.abs(c.close - drill.range_low) / drill.range_low;
     if (Math.min(distHigh, distLow) <= RANGE_PROXIMITY_PCT) pulseRangeZone();
 
-    chart.timeScale().fitContent();
+    chart.timeScale().scrollToRealTime();
     updateRangeZone(drill);
     updateRangeLabels(drill);
 
@@ -2847,6 +2997,7 @@ async function initAccountSync() {
               appState.speedRunBestAccuracy = result.merged.best_speedrun_accuracy || 0;
               appState.practiceTimerSeconds = result.merged.practice_timer_seconds || PRACTICE_TIMER_START;
               if (result.merged.onboarding_profile) appState.onboardingProfile = result.merged.onboarding_profile;
+              if (result.merged.chart_settings) appState.chartSettings = result.merged.chart_settings;
               appState.dailyPlayStreak = recomputed.dailyPlayStreak;
               appState.dailyWinStreak = recomputed.dailyWinStreak;
               if (recomputed.lastDailyDate) appState.lastDailyDate = recomputed.lastDailyDate;
@@ -2914,6 +3065,13 @@ function cancelExitDrill() {
   document.getElementById("exitConfirmOverlay").classList.remove("show");
 }
 document.getElementById("soundToggle").onclick = toggleSound;
+document.addEventListener("click", (e) => {
+  const panel = document.getElementById("chartSettingsPanel");
+  const gear = document.getElementById("chartSettingsGear");
+  if (panel && !panel.classList.contains("hidden") && !panel.contains(e.target) && e.target !== gear) {
+    panel.classList.add("hidden");
+  }
+});
 document.getElementById("exitBtn").onclick = handleExitClick;
 document.getElementById("exitStayBtn").onclick = cancelExitDrill;
 document.getElementById("exitLeaveBtn").onclick = confirmExitDrill;
