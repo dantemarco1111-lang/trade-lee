@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Weekly Leagues — Trade Lee</title>
+<meta name="description" content="Weekly leagues — climb from Bronze to Funded. Top 5 promote, bottom 5 demote, every week resets Monday at market open.">
+<meta property="og:title" content="Weekly Leagues — Trade Lee">
+<meta property="og:description" content="Weekly leagues — climb from Bronze to Funded. Top 5 promote, bottom 5 demote, every week resets Monday at market open.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://trade-lee.vercel.app/leagues/">
+<meta property="og:image" content="https://trade-lee.vercel.app/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Weekly Leagues — Trade Lee">
+<meta name="twitter:description" content="Climb from Bronze to Funded. Resets every Monday.">
+<meta name="twitter:image" content="https://trade-lee.vercel.app/og-image.png">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230b0e14'/%3E%3Cline x1='11' y1='4' x2='11' y2='28' stroke='%2326a69a' stroke-width='2.2'/%3E%3Crect x='7' y='10' width='8' height='10' rx='1' fill='%2326a69a'/%3E%3Cline x1='23' y1='6' x2='23' y2='25' stroke='%23ef5350' stroke-width='2.2'/%3E%3Crect x='19' y='12' width='8' height='7' rx='1' fill='%23ef5350'/%3E%3C/svg%3E">
+<link rel="manifest" href="/manifest.json">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta name="theme-color" content="#0b0e14">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@500;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@500;700&display=swap">
+<link rel="stylesheet" href="/theme.css">
+<style>
+  html, body {
+    margin: 0; padding: 0;
+    color: var(--text);
+    font-family: var(--font-body);
+    overflow-x: hidden;
+    -webkit-tap-highlight-color: transparent;
+    min-height: 100vh;
+  }
+  a { color: inherit; }
+  .wrap { max-width: 1100px; margin: 0 auto; padding: 0 20px; }
+
+  .tier-badge {
+    display: inline-flex; align-items: center; gap: 8px;
+    font-family: var(--font-display); font-weight: 700; font-size: 1.1rem;
+    padding: 8px 18px; border-radius: 999px; border: 1px solid var(--border-strong);
+    background: var(--surface-2);
+  }
+  .tier-dot { width: 10px; height: 10px; border-radius: 50%; }
+  .league-meta-row {
+    display: flex; align-items: center; justify-content: space-between;
+    flex-wrap: wrap; gap: 12px; margin-bottom: 18px;
+  }
+  .league-countdown {
+    font-family: var(--font-mono); font-variant-numeric: tabular-nums;
+    color: var(--text-dim); font-size: 0.85rem;
+  }
+  .league-countdown span { color: var(--text); font-weight: 700; }
+
+  .league-row-promote { background: rgba(34, 197, 94, 0.08); }
+  .league-row-demote { background: rgba(239, 68, 68, 0.08); }
+  .league-row-you { outline: 1px solid var(--green); outline-offset: -1px; }
+  .shield-icon { margin-left: 4px; }
+
+  .rollover-card {
+    background: linear-gradient(180deg, rgba(245, 180, 0, 0.08), rgba(245, 180, 0, 0.02));
+    border: 1px solid rgba(245, 180, 0, 0.3); border-radius: 14px;
+    padding: 20px 18px; text-align: center; margin-bottom: 20px;
+  }
+  .rollover-card .headline {
+    font-family: var(--font-display); font-weight: 800; font-size: 1.15rem; margin-bottom: 12px;
+  }
+
+  .locked-preview { position: relative; }
+  .locked-preview-table { filter: blur(4px); opacity: 0.5; pointer-events: none; user-select: none; }
+  .locked-preview-overlay {
+    position: absolute; inset: 0; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; text-align: center; gap: 14px; padding: 20px;
+  }
+  .locked-preview-badge {
+    font-family: var(--font-mono); font-size: 1.6rem;
+  }
+
+  .promote-tag, .demote-tag {
+    font-family: var(--font-mono); font-size: 0.68rem; font-weight: 700;
+    padding: 2px 8px; border-radius: 999px; text-transform: uppercase; letter-spacing: 0.4px;
+  }
+  .promote-tag { background: rgba(34, 197, 94, 0.15); color: var(--green); }
+  .demote-tag { background: rgba(239, 68, 68, 0.15); color: var(--red); }
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="wrap site-header-inner">
+    <a class="nav-wordmark" href="/">📈 Trade Lee</a>
+    <nav class="nav-links-desktop">
+      <div class="nav-dropdown" id="playDropdown">
+        <button class="nav-dropdown-trigger" type="button">Play <span class="caret">▾</span></button>
+        <div class="nav-dropdown-menu">
+          <a href="/play/?mode=daily">The 9:30 Drop</a>
+          <a href="/play/?mode=practice">Practice</a>
+        </div>
+      </div>
+      <div class="nav-dropdown" id="learnDropdown">
+        <button class="nav-dropdown-trigger" type="button">Learn <span class="caret">▾</span></button>
+        <div class="nav-dropdown-menu">
+          <a href="/academy/">Academy</a>
+          <a href="/risk/">Risk</a>
+          <a href="/strategies/">Strategies</a>
+          <a href="/learn/">Lessons</a>
+          <a href="/about/">About</a>
+        </div>
+      </div>
+      <a href="/leaderboard/">Leaderboard</a>
+      <a href="/leagues/">Leagues</a>
+      <a href="/premium/">Pro <span class="soon-tag">BETA</span></a>
+    </nav>
+    <button class="hamburger-btn" id="hamburgerBtn" aria-label="Open menu">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</header>
+
+<div class="mobile-menu-overlay" id="mobileMenuOverlay">
+  <button class="mobile-menu-close" id="mobileMenuClose" aria-label="Close menu">✕</button>
+  <div class="mobile-menu-label">Play</div>
+  <a href="/play/?mode=daily">The 9:30 Drop</a>
+  <a href="/play/?mode=practice">Practice</a>
+  <div class="mobile-menu-label">Learn</div>
+  <a href="/academy/">Academy</a>
+  <a href="/risk/">Risk</a>
+  <a href="/strategies/">Strategies</a>
+  <a href="/learn/">Lessons</a>
+  <a href="/about/">About</a>
+  <div class="mobile-menu-label">More</div>
+  <a href="/leaderboard/">Leaderboard</a>
+  <a href="/leagues/">Leagues</a>
+  <a href="/premium/">Pro <span class="soon-tag">BETA</span></a>
+</div>
+
+<main class="content-page">
+  <div class="content-hero">
+    <div class="badge">WEEKLY LEAGUES</div>
+    <h1>Climb the ladder</h1>
+    <p>Bronze → Silver → Gold → Platinum → Funded. Top 5 in your group promote, bottom 5 demote, every week resets Monday at market open.</p>
+  </div>
+
+  <section class="content-card card" id="leagueSection">
+    <div class="skeleton-line" style="width:60%;margin-bottom:10px;"></div>
+    <div class="skeleton-line" style="width:100%;margin-bottom:10px;"></div>
+    <div class="skeleton-line" style="width:80%;"></div>
+  </section>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <div class="footer-wordmark">📈 Trade Lee</div>
+    <div class="footer-tagline">Trade Lee — train your eye. © 2026</div>
+    <div class="footer-links">
+      <a href="#" data-social="tiktok">TikTok</a>
+      <a href="#" data-social="x">X</a>
+      <a href="#" data-social="instagram">Instagram</a>
+      <a href="#" data-social="youtube">YouTube</a>
+    </div>
+    <div class="footer-disclaimer">Educational content, not financial advice.</div>
+  </div>
+</footer>
+
+<script src="/social-links.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/supabase-config.js"></script>
+<script src="/auth.js"></script>
+<script>
+(function () {
+  const overlay = document.getElementById("mobileMenuOverlay");
+  document.getElementById("hamburgerBtn").onclick = () => overlay.classList.add("open");
+  document.getElementById("mobileMenuClose").onclick = () => overlay.classList.remove("open");
+  overlay.querySelectorAll("a").forEach(a => a.addEventListener("click", () => overlay.classList.remove("open")));
+
+  document.querySelectorAll(".nav-dropdown").forEach(dd => {
+    const trigger = dd.querySelector(".nav-dropdown-trigger");
+    trigger.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const isOpen = dd.classList.contains("open");
+      document.querySelectorAll(".nav-dropdown.open").forEach(o => o.classList.remove("open"));
+      if (!isOpen) dd.classList.add("open");
+    });
+  });
+  document.addEventListener("click", () => {
+    document.querySelectorAll(".nav-dropdown.open").forEach(o => o.classList.remove("open"));
+  });
+})();
+
+const STORAGE_KEY = "tradeLeeState_v1";
+function loadLocalState() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    return raw ? JSON.parse(raw) : {};
+  } catch (e) { return {}; }
+}
+function saveLocalState(state) {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch (e) {}
+}
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+}
+
+const TIER_ORDER = ["bronze", "silver", "gold", "platinum", "funded"];
+const TIER_LABELS = { bronze: "Bronze", silver: "Silver", gold: "Gold", platinum: "Platinum", funded: "Funded" };
+const TIER_COLORS = { bronze: "#cd7f32", silver: "#c0c0c0", gold: "#f5b400", platinum: "#5c9eff", funded: "#22c55e" };
+
+/* ---- ET date helpers (self-contained copy — see play/index.html for the canonical version) ---- */
+function getEtDateString(offsetDays) {
+  const now = new Date(Date.now() + (offsetDays || 0) * 86400000);
+  return new Intl.DateTimeFormat("en-CA", { timeZone: "America/New_York", year: "numeric", month: "2-digit", day: "2-digit" }).format(now);
+}
+function getEtOffsetMinutes(date) {
+  const utcDate = new Date(date.toLocaleString("en-US", { timeZone: "UTC" }));
+  const etDate = new Date(date.toLocaleString("en-US", { timeZone: "America/New_York" }));
+  return (etDate - utcDate) / 60000;
+}
+function getEtDayOfWeek() {
+  const parts = new Intl.DateTimeFormat("en-US", { timeZone: "America/New_York", weekday: "short" }).format(new Date());
+  return ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].indexOf(parts);
+}
+function getNextMondayMidnightEtMs() {
+  const dow = getEtDayOfWeek();
+  const daysUntilNextMonday = ((1 - dow + 7) % 7) || 7;
+  const targetDateStr = getEtDateString(daysUntilNextMonday);
+  const [y, m, d] = targetDateStr.split("-").map(Number);
+  const candidate = Date.UTC(y, m - 1, d, 0, 0, 0);
+  const offsetMinutes = getEtOffsetMinutes(new Date(candidate));
+  return candidate - offsetMinutes * 60000;
+}
+function startCountdown() {
+  clearInterval(window.__leagueCountdownInterval);
+  function tick() {
+    const el = document.getElementById("leagueCountdownText");
+    if (!el) { clearInterval(window.__leagueCountdownInterval); return; }
+    const remaining = Math.max(0, getNextMondayMidnightEtMs() - Date.now());
+    const d = Math.floor(remaining / 86400000);
+    const h = Math.floor((remaining % 86400000) / 3600000);
+    const m = Math.floor((remaining % 3600000) / 60000);
+    el.textContent = d > 0 ? `${d}d ${h}h` : `${h}h ${m}m`;
+  }
+  tick();
+  window.__leagueCountdownInterval = setInterval(tick, 30000);
+}
+
+function renderAnonLockedPreview() {
+  const el = document.getElementById("leagueSection");
+  el.innerHTML = `
+    <h2><span class="card-num">🏆</span>This Week's League</h2>
+    <div class="locked-preview">
+      <table class="data-table locked-preview-table">
+        <thead><tr><th>#</th><th>Player</th><th>Ticks</th></tr></thead>
+        <tbody>
+          <tr><td>1</td><td>Trader1</td><td>1,240</td></tr>
+          <tr><td>2</td><td>Trader2</td><td>980</td></tr>
+          <tr><td>3</td><td>Trader3</td><td>860</td></tr>
+          <tr><td>4</td><td>Trader4</td><td>710</td></tr>
+          <tr><td>5</td><td>Trader5</td><td>640</td></tr>
+        </tbody>
+      </table>
+      <div class="locked-preview-overlay">
+        <div class="locked-preview-badge">🔒</div>
+        <div style="font-weight:700;font-size:1.05rem;">Sign in to join Monday's league.</div>
+        <p style="color:var(--text-dim);font-size:0.88rem;max-width:340px;margin:0;">
+          Every signed-in player gets bucketed into a group of 20 starting in Bronze.
+          Top 5 each week promote — climb all the way to Funded.
+        </p>
+        <button class="btn btn-primary" id="leagueSignInBtn">Sign in to join</button>
+      </div>
+    </div>
+  `;
+  document.getElementById("leagueSignInBtn").onclick = () => tlOpenAuthModal();
+}
+
+function renderNeedsNameState() {
+  const el = document.getElementById("leagueSection");
+  el.innerHTML = `
+    <h2><span class="card-num">🏆</span>This Week's League</h2>
+    <p style="color:var(--text-dim);">Finish setting up your account to join this week's league.</p>
+    <button class="btn btn-primary" id="leagueClaimNameBtn">Continue sign in</button>
+  `;
+  document.getElementById("leagueClaimNameBtn").onclick = () => tlOpenAuthModal();
+}
+
+function renderErrorState() {
+  const el = document.getElementById("leagueSection");
+  el.innerHTML = `
+    <h2><span class="card-num">🏆</span>This Week's League</h2>
+    <div class="offline-notice">Can't reach the league right now — try again in a moment.</div>
+  `;
+}
+
+function tierRank(tier) { return TIER_ORDER.indexOf(tier); }
+
+function buildRolloverHeadline(prevResult, newTier, groupSize, shielded) {
+  const rank = prevResult.rank;
+  const oldTier = prevResult.tier;
+  const promoted = tierRank(newTier) > tierRank(oldTier);
+  const demoted = tierRank(newTier) < tierRank(oldTier);
+  const shieldSuffix = shielded ? " 🛡" : "";
+  if (promoted) return `You finished #${rank} — promoted to ${TIER_LABELS[newTier]}${shieldSuffix}`;
+  if (demoted) return `You finished #${rank} — moved to ${TIER_LABELS[newTier]}`;
+  return `Stayed in ${TIER_LABELS[oldTier]} — top 5 promotes${shieldSuffix}`;
+}
+
+function generateRolloverShareCanvas(headline, tier) {
+  const canvas = document.createElement("canvas");
+  canvas.width = 1080; canvas.height = 1350;
+  const ctx = canvas.getContext("2d");
+  const grad = ctx.createLinearGradient(0, 0, 0, 1350);
+  grad.addColorStop(0, "#141922"); grad.addColorStop(1, "#0b0e14");
+  ctx.fillStyle = grad; ctx.fillRect(0, 0, 1080, 1350);
+
+  ctx.textAlign = "center";
+  ctx.fillStyle = "#e6e9ef";
+  ctx.font = "700 60px -apple-system, Arial, sans-serif";
+  ctx.fillText("📈 Trade Lee", 540, 160);
+  ctx.font = "400 30px Arial, sans-serif";
+  ctx.fillStyle = "#8b95a7";
+  ctx.fillText("Weekly League", 540, 210);
+
+  ctx.font = "900 90px Arial, sans-serif";
+  ctx.fillStyle = TIER_COLORS[tier] || "#f5b400";
+  ctx.fillText(TIER_LABELS[tier] || tier, 540, 500);
+
+  ctx.font = "700 46px Arial, sans-serif";
+  ctx.fillStyle = "#e6e9ef";
+  wrapText(ctx, headline, 540, 620, 880, 58);
+
+  ctx.font = "400 28px Arial, sans-serif";
+  ctx.fillStyle = "#8b95a7";
+  ctx.fillText("Can you read the tape?", 540, 1250);
+  return canvas;
+}
+function wrapText(ctx, text, x, y, maxWidth, lineHeight) {
+  const words = text.split(" ");
+  let line = "";
+  let curY = y;
+  words.forEach((word, i) => {
+    const testLine = line + word + " ";
+    if (ctx.measureText(testLine).width > maxWidth && i > 0) {
+      ctx.fillText(line, x, curY);
+      line = word + " ";
+      curY += lineHeight;
+    } else {
+      line = testLine;
+    }
+  });
+  ctx.fillText(line, x, curY);
+}
+async function shareRollover(headline, tier) {
+  const canvas = generateRolloverShareCanvas(headline, tier);
+  canvas.toBlob(async (blob) => {
+    const file = new File([blob], "trade-lee-league.png", { type: "image/png" });
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      try { await navigator.share({ files: [file], title: "Trade Lee", text: headline }); return; } catch (e) {}
+    }
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = "trade-lee-league.png";
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 2000);
+  }, "image/png");
+}
+
+function renderGroupSection(membership, group, shielded, rolloverHtml) {
+  const el = document.getElementById("leagueSection");
+  const myId = tlSession ? tlSession.user.id : null;
+  const size = group.length;
+  const promoteCutoff = 5;
+  const demoteCutoff = Math.max(size - 5, 5);
+
+  const rows = group.map((r, i) => {
+    const rank = i + 1;
+    const isYou = r.user_id === myId;
+    const isPromoteZone = rank <= promoteCutoff && membership.tier !== "funded";
+    const isDemoteZone = rank > demoteCutoff && membership.tier !== "bronze";
+    const rowCls = [isYou ? "league-row-you" : "", isPromoteZone ? "league-row-promote" : "", isDemoteZone ? "league-row-demote" : ""].filter(Boolean).join(" ");
+    const tag = isPromoteZone ? `<span class="promote-tag">Promote</span>` : isDemoteZone ? `<span class="demote-tag">Demote</span>` : "";
+    const shieldForRow = isYou && shielded ? `<span class="shield-icon" title="Protected from demotion — first 2 weeks">🛡</span>` : "";
+    return `<tr class="${rowCls}"><td>${rank}</td><td>${escapeHtml(r.users.display_name)}${isYou ? " (you)" : ""}${shieldForRow}</td><td>⚡ ${r.weekly_ticks}</td><td>${tag}</td></tr>`;
+  }).join("");
+
+  el.innerHTML = `
+    ${rolloverHtml || ""}
+    <div class="league-meta-row">
+      <div class="tier-badge"><span class="tier-dot" style="background:${TIER_COLORS[membership.tier]}"></span>${TIER_LABELS[membership.tier]}</div>
+      <div class="league-countdown">Week ends in <span id="leagueCountdownText">--</span></div>
+    </div>
+    <table class="data-table">
+      <thead><tr><th>#</th><th>Player</th><th>Ticks</th><th></th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table>
+    <p style="color:var(--text-dim);font-size:0.8rem;margin-top:14px;">Top 5 promote, bottom 5 demote (min group of 5 protected). New joiners are demotion-proof for their first 2 weeks.</p>
+  `;
+  startCountdown();
+}
+
+async function loadLeaguePage() {
+  await tlInitSession();
+  if (!tlIsSignedIn()) { renderAnonLockedPreview(); return; }
+  await tlFetchMyProfile();
+  if (!tlProfile) { renderNeedsNameState(); return; }
+
+  const state = loadLocalState();
+  const prevSeenWeek = state.lastLeagueWeekSeen;
+
+  const membership = await tlEnsureLeagueMembership();
+  if (!membership) { renderErrorState(); return; }
+
+  let rolloverHtml = "";
+  if (prevSeenWeek && prevSeenWeek !== membership.week_id) {
+    const prevResult = await tlFetchPreviousWeekResult(prevSeenWeek);
+    if (prevResult) {
+      const weeksCount = await tlFetchMyLeagueWeeksCount();
+      const shielded = weeksCount <= 2;
+      const headline = buildRolloverHeadline(prevResult, membership.tier, 20, shielded);
+      rolloverHtml = `
+        <div class="rollover-card">
+          <div class="headline">${escapeHtml(headline)}</div>
+          <button class="btn btn-primary" id="rolloverShareBtn">📤 SHARE</button>
+        </div>
+      `;
+      setTimeout(() => {
+        const btn = document.getElementById("rolloverShareBtn");
+        if (btn) btn.onclick = () => shareRollover(headline, membership.tier);
+      }, 0);
+    }
+  }
+  state.lastLeagueWeekSeen = membership.week_id;
+  saveLocalState(state);
+
+  const weeksCountNow = await tlFetchMyLeagueWeeksCount();
+  const shieldedNow = weeksCountNow <= 2;
+
+  const group = await tlFetchLeagueGroup(membership.league_id);
+  if (!group) { renderErrorState(); return; }
+  renderGroupSection(membership, group, shieldedNow, rolloverHtml);
+}
+
+tlOnAuthChange((event) => {
+  if (event === "SIGNED_IN" || event === "SIGNED_OUT") loadLeaguePage();
+});
+loadLeaguePage();
+</script>
+</body>
+</html>

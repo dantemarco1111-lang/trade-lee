@@ -801,6 +801,11 @@
     color: #5c9eff; border-radius: 12px; padding: 10px 14px; font-size: 0.85rem;
     font-weight: 600; margin-bottom: 16px;
   }
+  .comeback-notice {
+    background: rgba(34, 197, 94, 0.1); border: 1px solid rgba(34, 197, 94, 0.35);
+    color: var(--green); border-radius: 12px; padding: 10px 14px; font-size: 0.85rem;
+    font-weight: 600; margin-bottom: 16px;
+  }
   .mode-btn {
     width: 100%; padding: 20px; font-size: 1.05rem; font-weight: 700; font-family: var(--font-display); border-radius: 16px;
     border: none; cursor: pointer; color: #fff; margin-bottom: 12px; letter-spacing: 0.3px;
@@ -1123,6 +1128,11 @@ function defaultState() {
     traderRating: RATING_START,
     ratedDrillsCount: 0,
     ratingColdStreak: 0,
+    // retention Stage 4: weekly leagues / comeback bonus
+    todayNetPnl: 0,
+    todayNetPnlDate: null,
+    comebackBonusDate: null,
+    lastLeagueWeekSeen: null,
   };
 }
 function loadPersistedState() {
@@ -1505,11 +1515,34 @@ function updateSpeedRunBestAccuracy(pct) {
 }
 
 /* ============================= TICKS / POWER-UPS ============================= */
+/* ---- comeback bonus: a net-negative P&L day pays double the next day ---- */
+function checkComebackBonus() {
+  const today = getEtDateString(0);
+  if (appState.todayNetPnlDate === today) return;
+  if (appState.todayNetPnlDate && (appState.todayNetPnl || 0) < 0) {
+    appState.comebackBonusDate = today;
+  }
+  appState.todayNetPnlDate = today;
+  appState.todayNetPnl = 0;
+  saveState();
+}
+function accumulateDailyPnl(pnl) {
+  checkComebackBonus();
+  appState.todayNetPnl = (appState.todayNetPnl || 0) + pnl;
+  saveState();
+}
+function comebackBonusActiveToday() {
+  return appState.comebackBonusDate === getEtDateString(0);
+}
 function awardTicks(n) {
-  appState.ticks = (appState.ticks || 0) + n;
-  appState.ticksEarnedAllTime = (appState.ticksEarnedAllTime || 0) + n;
+  checkComebackBonus();
+  const finalN = comebackBonusActiveToday() ? n * 2 : n;
+  appState.ticks = (appState.ticks || 0) + finalN;
+  appState.ticksEarnedAllTime = (appState.ticksEarnedAllTime || 0) + finalN;
   saveState();
   updateNavStreak();
+  if (authReady() && tlIsSignedIn()) tlAddWeeklyTicks(finalN);
+  return finalN;
 }
 function checkStreakFreeze() {
   const today = getEtDateString(0);
@@ -2334,6 +2367,7 @@ function finishPlayout(drill, choice) {
 
     const prevBankroll = bankroll, prevSessionPnl = sessionPnl;
     bankroll += pnl; sessionPnl += pnl;
+    accumulateDailyPnl(pnl);
 
     const bankrollEl = document.getElementById("bankrollValue");
     const pnlEl = document.getElementById("pnlValue");
@@ -2378,6 +2412,7 @@ function finishPlayout(drill, choice) {
 
     const prevBankroll = bankroll, prevSessionPnl = sessionPnl;
     bankroll += pnl; sessionPnl += pnl;
+    accumulateDailyPnl(pnl);
     const bankrollEl = document.getElementById("bankrollValue");
     const pnlEl = document.getElementById("pnlValue");
     animateNumber(prevBankroll, bankroll, 600, v => bankrollEl.textContent = formatMoney(v));
@@ -2404,6 +2439,7 @@ function finishPlayout(drill, choice) {
 
     const prevBankroll = bankroll, prevSessionPnl = sessionPnl;
     bankroll += pnl; sessionPnl += pnl;
+    accumulateDailyPnl(pnl);
     const bankrollEl = document.getElementById("bankrollValue");
     const pnlEl = document.getElementById("pnlValue");
     animateNumber(prevBankroll, bankroll, 600, v => bankrollEl.textContent = formatMoney(v));
@@ -4201,6 +4237,7 @@ function renderStartScreen() {
       <div class="start-sub">${subhead}</div>
 
       ${showFreezeNotice ? `<div class="freeze-notice">🧊 Streak saved by freeze. Your streak didn't reset.</div>` : ""}
+      ${comebackBonusActiveToday() ? `<div class="comeback-notice">💪 Rough day yesterday. Today pays double.</div>` : ""}
 
       <div class="start-daily-streak">
         <span>🔥</span> ${appState.dailyPlayStreak || 0} day streak
@@ -4634,6 +4671,7 @@ async function init() {
     allDrills = await res.json();
     if (!allDrills.length) throw new Error("No drills in drills.json");
     checkStreakFreeze();
+    checkComebackBonus();
     updateNavStreak();
     initAccountSync();
     if (pendingChallengeId) loadChallengeFromUrl(pendingChallengeId);

@@ -270,6 +270,101 @@ async function tlFetchTopDailyStreak() {
   }
 }
 
+/* ============================= WEEKLY LEAGUES (Stage 4) ============================= */
+// Lazily buckets the signed-in caller into this week's league on first call
+// of a new week (or first-ever call); no-ops if already a member. See
+// stage-retention4-leagues-schema.sql for the server-side tier/group logic.
+async function tlEnsureLeagueMembership() {
+  if (!sbClient || !tlSession) return null;
+  try {
+    const { data, error } = await sbClient.rpc("ensure_league_membership");
+    if (error) throw error;
+    return (data || [])[0] || null; // { tier, week_id, league_id, group_number }
+  } catch (e) {
+    return null;
+  }
+}
+// Fire-and-forget, same pattern as every other cloud sync in this file —
+// local Ticks are always the source of truth, this is purely additive.
+async function tlAddWeeklyTicks(amount) {
+  if (!sbClient || !tlSession || !amount) return;
+  try {
+    await sbClient.rpc("add_weekly_ticks", { p_amount: amount });
+  } catch (e) {}
+}
+// Full ranked roster of a group, for the league page's live table.
+async function tlFetchLeagueGroup(leagueId) {
+  if (!sbClient || !leagueId) return null;
+  try {
+    const { data, error } = await sbClient
+      .from("league_members")
+      .select("user_id, weekly_ticks, joined_at, week_id, users(display_name)")
+      .eq("league_id", leagueId)
+      .order("weekly_ticks", { ascending: false });
+    if (error) throw error;
+    return (data || []).filter(r => r.users && r.users.display_name);
+  } catch (e) {
+    return null;
+  }
+}
+// The caller's own membership row for the CURRENT week (tier/group/score),
+// used to drive the league page once ensure_league_membership() has run.
+async function tlFetchMyCurrentLeagueMembership() {
+  if (!sbClient || !tlSession) return null;
+  try {
+    const { data, error } = await sbClient
+      .from("league_members")
+      .select("week_id, league_id, tier, weekly_ticks, joined_at")
+      .eq("user_id", tlSession.user.id)
+      .order("week_id", { ascending: false })
+      .limit(1);
+    if (error) throw error;
+    return (data || [])[0] || null;
+  } catch (e) {
+    return null;
+  }
+}
+// The caller's PREVIOUS week's row + rank within that group's final
+// standings — powers the week-rollover "You finished #3 — promoted" screen.
+async function tlFetchPreviousWeekResult(prevWeekId) {
+  if (!sbClient || !tlSession) return null;
+  try {
+    const { data: mine, error: e1 } = await sbClient
+      .from("league_members")
+      .select("week_id, league_id, tier, weekly_ticks")
+      .eq("user_id", tlSession.user.id)
+      .eq("week_id", prevWeekId)
+      .maybeSingle();
+    if (e1) throw e1;
+    if (!mine) return null;
+    const { count, error: e2 } = await sbClient
+      .from("league_members")
+      .select("user_id", { count: "exact", head: true })
+      .eq("league_id", mine.league_id)
+      .gt("weekly_ticks", mine.weekly_ticks);
+    if (e2) throw e2;
+    return { ...mine, rank: (count || 0) + 1 };
+  } catch (e) {
+    return null;
+  }
+}
+
+// Total distinct weeks the caller has ever had a league_members row —
+// powers the "new player" demotion-shield icon (weeks 1-2 are protected).
+async function tlFetchMyLeagueWeeksCount() {
+  if (!sbClient || !tlSession) return 0;
+  try {
+    const { data, error } = await sbClient
+      .from("league_members")
+      .select("week_id")
+      .eq("user_id", tlSession.user.id);
+    if (error) throw error;
+    return (data || []).length;
+  } catch (e) {
+    return 0;
+  }
+}
+
 async function tlFetchDailyPercentile(dateStr) {
   if (!sbClient) return null;
   try {
