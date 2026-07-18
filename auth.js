@@ -227,8 +227,32 @@ async function tlSyncStats(appState) {
       ot_total_wins: appState.orderTrainerStats ? appState.orderTrainerStats.wins : 0,
       sp_total_answered: appState.strategyPackStats ? appState.strategyPackStats.totalAnswered : 0,
       sp_total_correct: appState.strategyPackStats ? appState.strategyPackStats.totalCorrect : 0,
+      daily_play_streak: appState.dailyPlayStreak || 0,
+      daily_win_streak: appState.dailyWinStreak || 0,
     });
   } catch (e) {}
+}
+
+// Public, anonymous-friendly — powers the "Longest active streak" line on the
+// Yesterday's Reveal card. `stats`/`users` are both already publicly
+// SELECT-able (see stage-b-schema.sql), so this is a plain join query, same
+// pattern as tlFetchLeaderboard — no RPC required.
+async function tlFetchTopDailyStreak() {
+  if (!sbClient) return null;
+  try {
+    const { data, error } = await sbClient
+      .from("stats")
+      .select("daily_play_streak, users(display_name)")
+      .gt("daily_play_streak", 0)
+      .order("daily_play_streak", { ascending: false })
+      .limit(1);
+    if (error) throw error;
+    const row = (data || [])[0];
+    if (!row || !row.users || !row.users.display_name) return null;
+    return { name: row.users.display_name, streak: row.daily_play_streak };
+  } catch (e) {
+    return null;
+  }
 }
 
 async function tlFetchDailyPercentile(dateStr) {

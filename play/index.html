@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Trade Lee — can you read the tape?</title>
-<meta name="description" content="A daily drill that trains you to read real charts fast — take it or fade it, using real market data.">
+<meta name="description" content="The 9:30 Drop — a daily trading drill that trains you to read real charts fast — take it or fade it, using real market data.">
 <meta property="og:title" content="Trade Lee — can you read the tape?">
 <meta property="og:description" content="One chart. Ten seconds. Take it or fade it — train your eye with real market data.">
 <meta property="og:type" content="website">
@@ -550,6 +550,31 @@
   .don-actions { display: flex; gap: 10px; }
   .don-actions .btn { flex: 1; min-height: 48px; padding: 12px 8px; font-size: 0.92rem; }
 
+  /* ---------- streak milestone celebration (retention Stage 2) ---------- */
+  .milestone-overlay {
+    position: fixed; inset: 0; z-index: 300; display: flex; align-items: center; justify-content: center;
+    padding: 20px; background: rgba(5, 7, 12, 0.82); backdrop-filter: blur(2px);
+    animation: milestoneFadeIn 0.25s ease;
+  }
+  @keyframes milestoneFadeIn { from { opacity: 0; } to { opacity: 1; } }
+  .milestone-card {
+    background: var(--card); border: 1px solid rgba(245, 180, 0, 0.4); border-radius: 20px;
+    padding: 32px 24px; text-align: center; max-width: 340px; width: 100%;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+    animation: milestonePop 0.4s cubic-bezier(.34,1.56,.64,1);
+  }
+  @keyframes milestonePop { from { opacity: 0; transform: scale(0.85) translateY(10px); } to { opacity: 1; transform: scale(1) translateY(0); } }
+  .milestone-flame { font-size: 2.4rem; margin-bottom: 10px; }
+  .milestone-title {
+    font-family: var(--font-display); font-weight: 800; font-size: 1.3rem;
+    color: var(--text); margin-bottom: 8px;
+  }
+  .milestone-bonus {
+    font-family: var(--font-mono); font-variant-numeric: tabular-nums;
+    color: var(--gold); font-weight: 700; font-size: 1rem; margin-bottom: 20px;
+  }
+  .milestone-card .share-btn { margin-bottom: 10px; }
+
   /* ---------- coach card ---------- */
   .coach-card {
     background: var(--card); border: 1px solid var(--border); border-radius: 16px;
@@ -739,6 +764,20 @@
   .confetti-piece { position: absolute; top: -20px; width: 8px; height: 14px; opacity: 0.9; animation: confettiFall linear forwards; }
   @keyframes confettiFall { to { transform: translateY(110vh) rotate(540deg); opacity: 0.3; } }
 
+  /* ---------- yesterday's reveal (retention Stage 2) ---------- */
+  .reveal-screen { display: flex; align-items: center; justify-content: center; min-height: 70vh; padding: 20px 6px; }
+  .reveal-card {
+    background: var(--card); border: 1px solid var(--border); border-radius: 20px;
+    padding: 30px 22px; text-align: center; max-width: 380px; width: 100%;
+    animation: milestonePop 0.35s cubic-bezier(.22,1,.36,1);
+  }
+  .reveal-badge {
+    font-family: var(--font-mono); font-size: 0.7rem; font-weight: 700; letter-spacing: 0.8px;
+    color: var(--gold); border: 1px solid rgba(245, 180, 0, 0.4); border-radius: 999px;
+    display: inline-block; padding: 5px 12px; margin-bottom: 16px;
+  }
+  .reveal-text { color: var(--text); font-size: 0.98rem; line-height: 1.6; margin: 0 0 22px; }
+
   /* ---------- start screen ---------- */
   .start-screen { text-align: center; padding: 30px 6px 10px; position: relative; }
   .start-wordmark { font-family: var(--font-display); font-size: 2.1rem; font-weight: 700; letter-spacing: -0.5px; }
@@ -750,6 +789,10 @@
   }
   .start-daily-streak .win-streak { color: var(--green); font-size: 0.85rem; font-weight: 600; }
   .start-daily-streak .freeze-icons { font-size: 0.9rem; }
+  .streak-risk-line {
+    font-size: 0.8rem; color: var(--muted); margin: -14px 0 20px;
+    font-family: var(--font-mono); font-variant-numeric: tabular-nums;
+  }
   .daily-goal-chip {
     display: block; font-size: 0.78rem; color: var(--text-dim); margin: 8px 0 20px; text-align: center;
   }
@@ -767,6 +810,12 @@
   .mode-btn:active { transform: translateY(1px) scale(0.97); box-shadow: inset 0 1px 0 rgba(255,255,255,0.14), inset 0 -1px 0 rgba(0,0,0,0.12), 0 2px 8px var(--btn-shadow-color, rgba(0,0,0,0.18)); }
   .daily-btn { background: linear-gradient(135deg, #ffb020, #ff5e3a); color: #1a0a00; --btn-shadow-color: rgba(255,130,0,0.25); }
   .daily-btn.done { background: var(--card2); color: var(--muted); border: 1px solid var(--border); box-shadow: none; }
+  .daily-btn.locked {
+    background: var(--card2); color: var(--text-dim); border: 1px solid var(--border); box-shadow: none;
+    cursor: default; font-family: var(--font-mono); font-variant-numeric: tabular-nums; font-size: 0.95rem;
+  }
+  .daily-btn.locked:active { transform: none; }
+  .daily-btn:disabled { opacity: 1; }
   .practice-btn { background: linear-gradient(180deg, #2fbf9f, var(--green-dark)); --btn-shadow-color: rgba(34,197,94,0.2); }
   .speedrun-btn { background: linear-gradient(135deg, #f5b400, #ff8a3d); color: #1a1200; --btn-shadow-color: rgba(245,180,0,0.25); }
 
@@ -1056,6 +1105,8 @@ function defaultState() {
     // retention Stage 1: clutch calls + double-or-nothing
     clutchCalls: 0,
     doubleOrNothingStats: { wins: 0, losses: 0 },
+    // retention Stage 2: The 9:30 Drop
+    lastRevealShownDate: null,
   };
 }
 function loadPersistedState() {
@@ -1204,6 +1255,21 @@ function getNextEtMidnightMs() {
   const offsetMinutes = getEtOffsetMinutes(new Date(candidate));
   return candidate - offsetMinutes * 60000;
 }
+// "The 9:30 Drop" unlock gate — the daily drill opens at 9:30 AM ET, not ET midnight.
+function get930UnlockMsForEtDate(etDateStr) {
+  const [y, m, d] = etDateStr.split("-").map(Number);
+  const candidate = Date.UTC(y, m - 1, d, 9, 30, 0);
+  const offsetMinutes = getEtOffsetMinutes(new Date(candidate));
+  return candidate - offsetMinutes * 60000;
+}
+function isDailyUnlockedNow() {
+  return Date.now() >= get930UnlockMsForEtDate(getEtDateString(0));
+}
+function getNextDropUnlockMs() {
+  const todayUnlock = get930UnlockMsForEtDate(getEtDateString(0));
+  if (Date.now() < todayUnlock) return todayUnlock;
+  return get930UnlockMsForEtDate(getEtDateString(1));
+}
 
 function hashString(s) {
   let h = 0;
@@ -1286,6 +1352,7 @@ function animateStatNumber(el, newVal, opts) {
 }
 
 /* ============================= PERSISTENCE HELPERS ============================= */
+const STREAK_MILESTONE_TICKS = { 3: 25, 7: 75, 14: 200, 30: 500 };
 function recordDailyResult(drill, isCorrect, isFizzle) {
   const today = getEtDateString(0);
   const yesterday = getEtDateString(-1);
@@ -1309,9 +1376,12 @@ function recordDailyResult(drill, isCorrect, isFizzle) {
   saveState();
 
   awardTicks(10 + (isCorrect ? 5 : 0));
-  if (appState.dailyPlayStreak > 0 && appState.dailyPlayStreak % 5 === 0) {
-    awardTicks(50);
+  const milestoneBonus = STREAK_MILESTONE_TICKS[appState.dailyPlayStreak];
+  if (milestoneBonus) {
+    awardTicks(milestoneBonus);
+    return { days: appState.dailyPlayStreak, bonus: milestoneBonus };
   }
+  return null;
 }
 function incrementGlobalStats(isCorrect) {
   appState.totalDrillsAnswered = (appState.totalDrillsAnswered || 0) + 1;
@@ -1627,7 +1697,7 @@ function renderGameScreen(mode) {
         <div class="stat-chip"><span class="stat-value" id="drillCounter">1/${STRATEGY_PACK_DRILLS_PER_SESSION}</span><span class="stat-label">Drill</span></div>
       </div>`;
   } else {
-    const label = mode === "daily" ? "Daily Drill" : "Quick Tutorial";
+    const label = mode === "daily" ? "The 9:30 Drop" : "Quick Tutorial";
     const sub = mode === "daily" ? getEtDateHuman() : "Learn the basics";
     headerHtml = `
       <div class="topbar">
@@ -2205,10 +2275,10 @@ function finishPlayout(drill, choice) {
     showCoachCard(drill, isCorrect, pnl, isFizzle, isClutch);
   } else if (currentMode === "daily") {
     incrementGlobalStats(isCorrect);
-    recordDailyResult(drill, isCorrect, isFizzle);
+    const milestoneHit = recordDailyResult(drill, isCorrect, isFizzle);
     updateNavStreak();
     if (authReady()) tlSyncDailyResult(isCorrect, appState, getEtDateString(0));
-    setTimeout(() => renderDailyResultScreen(drill, isCorrect, isFizzle, isClutch), 350);
+    setTimeout(() => renderDailyResultScreen(drill, isCorrect, isFizzle, isClutch, milestoneHit), 350);
   } else if (currentMode === "tutorial") {
     setTimeout(() => renderTutorialOutro(), 600);
   } else if (currentMode === "speedrun") {
@@ -3494,16 +3564,17 @@ function handleDailyButtonClick() {
   const today = getEtDateString(0);
   if (appState.lastDailyDate === today) {
     showDailyResultRecap();
-  } else {
+  } else if (isDailyUnlockedNow()) {
     renderGameScreen("daily");
     loadDrill(getDailyDrill());
   }
+  // locked (before 9:30 ET): button is non-interactive, nothing to do.
 }
 function showDailyResultRecap() {
   const drill = allDrills.find(d => d.id === appState.lastDailyDrillId) || getDailyDrill();
   renderDailyResultScreen(drill, appState.lastDailyOutcomeCorrect, appState.lastDailyIsFizzle);
 }
-function renderDailyResultScreen(drill, isCorrect, isFizzle, isClutch) {
+function renderDailyResultScreen(drill, isCorrect, isFizzle, isClutch, milestoneHit) {
   currentMode = null;
   setDrillInProgress(false);
   clearInterval(window.__countdownInterval);
@@ -3514,7 +3585,7 @@ function renderDailyResultScreen(drill, isCorrect, isFizzle, isClutch) {
   const root = document.getElementById("screenRoot");
   root.innerHTML = `
     <div class="topbar">
-      <div class="bankroll"><div class="bankroll-label">Daily Drill</div><div class="bankroll-value" style="font-size:1.25rem;">${getEtDateHuman()}</div></div>
+      <div class="bankroll"><div class="bankroll-label">The 9:30 Drop</div><div class="bankroll-value" style="font-size:1.25rem;">${getEtDateHuman()}</div></div>
     </div>
     <div class="daily-result">
       ${isClutch ? `<div class="clutch-badge pop">CLUTCH ✅</div>` : ""}
@@ -3528,7 +3599,7 @@ function renderDailyResultScreen(drill, isCorrect, isFizzle, isClutch) {
       <div class="daily-distribution" id="dailyDistribution"><div class="skeleton-line" style="width:80%;margin:0 auto;"></div></div>
       <div id="dailySigninPrompt"></div>
       <div id="nextActionNudge"></div>
-      <div class="daily-countdown">Next daily in <span id="countdownText">--:--:--</span></div>
+      <div class="daily-countdown">Next Drop in <span id="countdownText">--:--:--</span></div>
       <button class="share-btn" id="shareBtnDaily">📤 SHARE</button>
       <button class="trade-again-btn" id="dailyBackBtn">BACK TO START</button>
     </div>
@@ -3541,6 +3612,28 @@ function renderDailyResultScreen(drill, isCorrect, isFizzle, isClutch) {
   renderNextActionNudge();
 
   startCountdown();
+
+  if (milestoneHit) setTimeout(() => showStreakMilestone(milestoneHit), 500);
+}
+/* ---- streak milestones: day 3/7/14/30 (retention Stage 2) ---- */
+function showStreakMilestone(milestoneHit) {
+  launchConfetti();
+  playMultiplier();
+  const overlay = document.createElement("div");
+  overlay.className = "milestone-overlay";
+  overlay.id = "milestoneOverlay";
+  overlay.innerHTML = `
+    <div class="milestone-card">
+      <div class="milestone-flame">🔥</div>
+      <div class="milestone-title">${milestoneHit.days} straight Drops ✅</div>
+      <div class="milestone-bonus">+${milestoneHit.bonus} Ticks</div>
+      <button class="share-btn" id="milestoneShareBtn">📤 SHARE</button>
+      <button class="mode-btn practice-btn" id="milestoneDismissBtn">NICE →</button>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+  document.getElementById("milestoneDismissBtn").onclick = () => overlay.remove();
+  document.getElementById("milestoneShareBtn").onclick = () => generateAndShareCard("streak_milestone", milestoneHit);
 }
 // Picks one contextual nudge based on the player's current state — most
 // urgent (protect an active streak) first, falling back toward general
@@ -3584,7 +3677,7 @@ function startCountdown() {
   function tick() {
     const el = document.getElementById("countdownText");
     if (!el) { clearInterval(window.__countdownInterval); return; }
-    const remaining = Math.max(0, getNextEtMidnightMs() - Date.now());
+    const remaining = Math.max(0, getNextDropUnlockMs() - Date.now());
     const h = Math.floor(remaining / 3600000);
     const m = Math.floor((remaining % 3600000) / 60000);
     const s = Math.floor((remaining % 60000) / 1000);
@@ -3961,9 +4054,12 @@ function renderStartScreen() {
   clearTimeout(playoutHandle);
   clearTimeout(autoAdvanceHandle);
   clearInterval(window.__countdownInterval);
+  clearInterval(window.__dropCountdownInterval);
+  clearInterval(window.__streakRiskInterval);
 
   const today = getEtDateString(0);
   const alreadyPlayedDaily = appState.lastDailyDate === today;
+  const dropUnlocked = isDailyUnlockedNow();
   const accuracy = appState.totalDrillsAnswered ? Math.round(100 * appState.totalCorrect / appState.totalDrillsAnswered) : 0;
   const showFreezeNotice = !!appState.freezeConsumedPending;
   if (showFreezeNotice) { appState.freezeConsumedPending = false; saveState(); }
@@ -3973,6 +4069,9 @@ function renderStartScreen() {
     const greetDay = alreadyPlayedDaily ? appState.dailyPlayStreak : appState.dailyPlayStreak + 1;
     subhead = `Back for day ${greetDay}, ${escapeHtml(tlProfile.display_name)}?`;
   }
+
+  const streakAtRisk = authReady() && tlIsSignedIn() && (appState.dailyPlayStreak || 0) >= 3
+    && !alreadyPlayedDaily && (appState.ownedFreezes || 0) === 0;
 
   const root = document.getElementById("screenRoot");
   root.innerHTML = `
@@ -3987,10 +4086,11 @@ function renderStartScreen() {
         ${appState.dailyWinStreak > 0 ? `<span class="win-streak">· ${appState.dailyWinStreak} win streak</span>` : ""}
         ${appState.ownedFreezes > 0 ? `<span class="freeze-icons">${"🧊".repeat(appState.ownedFreezes)}</span>` : ""}
       </div>
+      ${streakAtRisk ? `<div class="streak-risk-line">Your ${appState.dailyPlayStreak}-day streak ends in <span id="streakRiskCountdown">--h --m</span>.</div>` : ""}
       ${appState.onboardingProfile ? `<div class="daily-goal-chip">🎯 ${escapeHtml(TIME_GOAL_LABEL[appState.onboardingProfile.time] || "1 drill a day")}</div>` : ""}
 
-      <button class="mode-btn daily-btn ${alreadyPlayedDaily ? "done" : ""}" id="dailyBtn">
-        ${alreadyPlayedDaily ? "DAILY DRILL ✓ DONE — VIEW RESULT" : "DAILY DRILL"}
+      <button class="mode-btn daily-btn ${alreadyPlayedDaily ? "done" : dropUnlocked ? "" : "locked"}" id="dailyBtn" ${(!dropUnlocked && !alreadyPlayedDaily) ? "disabled" : ""}>
+        ${alreadyPlayedDaily ? "THE 9:30 DROP ✓ DONE — VIEW RESULT" : dropUnlocked ? "THE 9:30 DROP" : `Next Drop in <span id="dropCountdownText">--h --m</span>`}
       </button>
 
       <div class="customize-panel">
@@ -4042,6 +4142,36 @@ function renderStartScreen() {
   if (missBtn) missBtn.onclick = startMissReview;
   document.getElementById("speedRunBtn").onclick = () => startNewSpeedRun();
   initCustomizePanel();
+
+  if (!dropUnlocked && !alreadyPlayedDaily) startDropCountdown();
+  if (streakAtRisk) startStreakRiskCountdown();
+}
+function startDropCountdown() {
+  clearInterval(window.__dropCountdownInterval);
+  function tick() {
+    const el = document.getElementById("dropCountdownText");
+    if (!el) { clearInterval(window.__dropCountdownInterval); return; }
+    const remaining = getNextDropUnlockMs() - Date.now();
+    if (remaining <= 0) { clearInterval(window.__dropCountdownInterval); renderStartScreen(); return; }
+    const h = Math.floor(remaining / 3600000);
+    const m = Math.floor((remaining % 3600000) / 60000);
+    el.textContent = `${h}h ${m}m`;
+  }
+  tick();
+  window.__dropCountdownInterval = setInterval(tick, 30000);
+}
+function startStreakRiskCountdown() {
+  clearInterval(window.__streakRiskInterval);
+  function tick() {
+    const el = document.getElementById("streakRiskCountdown");
+    if (!el) { clearInterval(window.__streakRiskInterval); return; }
+    const remaining = Math.max(0, getNextEtMidnightMs() - Date.now());
+    const h = Math.floor(remaining / 3600000);
+    const m = Math.floor((remaining % 3600000) / 60000);
+    el.textContent = `${String(h).padStart(2, "0")}h ${String(m).padStart(2, "0")}m`;
+  }
+  tick();
+  window.__streakRiskInterval = setInterval(tick, 30000);
 }
 
 /* ============================= SHARE CARD ============================= */
@@ -4096,6 +4226,16 @@ function generateShareCanvas(mode, data) {
     ctx.fillStyle = "#f5b400";
     ctx.fillText(`🔥 ${appState.dailyPlayStreak} day streak`, 540, 530);
     drawMiniChart(ctx, data.drill.candles, 140, 650, 800, 480);
+  } else if (mode === "streak_milestone") {
+    ctx.font = "900 130px Arial, sans-serif";
+    ctx.fillStyle = "#f5b400";
+    ctx.fillText("🔥", 540, 480);
+    ctx.font = "900 76px Arial, sans-serif";
+    ctx.fillStyle = "#e6e9ef";
+    ctx.fillText(`${data.days} straight Drops ✅`, 540, 620);
+    ctx.font = "700 44px Arial, sans-serif";
+    ctx.fillStyle = "#22c55e";
+    ctx.fillText(`+${data.bonus} Ticks`, 540, 700);
   } else if (mode === "speedrun") {
     ctx.font = "900 110px Arial, sans-serif";
     ctx.fillStyle = "#f5b400";
@@ -4314,7 +4454,45 @@ function goToStartOrDeepLink() {
   else if (mode === "daily") handleDailyButtonClick();
   else if (mode === "practice") startNewPracticeSession();
   else if (mode === "ordertrainer" || mode === "longshortwait") { appState.drillStyle = mode; saveState(); startNewPracticeSession(); }
-  else renderStartScreen();
+  else if (!maybeShowYesterdaysReveal()) renderStartScreen();
+}
+
+/* ---- Yesterday's Reveal: first screen a returning player sees, once per day ---- */
+function maybeShowYesterdaysReveal() {
+  const today = getEtDateString(0);
+  if (appState.lastRevealShownDate === today) return false;
+  appState.lastRevealShownDate = today;
+  saveState();
+  renderYesterdaysReveal();
+  return true;
+}
+async function renderYesterdaysReveal() {
+  const yesterday = getEtDateString(-1);
+  const playedYesterday = appState.lastDailyDate === yesterday;
+  const root = document.getElementById("screenRoot");
+  root.innerHTML = `
+    <div class="reveal-screen">
+      <div class="reveal-card">
+        <div class="reveal-badge">YESTERDAY'S DROP</div>
+        <p class="reveal-text" id="revealText">Loading…</p>
+        <button class="mode-btn practice-btn" id="revealContinueBtn">CONTINUE →</button>
+      </div>
+    </div>
+  `;
+  document.getElementById("revealContinueBtn").onclick = renderStartScreen;
+
+  const [pct, topStreak] = await Promise.all([
+    authReady() ? tlFetchDailyPercentile(yesterday) : Promise.resolve(null),
+    authReady() ? tlFetchTopDailyStreak() : Promise.resolve(null),
+  ]);
+
+  const parts = [];
+  parts.push(pct === null ? "No data yet for yesterday's Drop." : `${Math.round(100 - pct)}% of traders got trapped.`);
+  if (playedYesterday) parts.push(`You ${appState.lastDailyResult === "win" ? "got it ✅" : "got trapped ❌"}.`);
+  parts.push(topStreak ? `Longest active streak: ${escapeHtml(topStreak.name)} (${topStreak.streak} days).` : "Be the first name on the board.");
+
+  const textEl = document.getElementById("revealText");
+  if (textEl) textEl.innerHTML = parts.join(" ");
 }
 
 /* ============================= INIT ============================= */
