@@ -131,12 +131,16 @@
     font-family: var(--font-display); font-weight: 700; font-size: 0.66rem;
     letter-spacing: 0.4px; color: #fff;
   }
-  .mock-real { background: linear-gradient(180deg, #2fbf9f, var(--green-dark)); }
-  .mock-fake { background: linear-gradient(180deg, #f0563f, var(--red-dark)); }
+  .mock-real { background: linear-gradient(180deg, var(--green), var(--green-dark)); }
+  .mock-fake { background: linear-gradient(180deg, var(--red), var(--red-dark)); }
 
   /* ---------- how it works ---------- */
   .section { padding: 50px 0; }
   .section-tight { padding-top: 16px; }
+  @media (min-width: 960px) {
+    .section { padding: 75px 0; }
+    .section-tight { padding-top: 24px; }
+  }
   .section-title {
     font-family: var(--font-display); font-weight: 700; letter-spacing: -0.4px;
     font-size: 1.5rem; text-align: center; margin: 0 0 30px;

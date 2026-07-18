@@ -273,6 +273,20 @@
   #chartContainer.desaturate { filter: grayscale(0.7) brightness(0.85); }
   #chartContainer.fizzle-fade { filter: grayscale(1) brightness(0.7); }
 
+  .chart-toolbar {
+    display: flex; align-items: center; gap: 8px;
+    padding: 0 4px 8px;
+    font-family: var(--font-mono); font-size: 0.72rem; letter-spacing: 0.02em;
+    color: var(--text-dim);
+  }
+  .chart-toolbar .toolbar-symbol { color: var(--text); font-weight: 700; }
+  .chart-toolbar .toolbar-sep { opacity: 0.4; }
+  .chart-toolbar .toolbar-session {
+    margin-left: auto; padding: 2px 9px; border-radius: 999px;
+    background: var(--surface-2); border: 1px solid var(--border);
+    font-size: 0.66rem; white-space: nowrap;
+  }
+
   .range-zone {
     position: absolute;
     left: 6px; right: 6px;
@@ -518,8 +532,8 @@
     box-shadow: inset 0 1px 0 rgba(255,255,255,0.22), inset 0 -1px 0 rgba(0,0,0,0.12), 0 6px 20px var(--btn-shadow-color, rgba(0,0,0,0.2));
   }
   .btn:active { transform: translateY(1px) scale(0.98); box-shadow: inset 0 1px 0 rgba(255,255,255,0.14), inset 0 -1px 0 rgba(0,0,0,0.12), 0 2px 8px var(--btn-shadow-color, rgba(0,0,0,0.18)); }
-  .btn.real { background: linear-gradient(180deg, #2fbf9f, var(--green-dark)); --btn-shadow-color: rgba(34,197,94,0.2); }
-  .btn.fake { background: linear-gradient(180deg, #f0563f, var(--red-dark)); --btn-shadow-color: rgba(239,68,68,0.2); }
+  .btn.real { background: linear-gradient(180deg, var(--green), var(--green-dark)); --btn-shadow-color: rgba(34,197,94,0.2); }
+  .btn.fake { background: linear-gradient(180deg, var(--red), var(--red-dark)); --btn-shadow-color: rgba(239,68,68,0.2); }
   .btn.wait { background: linear-gradient(180deg, #8b95a7, #565f6e); --btn-shadow-color: rgba(139,149,167,0.2); font-size: 0.9rem; }
   .btn:disabled { opacity: 0.45; cursor: default; }
 
@@ -674,7 +688,7 @@
   }
   .trade-again-btn {
     width: 100%; padding: 17px; font-size: 1.05rem; font-weight: 700; font-family: var(--font-display); border-radius: 16px;
-    border: none; background: linear-gradient(180deg, #2fbf9f, var(--green-dark)); color: #fff; cursor: pointer;
+    border: none; background: linear-gradient(180deg, var(--green), var(--green-dark)); color: #fff; cursor: pointer;
     margin-bottom: 10px; transition: transform 0.15s cubic-bezier(.34,1.56,.64,1); box-shadow: 0 6px 20px rgba(34,197,94,0.2);
   }
   .trade-again-btn:active { transform: scale(0.96); }
@@ -747,7 +761,7 @@
   }
   .exit-confirm-buttons button:active { transform: scale(0.95); }
   #exitStayBtn { background: var(--card); border: 1px solid var(--border); color: var(--text); }
-  #exitLeaveBtn { background: linear-gradient(180deg, #f0563f, var(--red-dark)); border: none; color: #fff; }
+  #exitLeaveBtn { background: linear-gradient(180deg, var(--red), var(--red-dark)); border: none; color: #fff; }
 
   .loading, .error { text-align: center; padding: 60px 12px; color: var(--muted); }
   .error { color: var(--red); }
@@ -860,7 +874,7 @@
   }
   .daily-btn.locked:active { transform: none; }
   .daily-btn:disabled { opacity: 1; }
-  .practice-btn { background: linear-gradient(180deg, #2fbf9f, var(--green-dark)); --btn-shadow-color: rgba(34,197,94,0.2); }
+  .practice-btn { background: linear-gradient(180deg, var(--green), var(--green-dark)); --btn-shadow-color: rgba(34,197,94,0.2); }
   .speedrun-btn { background: linear-gradient(135deg, #f5b400, #ff8a3d); color: #1a1200; --btn-shadow-color: rgba(245,180,0,0.25); }
 
   /* ---------- customize-drills panel ---------- */
@@ -1035,7 +1049,8 @@
     #content { display: contents; }
     #screenRoot::after { content: ""; display: block; clear: both; }
     #screenRoot > .topbar { clear: both; }
-    .chart-card, .legend-row, #content > .chart-card, #content > .legend-row {
+    .chart-toolbar, .chart-card, .legend-row,
+    #content > .chart-toolbar, #content > .chart-card, #content > .legend-row {
       float: left; width: calc(100% - 372px); clear: left;
     }
     .statsbar, .powerup-bar, .timer-bar-wrap, .decision-prompt,
@@ -2043,10 +2058,32 @@ function toggleSound() {
 }
 
 /* ============================= DRILL SHELL / LOAD ============================= */
+function chartToolbarHtml() {
+  let symbol = "Stocks", timeframe = appState.practiceTimeframe || "5m", session = null;
+  if (currentMode === "practice") {
+    symbol = MARKET_LABELS[appState.practiceMarket || "stocks"] || "Stocks";
+    const opts = SESSION_OPTIONS[appState.practiceMarket || "stocks"] || [];
+    const match = appState.practiceSession ? opts.find(o => o[0] === appState.practiceSession) : null;
+    session = match ? match[1] : "Any Session";
+  } else if (currentMode === "daily") { timeframe = "5m"; session = "9:30 Drop"; }
+  else if (currentMode === "longshortwait") { session = "Long / Short / Wait"; }
+  else if (currentMode === "strategy_pack") { session = currentStrategyPack.label; }
+  else if (currentMode === "speedrun") { session = "Speed Run"; }
+  else if (currentMode === "review") { session = "Review"; }
+  else if (currentMode === "ordertrainer") { session = "Order Trainer"; }
+  else { session = "Tutorial"; }
+  return `<div class="chart-toolbar">
+    <span class="toolbar-symbol">${escapeHtml(symbol)}</span>
+    <span class="toolbar-sep">•</span>
+    <span class="toolbar-timeframe">${escapeHtml(timeframe)}</span>
+    ${session ? `<span class="toolbar-session">${escapeHtml(session)}</span>` : ""}
+  </div>`;
+}
 function renderShell() {
   const content = document.getElementById("content");
   if (currentMode === "ordertrainer") { renderOrderTrainerShell(content); return; }
   content.innerHTML = `
+    ${chartToolbarHtml()}
     <div class="chart-card slide-in" id="chartCard">
       <div id="chartContainer"></div>
       <div class="range-zone" id="rangeZone"></div>
@@ -3009,6 +3046,7 @@ let otDrill = null;
 
 function renderOrderTrainerShell(content) {
   content.innerHTML = `
+    ${chartToolbarHtml()}
     <div class="chart-card slide-in" id="chartCard">
       <div id="chartContainer"></div>
       <div class="volume-profile-layer hidden" id="volumeProfileLayer"></div>
