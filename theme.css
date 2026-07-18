@@ -1,4 +1,19 @@
 /* Trade Lee — shared design system (landing + game) */
+/*
+ * LAYOUT SAFETY RULE (read before adding any wrapper, modal, or sheet):
+ * - Page-level wrappers use min-height, never a fixed height, and never
+ *   overflow-y: hidden — the page must always be free to grow and scroll.
+ * - Any modal / bottom sheet / overlay card gets max-height: 90vh plus
+ *   overflow-y: auto, so it degrades to an internal scroll on a short
+ *   window instead of clipping content with no way to reach it.
+ * - overflow-x: hidden on html/body is fine (kills horizontal scroll from
+ *   full-bleed sections); overflow-y must always stay open at that level.
+ * A fixed-height stack (chart-card, etc.) is the #1 way this site has
+ * broken on real 1366x768 / 1280x600 desktop windows — browser chrome eats
+ * into the visible viewport, so anything sized off raw vh assuming a tall
+ * window silently pushes controls below the fold. Prefer vh with a sane
+ * min/max clamp over a rigid px height for anything above the fold.
+ */
 
 :root {
   /* core palette */
@@ -542,6 +557,7 @@ body {
 .auth-modal-card {
   background: var(--surface); border: 1px solid var(--border-strong); border-radius: 16px;
   padding: 28px 24px; max-width: 380px; width: 100%; position: relative;
+  max-height: 90vh; overflow-y: auto; box-sizing: border-box;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
 }
 .auth-modal-close {
