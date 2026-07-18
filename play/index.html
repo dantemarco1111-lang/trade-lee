@@ -1020,6 +1020,31 @@
        shorter windows instead of just clipping. */
     .chart-card { height: 46vh; min-height: 320px; max-height: 480px; }
   }
+
+  /* ---------- desktop two-column game screen (Stage 2) ----------
+     Chart stays large on the left; stats/streak/timer/decision buttons and
+     the result card form a right rail instead of stacking below the chart
+     or overlaying it. Pure CSS (float + display:contents) — no JS or DOM
+     changes, so every mode (practice/daily/lsw/strategy_pack/speedrun/
+     review/order trainer) gets this for free since they all reuse the same
+     class names. #content uses display:contents so its children become
+     real layout siblings of .topbar/.statsbar in #screenRoot — floats need
+     that flat sibling relationship to sit side by side correctly. */
+  @media (min-width: 960px) {
+    #app, .site-nav { max-width: 1200px; }
+    #content { display: contents; }
+    #screenRoot::after { content: ""; display: block; clear: both; }
+    #screenRoot > .topbar { clear: both; }
+    .chart-card, .legend-row, #content > .chart-card, #content > .legend-row {
+      float: left; width: calc(100% - 372px); clear: left;
+    }
+    .statsbar, .powerup-bar, .timer-bar-wrap, .decision-prompt,
+    .don-card, .buttons-row, .skip-message, .coach-card, .ot-ticket {
+      float: right; width: 344px; clear: right;
+    }
+    .chart-card { margin-bottom: 12px; }
+    .coach-card { margin-top: 4px; }
+  }
 </style>
 </head>
 <body>

@@ -52,6 +52,19 @@
     mask-image: linear-gradient(90deg, transparent, black 12%, black 88%, transparent);
   }
   .hero-inner { position: relative; z-index: 2; }
+  @media (min-width: 960px) {
+    .hero-inner {
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 56px; text-align: left;
+    }
+    .hero-copy { flex: 1 1 480px; max-width: 540px; }
+    .hero h1 { margin-left: 0; }
+    .hero p.subhead { margin: 0 0 32px; }
+    .hero-ctas { align-items: flex-start; }
+    .hero-ctas .btn { width: auto; }
+    .hero-stat-ticker { margin: 22px 0 0; }
+    .mock-preview { flex: 0 0 360px; margin: 0; }
+  }
   .hero h1 {
     font-family: var(--font-display);
     font-weight: 700;
@@ -84,11 +97,10 @@
   }
   .hero-stat-ticker.fade { opacity: 0; }
 
-  /* ---------- mock preview (fills the gap between hero and how-it-works) ---------- */
-  .mock-preview-section { padding: 26px 0 10px; }
+  /* ---------- mock preview (sits beside the hero copy on desktop) ---------- */
   .mock-preview {
     max-width: 340px;
-    margin: 0 auto;
+    margin: 26px auto 0;
     padding: 14px 16px 18px;
     text-decoration: none;
     display: block;
@@ -235,22 +247,15 @@
 <section class="hero">
   <canvas id="heroCanvas"></canvas>
   <div class="wrap hero-inner">
-    <h1>Can you read the <span class="accent">tape</span>?</h1>
-    <p class="subhead">Real charts. Real market data. 10 seconds to make the call — most people get trapped.</p>
-    <div class="hero-ctas">
-      <a class="btn btn-primary" href="/play/?mode=daily">PLAY TODAY'S DRILL →</a>
-      <a class="btn btn-ghost" href="/play/?mode=practice">Practice mode</a>
+    <div class="hero-copy">
+      <h1>Can you read the <span class="accent">tape</span>?</h1>
+      <p class="subhead">Real charts. Real market data. 10 seconds to make the call — most people get trapped.</p>
+      <div class="hero-ctas">
+        <a class="btn btn-primary" href="/play/?mode=daily">PLAY TODAY'S DRILL →</a>
+        <a class="btn btn-ghost" href="/play/?mode=practice">Practice mode</a>
+      </div>
+      <div class="hero-stat-ticker" id="heroStatTicker"></div>
     </div>
-    <div class="hero-stat-ticker" id="heroStatTicker"></div>
-  </div>
-</section>
-
-<div class="ticker-tape" aria-hidden="true">
-  <div class="ticker-tape-track" id="tickerTapeTrack"></div>
-</div>
-
-<div class="wrap">
-  <section class="mock-preview-section">
     <a class="mock-preview card" href="/play/?mode=practice" aria-label="Preview the game">
       <div class="session-clock"><span class="dot"></span>NYSE OPEN &bull; 09:47 ET</div>
       <svg class="mock-preview-chart" viewBox="0 0 330 90" width="100%" height="90" preserveAspectRatio="xMidYMid meet">
@@ -286,8 +291,14 @@
         <div class="mock-btn mock-fake">FADE IT</div>
       </div>
     </a>
-  </section>
+  </div>
+</section>
 
+<div class="ticker-tape" aria-hidden="true">
+  <div class="ticker-tape-track" id="tickerTapeTrack"></div>
+</div>
+
+<div class="wrap">
   <section class="section section-tight">
     <div class="section-title">How it works</div>
     <div class="how-grid">
