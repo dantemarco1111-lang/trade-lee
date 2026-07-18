@@ -1063,6 +1063,7 @@
 </style>
 </head>
 <body>
+<div class="session-progress-strip hidden" id="sessionProgressStrip"><div class="session-progress-fill" id="sessionProgressFill"></div></div>
 <nav class="site-nav">
   <div class="nav-left">
     <button class="exit-btn hidden" id="exitBtn">← Exit</button>
@@ -2311,6 +2312,7 @@ function loadDrill(drill, opts) {
   renderPowerupBar();
   const counterEl = document.getElementById("drillCounter");
   if (counterEl) counterEl.textContent = `${sessionIndex + 1}/${sessionDeck.length}`;
+  updateSessionProgressStrip();
 
   if (chart) { try { chart.remove(); } catch (e) {} chart = null; }
   const container = document.getElementById("chartContainer");
@@ -4980,6 +4982,14 @@ function setDrillInProgress(value) {
   drillInProgress = value;
   const btn = document.getElementById("exitBtn");
   if (btn) btn.classList.toggle("hidden", !drillInProgress);
+  const strip = document.getElementById("sessionProgressStrip");
+  if (strip) strip.classList.toggle("hidden", !value || currentMode === "ordertrainer");
+  if (!value) { const fill = document.getElementById("sessionProgressFill"); if (fill) fill.style.width = "0%"; }
+}
+function updateSessionProgressStrip() {
+  const fill = document.getElementById("sessionProgressFill");
+  if (!fill || !sessionDeck.length) return;
+  fill.style.width = Math.min(100, Math.round((sessionIndex / sessionDeck.length) * 100)) + "%";
 }
 function handleExitClick() {
   if (drillInProgress) {

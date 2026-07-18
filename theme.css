@@ -72,6 +72,17 @@
 
 .hidden { display: none !important; }
 
+/* persistent top progress strip — shown on lesson/drill screens only;
+   platforms have chrome, toys don't */
+.session-progress-strip {
+  position: fixed; top: 0; left: 0; right: 0; height: 3px;
+  background: var(--border); z-index: 500; pointer-events: none;
+}
+.session-progress-fill {
+  height: 100%; width: 0%; background: var(--green);
+  transition: width 0.3s ease;
+}
+
 /* ---------- layered site background ---------- */
 body {
   background-color: var(--bg);

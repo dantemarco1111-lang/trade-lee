@@ -204,6 +204,7 @@
 </head>
 <body>
 
+<div class="session-progress-strip hidden" id="sessionProgressStrip"><div class="session-progress-fill" id="sessionProgressFill"></div></div>
 <header class="site-header">
   <div class="wrap site-header-inner">
     <a class="nav-wordmark" href="/">📈 Trade Lee</a>
@@ -746,6 +747,7 @@ function dismissStrayPaywallSheet() {
 
 function renderPath() {
   dismissStrayPaywallSheet();
+  updateSessionProgressStrip(null, null);
   currentView = { screen: "path" };
   const root = document.getElementById("academyRoot");
   const totalCompleted = state.academyProgress.unitsCompleted.length;
@@ -811,8 +813,17 @@ function showAcademyProPaywall(unit) {
 }
 
 /* ============================= RENDER: UNIT DETAIL ============================= */
+function updateSessionProgressStrip(current, total) {
+  const strip = document.getElementById("sessionProgressStrip");
+  const fill = document.getElementById("sessionProgressFill");
+  if (!strip || !fill) return;
+  if (current == null || !total) { strip.classList.add("hidden"); fill.style.width = "0%"; return; }
+  strip.classList.remove("hidden");
+  fill.style.width = Math.min(100, Math.round((current / total) * 100)) + "%";
+}
 function renderUnitDetail(unitKey) {
   dismissStrayPaywallSheet();
+  updateSessionProgressStrip(null, null);
   const unit = ACADEMY_UNITS.find(u => u.key === unitKey);
   currentView = { screen: "unit", unitKey };
   const root = document.getElementById("academyRoot");
@@ -851,6 +862,7 @@ function renderLesson(unitKey, idx) {
   const lesson = unit.lessons[idx];
   currentView = { screen: "lesson", unitKey, idx };
   markLessonRead(unitKey, idx);
+  updateSessionProgressStrip(idx + 1, unit.lessons.length);
   const root = document.getElementById("academyRoot");
   const isLast = idx === unit.lessons.length - 1;
   root.innerHTML = `
@@ -886,6 +898,7 @@ function renderQuiz(unitKey) {
 function renderQuizQuestion(unitKey) {
   const unit = ACADEMY_UNITS.find(u => u.key === unitKey);
   const q = unit.quiz[quizState.qIndex];
+  updateSessionProgressStrip(quizState.qIndex + 1, unit.quiz.length);
   const root = document.getElementById("academyRoot");
   root.innerHTML = `
     <div class="acad-topbar">
@@ -930,6 +943,7 @@ function answerQuiz(unitKey, choiceIdx) {
   };
 }
 function renderQuizResult(unitKey) {
+  updateSessionProgressStrip(null, null);
   const unit = ACADEMY_UNITS.find(u => u.key === unitKey);
   const score = quizState.correctCount;
   const total = unit.quiz.length;
