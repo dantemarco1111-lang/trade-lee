@@ -81,25 +81,26 @@ body {
   text-decoration: none;
   transition: transform 0.15s cubic-bezier(.34,1.56,.64,1), box-shadow 0.15s ease, opacity 0.15s ease;
   -webkit-tap-highlight-color: transparent;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.22), inset 0 -1px 0 rgba(0,0,0,0.12), 0 6px 20px var(--btn-shadow-color, rgba(0,0,0,0.2));
 }
-.btn:active { transform: scale(0.94); }
+.btn:active { transform: translateY(1px) scale(0.98); box-shadow: inset 0 1px 0 rgba(255,255,255,0.14), inset 0 -1px 0 rgba(0,0,0,0.12), 0 2px 8px var(--btn-shadow-color, rgba(0,0,0,0.18)); }
 .btn:disabled { opacity: 0.45; cursor: default; transform: none; }
 
 .btn-primary {
   background: linear-gradient(180deg, #2fbf9f, var(--green-dark));
-  box-shadow: 0 6px 20px rgba(34, 197, 94, 0.25);
+  --btn-shadow-color: rgba(34, 197, 94, 0.25);
 }
 .btn-primary:hover { box-shadow: 0 8px 26px rgba(34, 197, 94, 0.35); }
 
 .btn-danger {
   background: linear-gradient(180deg, #f0563f, var(--red-dark));
-  box-shadow: 0 6px 20px rgba(239, 68, 68, 0.25);
+  --btn-shadow-color: rgba(239, 68, 68, 0.25);
 }
 
 .btn-gold {
   background: linear-gradient(135deg, #ffb020, #ff5e3a);
   color: #1a0a00;
-  box-shadow: 0 6px 20px rgba(255, 130, 0, 0.3);
+  --btn-shadow-color: rgba(255, 130, 0, 0.3);
 }
 
 .btn-ghost {
@@ -108,6 +109,7 @@ body {
   color: var(--text);
   box-shadow: none;
 }
+.btn-ghost:active { box-shadow: none; }
 .btn-ghost:hover { border-color: var(--text-dim); }
 
 /* ---------- cards ---------- */

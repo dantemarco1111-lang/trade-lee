@@ -119,6 +119,15 @@
   a.nav-streak.nav-ticks:active { transform: scale(0.93); }
   button.nav-streak.nav-account { cursor: pointer; font-family: var(--font-body); transition: transform 0.15s cubic-bezier(.34,1.56,.64,1); }
   button.nav-streak.nav-account:active { transform: scale(0.93); }
+  .flame-icon { display: inline-block; animation: flameFlicker 2.6s ease-in-out infinite; }
+  .flame-icon.big { font-size: 1.15em; }
+  @keyframes flameFlicker {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    25% { opacity: 0.85; transform: scale(0.96); }
+    50% { opacity: 1; transform: scale(1.05); }
+    75% { opacity: 0.9; transform: scale(0.98); }
+  }
+  @media (prefers-reduced-motion: reduce) { .flame-icon { animation: none; } }
 
   /* ---------- top bar ---------- */
   .topbar {
@@ -491,12 +500,14 @@
     flex: 1; padding: 18px 8px; font-size: 1.05rem; font-weight: 700;
     font-family: var(--font-display);
     border-radius: 16px; border: none; cursor: pointer; color: #fff;
-    letter-spacing: 0.3px; transition: transform 0.15s cubic-bezier(.34,1.56,.64,1); min-height: 60px;
+    letter-spacing: 0.3px; min-height: 60px;
+    transition: transform 0.15s cubic-bezier(.34,1.56,.64,1), box-shadow 0.15s ease;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.22), inset 0 -1px 0 rgba(0,0,0,0.12), 0 6px 20px var(--btn-shadow-color, rgba(0,0,0,0.2));
   }
-  .btn:active { transform: scale(0.94); }
-  .btn.real { background: linear-gradient(180deg, #2fbf9f, var(--green-dark)); box-shadow: 0 6px 20px rgba(34,197,94,0.2); }
-  .btn.fake { background: linear-gradient(180deg, #f0563f, var(--red-dark)); box-shadow: 0 6px 20px rgba(239,68,68,0.2); }
-  .btn.wait { background: linear-gradient(180deg, #8b95a7, #565f6e); box-shadow: 0 6px 20px rgba(139,149,167,0.2); font-size: 0.9rem; }
+  .btn:active { transform: translateY(1px) scale(0.98); box-shadow: inset 0 1px 0 rgba(255,255,255,0.14), inset 0 -1px 0 rgba(0,0,0,0.12), 0 2px 8px var(--btn-shadow-color, rgba(0,0,0,0.18)); }
+  .btn.real { background: linear-gradient(180deg, #2fbf9f, var(--green-dark)); --btn-shadow-color: rgba(34,197,94,0.2); }
+  .btn.fake { background: linear-gradient(180deg, #f0563f, var(--red-dark)); --btn-shadow-color: rgba(239,68,68,0.2); }
+  .btn.wait { background: linear-gradient(180deg, #8b95a7, #565f6e); --btn-shadow-color: rgba(139,149,167,0.2); font-size: 0.9rem; }
   .btn:disabled { opacity: 0.45; cursor: default; }
 
   .decision-prompt {
@@ -712,13 +723,14 @@
   .mode-btn {
     width: 100%; padding: 20px; font-size: 1.05rem; font-weight: 700; font-family: var(--font-display); border-radius: 16px;
     border: none; cursor: pointer; color: #fff; margin-bottom: 12px; letter-spacing: 0.3px;
-    transition: transform 0.15s cubic-bezier(.34,1.56,.64,1);
+    transition: transform 0.15s cubic-bezier(.34,1.56,.64,1), box-shadow 0.15s ease;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.22), inset 0 -1px 0 rgba(0,0,0,0.12), 0 6px 20px var(--btn-shadow-color, rgba(0,0,0,0.2));
   }
-  .mode-btn:active { transform: scale(0.97); }
-  .daily-btn { background: linear-gradient(135deg, #ffb020, #ff5e3a); color: #1a0a00; box-shadow: 0 6px 20px rgba(255,130,0,0.25); }
+  .mode-btn:active { transform: translateY(1px) scale(0.97); box-shadow: inset 0 1px 0 rgba(255,255,255,0.14), inset 0 -1px 0 rgba(0,0,0,0.12), 0 2px 8px var(--btn-shadow-color, rgba(0,0,0,0.18)); }
+  .daily-btn { background: linear-gradient(135deg, #ffb020, #ff5e3a); color: #1a0a00; --btn-shadow-color: rgba(255,130,0,0.25); }
   .daily-btn.done { background: var(--card2); color: var(--muted); border: 1px solid var(--border); box-shadow: none; }
-  .practice-btn { background: linear-gradient(180deg, #2fbf9f, var(--green-dark)); box-shadow: 0 6px 20px rgba(34,197,94,0.2); }
-  .speedrun-btn { background: linear-gradient(135deg, #f5b400, #ff8a3d); color: #1a1200; box-shadow: 0 6px 20px rgba(245,180,0,0.25); }
+  .practice-btn { background: linear-gradient(180deg, #2fbf9f, var(--green-dark)); --btn-shadow-color: rgba(34,197,94,0.2); }
+  .speedrun-btn { background: linear-gradient(135deg, #f5b400, #ff8a3d); color: #1a1200; --btn-shadow-color: rgba(245,180,0,0.25); }
 
   /* ---------- customize-drills panel ---------- */
   .customize-panel { margin-bottom: 14px; text-align: left; }
@@ -1086,6 +1098,17 @@ function playMultiplier() {
   playTone(1500, 0.14, "square", 0.09, 0);
   playTone(2000, 0.2, "square", 0.09, 0.06);
 }
+function playUiTick() { playTone(1400, 0.02, "square", 0.02); }
+document.addEventListener("click", (e) => {
+  const el = e.target.closest("button, .btn, .nav-link, .strategy-pack-card, .mode-card, .unit-card");
+  if (el && !el.disabled) playUiTick();
+}, true);
+
+/* ============================= HAPTICS ============================= */
+function canVibrate() { return typeof navigator !== "undefined" && typeof navigator.vibrate === "function"; }
+function hapticTick() { if (canVibrate()) navigator.vibrate(10); }
+function hapticDoublePulse() { if (canVibrate()) navigator.vibrate([12, 40, 12]); }
+function hapticBuzz() { if (canVibrate()) navigator.vibrate(30); }
 
 /* ============================= TIME / DATE UTIL ============================= */
 function toEasternChartTime(unixSeconds) {
@@ -1190,6 +1213,20 @@ function animateNumber(fromVal, toVal, duration, onUpdate, onComplete) {
     else { onUpdate(toVal); if (onComplete) onComplete(); }
   }
   requestAnimationFrame(step);
+}
+// Rolling-digit helper for any stat chip that isn't already hand-wired through
+// animateNumber (bankroll/P&L already are) — Ticks, streak counters, etc.
+// Tracks the previous value on the element itself so repeated calls (e.g. a
+// nav badge refreshed on every screen) only animate when the number actually changed.
+function animateStatNumber(el, newVal, opts) {
+  if (!el) return;
+  opts = opts || {};
+  const format = opts.format || (v => String(Math.round(v)));
+  const apply = opts.html ? (v => { el.innerHTML = v; }) : (v => { el.textContent = v; });
+  const prevVal = el.dataset.rawValue !== undefined ? parseFloat(el.dataset.rawValue) : newVal;
+  el.dataset.rawValue = newVal;
+  if (prevVal === newVal || Number.isNaN(prevVal)) { apply(format(newVal)); return; }
+  animateNumber(prevVal, newVal, opts.duration || 450, v => { apply(format(v)); });
 }
 
 /* ============================= PERSISTENCE HELPERS ============================= */
@@ -1733,6 +1770,33 @@ function renderVolumeProfile(drill) {
   layer.classList.remove("hidden");
 }
 
+// Progressively fans candles/volume/vwap in left-to-right over ~400ms when a drill
+// loads, instead of snapping the whole chart in at once. Falls back to an instant
+// setData for the final step so the chart always ends up fully correct.
+function revealChartEntrance(candleData, volumeData, vwapData, totalMs) {
+  totalMs = totalMs || 400;
+  const n = candleData.length;
+  if (n <= 1) {
+    candleSeries.setData(candleData);
+    volumeSeries.setData(volumeData);
+    vwapSeries.setData(vwapData);
+    return;
+  }
+  const steps = Math.min(n, 16);
+  const stepMs = totalMs / steps;
+  let step = 0;
+  function tick() {
+    step++;
+    const count = Math.max(1, Math.round((step / steps) * n));
+    candleSeries.setData(candleData.slice(0, count));
+    volumeSeries.setData(volumeData.slice(0, count));
+    vwapSeries.setData(vwapData.slice(0, count));
+    chart.timeScale().scrollToRealTime();
+    if (step < steps) setTimeout(tick, stepMs);
+  }
+  tick();
+}
+
 function loadDrill(drill, opts) {
   opts = opts || {};
   currentDrill = drill;
@@ -1753,9 +1817,8 @@ function loadDrill(drill, opts) {
 
   const candleData = drill.candles.map(c => ({ time: toEasternChartTime(c.time), open: c.open, high: c.high, low: c.low, close: c.close }));
   const volumeData = drill.candles.map(c => ({ time: toEasternChartTime(c.time), value: c.volume, color: c.close >= c.open ? "rgba(38,166,154,0.7)" : "rgba(239,83,80,0.7)" }));
-  candleSeries.setData(candleData);
-  volumeSeries.setData(volumeData);
-  vwapSeries.setData(drill.vwap.slice(0, drill.candles.length).map(v => ({ time: toEasternChartTime(v.time), value: v.value })));
+  const vwapData = drill.vwap.slice(0, drill.candles.length).map(v => ({ time: toEasternChartTime(v.time), value: v.value }));
+  revealChartEntrance(candleData, volumeData, vwapData);
 
   if (drill.compare_series && drill.compare_series.length) {
     compareSeries = addSeriesCompat(chart, "Line", { color: "#5c9eff", lineWidth: 2, priceScaleId: "left", priceLineVisible: false, lastValueVisible: false }, 0);
@@ -1871,6 +1934,7 @@ function answer(choice) {
   hideFormingMarker();
   disableButtons();
   playClick();
+  hapticTick();
   startPlayout(currentDrill, choice);
 }
 
@@ -1908,10 +1972,10 @@ function startPlayout(drill, choice) {
 function updateStreakDisplay() {
   const el = document.getElementById("streakValue");
   if (!el) return;
-  const flame = streak >= 5 ? " 🔥🔥" : streak >= 3 ? " 🔥" : "";
-  el.textContent = streak + flame;
+  const flame = streak >= 5 ? ` <span class="flame-icon big">🔥🔥</span>` : streak >= 3 ? ` <span class="flame-icon">🔥</span>` : "";
+  animateStatNumber(el, streak, { html: true, format: v => Math.round(v) + flame });
   const bEl = document.getElementById("bestStreakValue");
-  if (bEl) bEl.textContent = bestStreak;
+  if (bEl) animateStatNumber(bEl, bestStreak);
 }
 function showMultiplierBadge(mult) {
   const badge = document.getElementById("multiplierBadge");
@@ -1936,7 +2000,7 @@ function updateStreakAndMultiplier(isCorrect) {
     const newMult = streak >= 5 ? 3 : streak >= 3 ? 2 : 1;
     if (newMult !== multiplier) {
       multiplier = newMult;
-      if (multiplier > 1) showMultiplierBadge(multiplier);
+      if (multiplier > 1) { showMultiplierBadge(multiplier); hapticBuzz(); }
     }
   } else {
     triggerStreakShatter();
@@ -1972,6 +2036,7 @@ function applyResultJuice(isCorrect, isFizzle) {
     chartCard.classList.add("shake");
     chartContainer.classList.add("desaturate");
     playLoss();
+    hapticDoublePulse();
     setTimeout(() => chartContainer.classList.remove("desaturate"), 450);
   }
 }
@@ -2512,13 +2577,11 @@ async function startOrderTrainerRound() {
   initChart(container);
   const candleData = otDrill.candles.map(c => ({ time: toEasternChartTime(c.time), open: c.open, high: c.high, low: c.low, close: c.close }));
   const volumeData = otDrill.candles.map(c => ({ time: toEasternChartTime(c.time), value: c.volume, color: c.close >= c.open ? "rgba(38,166,154,0.7)" : "rgba(239,83,80,0.7)" }));
-  candleSeries.setData(candleData);
-  volumeSeries.setData(volumeData);
-  vwapSeries.setData(otDrill.vwap.slice(0, otDrill.candles.length).map(v => ({ time: toEasternChartTime(v.time), value: v.value })));
+  const vwapData = otDrill.vwap.slice(0, otDrill.candles.length).map(v => ({ time: toEasternChartTime(v.time), value: v.value }));
   const chartSettings = appState.chartSettings || { showVwap: true, showVolume: true };
   vwapSeries.applyOptions({ visible: chartSettings.showVwap !== false });
   applyVolumePaneVisibility(chartSettings.showVolume !== false);
-  chart.timeScale().scrollToRealTime();
+  revealChartEntrance(candleData, volumeData, vwapData);
 
   requestAnimationFrame(() => requestAnimationFrame(() => {
     resetOtLinesToDefault();
@@ -4040,14 +4103,15 @@ function updateNavStreak() {
   const el = document.getElementById("navStreakFlame");
   if (el) {
     if (appState.dailyPlayStreak > 0) {
-      el.textContent = `🔥 ${appState.dailyPlayStreak}`;
+      const big = appState.dailyPlayStreak >= 5 ? " big" : "";
+      animateStatNumber(el, appState.dailyPlayStreak, { html: true, format: v => `<span class="flame-icon${big}">🔥</span> ${Math.round(v)}` });
       el.classList.remove("hidden");
     } else {
       el.classList.add("hidden");
     }
   }
   const ticksEl = document.getElementById("navTicks");
-  if (ticksEl) ticksEl.textContent = `⚡ ${appState.ticks || 0}`;
+  if (ticksEl) animateStatNumber(ticksEl, appState.ticks || 0, { format: v => `⚡ ${Math.round(v)}` });
 }
 function setDrillInProgress(value) {
   drillInProgress = value;
