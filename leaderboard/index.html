@@ -119,11 +119,15 @@
     <h2><span class="card-num">#</span>Personal Bests</h2>
     <div class="records-grid" id="recordsGrid"></div>
     <div id="missReviewLink" style="margin-top:14px;"></div>
+    <div id="wrappedLink" style="margin-top:8px;"></div>
   </section>
 
   <section class="content-card card">
     <h2><span class="card-num">🌐</span>Global Leaderboard</h2>
     <p style="color:var(--text-dim);font-size:0.85rem;margin-top:-8px;">Top 50, ranked by best streak (accuracy breaks ties). Minimum 10 drills answered to appear.</p>
+    <label style="display:flex;align-items:center;gap:8px;font-size:0.85rem;color:var(--text-dim);margin-bottom:10px;cursor:pointer;">
+      <input type="checkbox" id="showArchetypesToggle"> Show archetypes next to names
+    </label>
     <div id="globalLeaderboardBody"></div>
     <div id="leaderboardSigninPrompt"></div>
   </section>
@@ -174,8 +178,13 @@ function defaultState() {
     bestSessionPnl: null, bestStreakEver: 0, dailyWinStreak: 0,
     totalDrillsAnswered: 0, totalCorrect: 0, ticksEarnedAllTime: 0,
     traderRating: 1000, ratedDrillsCount: 0,
+    archetype: null, lastWrappedRecap: null,
   };
 }
+const ARCHETYPE_NAMES = {
+  sniper: "THE SNIPER", cowboy: "THE COWBOY", skeptic: "THE SKEPTIC",
+  momentum: "THE MOMENTUM RIDER", grinder: "THE GRINDER",
+};
 function loadState() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
@@ -204,13 +213,21 @@ function renderRecords() {
     { val: accuracy + "%", label: "Overall Accuracy", cls: "neutral" },
     { val: "⚡ " + (state.ticksEarnedAllTime || 0), label: "Ticks Earned All-Time", cls: "neutral" },
     { val: isRanked ? Math.round(state.traderRating || 1000) : `${state.ratedDrillsCount || 0}/${RATING_UNRANKED_DRILLS}`, label: isRanked ? "Trader Rating" : "Trader Rating (Unranked)", cls: "neutral" },
+    { val: state.archetype ? ARCHETYPE_NAMES[state.archetype] || state.archetype : "—", label: "Trader Archetype", cls: "neutral" },
   ];
   document.getElementById("recordsGrid").innerHTML = records.map(r => `
     <div class="record-cell">
-      <div class="record-val ${r.cls}">${r.val}</div>
+      <div class="record-val ${r.cls}" style="${r.label === "Trader Archetype" ? "font-size:1.05rem;" : ""}">${r.val}</div>
       <div class="record-label">${r.label}</div>
     </div>
   `).join("");
+
+  const wrappedEl = document.getElementById("wrappedLink");
+  if (wrappedEl) {
+    wrappedEl.innerHTML = state.lastWrappedRecap
+      ? `<a class="text-link-btn" href="/play/?viewWrapped=1" style="display:block;">📅 View last month's Wrapped</a>`
+      : "";
+  }
 
   const missEl = document.getElementById("missReviewLink");
   if (missEl) {
@@ -242,6 +259,27 @@ function renderLeaderboardSigninPrompt() {
   if (btn) btn.onclick = tlOpenAuthModal;
 }
 
+let cachedLeaderboardRows = null;
+function renderLeaderboardTable() {
+  const body = document.getElementById("globalLeaderboardBody");
+  const rows = cachedLeaderboardRows;
+  const showArchetypes = document.getElementById("showArchetypesToggle").checked;
+  const myName = tlProfile ? tlProfile.display_name : null;
+  body.innerHTML = `
+    <table class="data-table">
+      <thead><tr><th>#</th><th>Player</th><th>Best Streak</th><th>Accuracy</th><th>Rating</th></tr></thead>
+      <tbody>
+        ${rows.map((r, i) => {
+          const acc = r.total_drills ? Math.round(100 * r.correct_drills / r.total_drills) : 0;
+          const isYou = myName && r.users.display_name === myName;
+          const ratingText = (r.rated_drills_count || 0) >= RATING_UNRANKED_DRILLS ? Math.round(r.trader_rating || 1000) : "Unranked";
+          const archetypeTag = showArchetypes && r.archetype ? ` <span style="color:var(--text-dim);font-size:0.78rem;">(${escapeHtml(ARCHETYPE_NAMES[r.archetype] || r.archetype)})</span>` : "";
+          return `<tr class="${isYou ? "lb-row-you" : ""}"><td class="${i === 0 ? "lb-rank-1" : ""}">${i + 1}</td><td>${escapeHtml(r.users.display_name)}${isYou ? " (you)" : ""}${archetypeTag}</td><td>${r.best_streak}</td><td>${acc}%</td><td>${ratingText}</td></tr>`;
+        }).join("")}
+      </tbody>
+    </table>
+  `;
+}
 async function loadGlobalLeaderboard() {
   const body = document.getElementById("globalLeaderboardBody");
   body.innerHTML = `
@@ -258,21 +296,10 @@ async function loadGlobalLeaderboard() {
     body.innerHTML = `<p style="text-align:center;color:var(--text-dim);padding:10px 0;">Be the first name on the board — answer at least 10 drills to qualify.</p>`;
     return;
   }
-  const myName = tlProfile ? tlProfile.display_name : null;
-  body.innerHTML = `
-    <table class="data-table">
-      <thead><tr><th>#</th><th>Player</th><th>Best Streak</th><th>Accuracy</th><th>Rating</th></tr></thead>
-      <tbody>
-        ${rows.map((r, i) => {
-          const acc = r.total_drills ? Math.round(100 * r.correct_drills / r.total_drills) : 0;
-          const isYou = myName && r.users.display_name === myName;
-          const ratingText = (r.rated_drills_count || 0) >= RATING_UNRANKED_DRILLS ? Math.round(r.trader_rating || 1000) : "Unranked";
-          return `<tr class="${isYou ? "lb-row-you" : ""}"><td class="${i === 0 ? "lb-rank-1" : ""}">${i + 1}</td><td>${escapeHtml(r.users.display_name)}${isYou ? " (you)" : ""}</td><td>${r.best_streak}</td><td>${acc}%</td><td>${ratingText}</td></tr>`;
-        }).join("")}
-      </tbody>
-    </table>
-  `;
+  cachedLeaderboardRows = rows;
+  renderLeaderboardTable();
 }
+document.getElementById("showArchetypesToggle").onchange = () => { if (cachedLeaderboardRows) renderLeaderboardTable(); };
 
 async function initAccounts() {
   await tlInitSession();
@@ -297,6 +324,7 @@ async function initAccounts() {
               state.dailyWinStreak = recomputed.dailyWinStreak;
               state.traderRating = result.merged.trader_rating || 1000;
               state.ratedDrillsCount = result.merged.rated_drills_count || 0;
+              if (result.merged.archetype) state.archetype = result.merged.archetype;
               try {
                 const raw = localStorage.getItem(STORAGE_KEY);
                 const full = raw ? JSON.parse(raw) : {};
@@ -319,6 +347,7 @@ async function initAccounts() {
                 full.lastDailyResult = recomputed.lastDailyResult || full.lastDailyResult;
                 full.traderRating = result.merged.trader_rating || 1000;
                 full.ratedDrillsCount = result.merged.rated_drills_count || 0;
+                if (result.merged.archetype) full.archetype = result.merged.archetype;
                 localStorage.setItem(STORAGE_KEY, JSON.stringify(full));
               } catch (e) {}
             }

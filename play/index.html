@@ -574,6 +574,42 @@
     color: var(--gold); font-weight: 700; font-size: 1rem; margin-bottom: 20px;
   }
   .milestone-card .share-btn { margin-bottom: 10px; }
+  .archetype-strengths {
+    list-style: none; margin: 0 0 14px; padding: 0; text-align: left;
+  }
+  .archetype-strengths li {
+    font-size: 0.88rem; color: var(--text); padding: 6px 0 6px 22px; position: relative; line-height: 1.4;
+  }
+  .archetype-strengths li::before { content: "✓"; position: absolute; left: 0; color: var(--green); font-weight: 700; }
+  .archetype-leak {
+    font-size: 0.85rem; color: var(--muted); text-align: left; line-height: 1.5;
+    background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.25);
+    border-radius: 10px; padding: 10px 12px; margin-bottom: 16px;
+  }
+  .archetype-leak strong { color: var(--red); }
+
+  .wrapped-card { position: relative; padding-top: 44px; }
+  .wrapped-skip {
+    position: absolute; top: 14px; right: 14px; background: none; border: none;
+    color: var(--muted); font-size: 0.82rem; cursor: pointer; padding: 6px 8px;
+  }
+  .wrapped-month {
+    font-family: var(--font-mono); font-size: 0.75rem; letter-spacing: 0.5px;
+    color: var(--gold); text-transform: uppercase; margin-bottom: 6px;
+  }
+  .wrapped-card-label {
+    font-size: 0.8rem; color: var(--muted); text-transform: uppercase;
+    letter-spacing: 0.5px; margin-top: -6px; margin-bottom: 4px;
+  }
+  .wrapped-card-sub {
+    font-family: var(--font-display); font-weight: 700; font-size: 0.95rem;
+    color: var(--gold); margin-bottom: 14px;
+  }
+  .wrapped-dots { display: flex; justify-content: center; gap: 6px; margin: 10px 0 18px; }
+  .wrapped-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--border-strong); }
+  .wrapped-dot.active { background: var(--gold); }
+  .wrapped-nav { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+  .wrapped-nav .mode-btn { margin-bottom: 0; flex: 1; }
 
   /* ---------- coach card ---------- */
   .coach-card {
@@ -1067,6 +1103,36 @@ const RATING_BANDS = [
   { max: 1499, name: "Funded Material" },
   { max: Infinity, name: "Market Sniper" },
 ];
+// retention: Trader Archetype (Stage 5)
+const ARCHETYPE_REVEAL_DRILLS = 50;
+const ARCHETYPE_HIGH_VOLUME_DRILLS = 150;
+const ARCHETYPES = {
+  sniper: {
+    name: "THE SNIPER", icon: "🎯",
+    strengths: ["High accuracy on the setups you do take", "You wait for genuine confirmation, not noise"],
+    leak: "You sit out too many good setups waiting for perfect — some edge is being left on the table",
+  },
+  cowboy: {
+    name: "THE COWBOY", icon: "🤠",
+    strengths: ["You take every setup the market gives you", "High reps — your eye gets calibrated fast"],
+    leak: "You rarely wait — low-volume, ambiguous breaks catch you as often as clean ones",
+  },
+  skeptic: {
+    name: "THE SKEPTIC", icon: "🧐",
+    strengths: ["Strong trap detection — you smell a fakeout early", "Disciplined about fading weak breakouts"],
+    leak: "You fade real breakouts too — you're leaving genuine moves on the table",
+  },
+  momentum: {
+    name: "THE MOMENTUM RIDER", icon: "🚀",
+    strengths: ["Excellent read on high-volume real breakouts", "You ride confirmed moves with real conviction"],
+    leak: "You take weak-volume breaks — your biggest leak, and where traps catch you",
+  },
+  grinder: {
+    name: "THE GRINDER", icon: "⚙️",
+    strengths: ["High volume, steady accuracy — a real process", "You build and protect long streaks"],
+    leak: "Your edge is consistency, not sharpness — a few more high-conviction setups could lift accuracy",
+  },
+};
 const STORAGE_KEY = "tradeLeeState_v1";
 
 /* ============================= PERSISTED STATE ============================= */
@@ -1133,6 +1199,17 @@ function defaultState() {
     todayNetPnlDate: null,
     comebackBonusDate: null,
     lastLeagueWeekSeen: null,
+    // retention Stage 5: archetype + monthly wrapped
+    archetype: null,
+    archetypeStats: {
+      takeCount: 0, fadeCount: 0, waitChosenCount: 0,
+      realOutcomeTotal: 0, realOutcomeCorrect: 0,
+      fakeOutcomeTotal: 0, fakeOutcomeCorrect: 0,
+      highVolRealTotal: 0, highVolRealCorrect: 0,
+    },
+    monthlySnapshot: null,
+    lastWrappedShownMonth: null,
+    lastWrappedRecap: null,
   };
 }
 function loadPersistedState() {
@@ -1295,6 +1372,53 @@ function getNextDropUnlockMs() {
   const todayUnlock = get930UnlockMsForEtDate(getEtDateString(0));
   if (Date.now() < todayUnlock) return todayUnlock;
   return get930UnlockMsForEtDate(getEtDateString(1));
+}
+// retention Stage 5: Monthly Wrapped
+function getEtMonthString() {
+  return new Intl.DateTimeFormat("en-CA", { timeZone: "America/New_York", year: "numeric", month: "2-digit" }).format(new Date());
+}
+function monthLabel(monthStr) {
+  const [y, m] = monthStr.split("-").map(Number);
+  return new Intl.DateTimeFormat("en-US", { month: "long", year: "numeric", timeZone: "UTC" }).format(new Date(Date.UTC(y, m - 1, 1)));
+}
+function snapshotForCurrentTotals() {
+  return {
+    month: getEtMonthString(),
+    totalDrillsAnswered: appState.totalDrillsAnswered || 0,
+    totalCorrect: appState.totalCorrect || 0,
+    bestStreakEver: appState.bestStreakEver || 0,
+    traderRating: appState.traderRating || RATING_START,
+  };
+}
+// Returns a recap object the first time this is called after the ET month
+// has rolled over since the last snapshot; null otherwise (including the
+// very first call ever, which just plants the initial snapshot).
+function checkMonthlyWrapped() {
+  const currentMonth = getEtMonthString();
+  if (!appState.monthlySnapshot) {
+    appState.monthlySnapshot = snapshotForCurrentTotals();
+    saveState();
+    return null;
+  }
+  if (appState.monthlySnapshot.month === currentMonth) return null;
+  const prev = appState.monthlySnapshot;
+  const recap = {
+    month: prev.month,
+    drillsAnswered: Math.max(0, (appState.totalDrillsAnswered || 0) - prev.totalDrillsAnswered),
+    accuracyPct: (() => {
+      const drillsDelta = (appState.totalDrillsAnswered || 0) - prev.totalDrillsAnswered;
+      const correctDelta = (appState.totalCorrect || 0) - prev.totalCorrect;
+      return drillsDelta > 0 ? Math.round(100 * correctDelta / drillsDelta) : 0;
+    })(),
+    bestStreak: appState.bestStreakEver || 0,
+    ratingChange: Math.round((appState.traderRating || RATING_START) - prev.traderRating),
+    archetype: appState.archetype || null,
+  };
+  appState.monthlySnapshot = snapshotForCurrentTotals();
+  appState.lastWrappedRecap = recap;
+  saveState();
+  if (appState.lastWrappedShownMonth === recap.month) return null;
+  return recap;
 }
 
 function hashString(s) {
@@ -1467,6 +1591,71 @@ function updateTraderRating(drill, isCorrect) {
     justUnranked: nowRanked && !wasRanked,
     bandUp: (nowRanked && wasRanked && newBand.rank > prevBand.rank) ? newBand : null,
   };
+}
+/* ---- Trader Archetype: play-style signals recorded as the player plays ---- */
+function recordArchetypeSignal(mode, choice, drill, isCorrect) {
+  const s = appState.archetypeStats = appState.archetypeStats || {
+    takeCount: 0, fadeCount: 0, waitChosenCount: 0,
+    realOutcomeTotal: 0, realOutcomeCorrect: 0,
+    fakeOutcomeTotal: 0, fakeOutcomeCorrect: 0,
+    highVolRealTotal: 0, highVolRealCorrect: 0,
+  };
+  if (mode === "longshortwait") {
+    if (choice === "wait") s.waitChosenCount++;
+    return;
+  }
+  // classic decision format (practice + daily): choice is "real" or "fake"
+  if (choice === "real") s.takeCount++; else if (choice === "fake") s.fadeCount++;
+  if (drill.outcome === "real") {
+    s.realOutcomeTotal++;
+    if (isCorrect) s.realOutcomeCorrect++;
+    if ((drill.volume_ratio || 0) >= 2) {
+      s.highVolRealTotal++;
+      if (isCorrect) s.highVolRealCorrect++;
+    }
+  } else if (drill.outcome === "fake") {
+    s.fakeOutcomeTotal++;
+    if (isCorrect) s.fakeOutcomeCorrect++;
+  }
+}
+function computeArchetype() {
+  const s = appState.archetypeStats || {};
+  const totalDrills = appState.totalDrillsAnswered || 0;
+  const accuracy = totalDrills ? (appState.totalCorrect || 0) / totalDrills : 0;
+  const decisionsTracked = (s.takeCount || 0) + (s.fadeCount || 0) + (s.waitChosenCount || 0);
+  const waitRate = decisionsTracked ? (s.waitChosenCount || 0) / decisionsTracked : 0;
+  const fadeRate = decisionsTracked ? (s.fadeCount || 0) / decisionsTracked : 0;
+  const realAccuracy = s.realOutcomeTotal ? s.realOutcomeCorrect / s.realOutcomeTotal : accuracy;
+  const fakeAccuracy = s.fakeOutcomeTotal ? s.fakeOutcomeCorrect / s.fakeOutcomeTotal : accuracy;
+  const hvRealAccuracy = (s.highVolRealTotal || 0) >= 5 ? s.highVolRealCorrect / s.highVolRealTotal : realAccuracy;
+  const bestStreak = appState.bestStreakEver || 0;
+  const isHighVolumePlayer = totalDrills >= ARCHETYPE_HIGH_VOLUME_DRILLS;
+
+  const clamp01 = v => Math.max(0, Math.min(1, v));
+  const scores = {
+    sniper: clamp01(accuracy / 0.65) * 0.5 + clamp01(waitRate / 0.3) * 0.3 + (isHighVolumePlayer ? 0.3 : 1) * 0.2,
+    // "takes most setups" is the dominant cowboy signal — volume alone
+    // overlaps too much with grinder, so it's weighted as secondary here.
+    cowboy: clamp01(totalDrills / ARCHETYPE_HIGH_VOLUME_DRILLS) * 0.3 + clamp01(1 - (fadeRate + waitRate) / 0.3) * 0.7,
+    skeptic: clamp01(fadeRate / 0.55) * 0.5 + clamp01(fakeAccuracy / 0.6) * 0.5,
+    momentum: clamp01(hvRealAccuracy / 0.65) * 0.6 + clamp01(1 - fakeAccuracy / 0.5) * 0.4,
+    // long streaks are the dominant grinder signal — a generic "moderate
+    // accuracy at high volume" bucket alone was swallowing cowboy profiles.
+    grinder: clamp01(totalDrills / ARCHETYPE_HIGH_VOLUME_DRILLS) * 0.25 + clamp01(bestStreak / 10) * 0.6 + clamp01(1 - Math.abs(accuracy - 0.56) / 0.15) * 0.15,
+  };
+  return Object.entries(scores).sort((a, b) => b[1] - a[1])[0][0];
+}
+// Called once per drill for the modes that feed the archetype signal; fires
+// the reveal exactly when totalDrillsAnswered crosses the threshold.
+function checkArchetypeReveal() {
+  if (appState.archetype) return null;
+  const total = appState.totalDrillsAnswered || 0;
+  if (total < ARCHETYPE_REVEAL_DRILLS) return null;
+  const key = computeArchetype();
+  appState.archetype = key;
+  saveState();
+  if (authReady() && tlIsSignedIn()) tlSyncStats(appState);
+  return key;
 }
 function updateBestStreakEver(streakVal) {
   if (streakVal > (appState.bestStreakEver || 0)) { appState.bestStreakEver = streakVal; saveState(); }
@@ -2345,6 +2534,9 @@ function finishPlayout(drill, choice) {
   const isClutch = applyClutchIfEarned(isCorrect);
   const ratingResult = (currentMode === "practice" || currentMode === "daily" || currentMode === "longshortwait")
     ? updateTraderRating(drill, isCorrect) : null;
+  if (currentMode === "practice" || currentMode === "daily" || currentMode === "longshortwait") {
+    recordArchetypeSignal(currentMode, choice, drill, isCorrect);
+  }
 
   if (currentMode !== "tutorial" && currentMode !== "longshortwait" && currentMode !== "strategy_pack") recordMissOrClear(drill, isCorrect);
   applyResultJuice(isCorrect, isFizzle);
@@ -2383,6 +2575,7 @@ function finishPlayout(drill, choice) {
     showCoachCard(drill, isCorrect, pnl, isFizzle, isClutch);
     updateRatingChip();
     maybeShowRatingReveal(ratingResult, 500);
+    maybeShowArchetypeReveal(checkArchetypeReveal(), 900);
   } else if (currentMode === "daily") {
     incrementGlobalStats(isCorrect);
     const milestoneHit = recordDailyResult(drill, isCorrect, isFizzle);
@@ -2390,6 +2583,7 @@ function finishPlayout(drill, choice) {
     if (authReady()) tlSyncDailyResult(isCorrect, appState, getEtDateString(0));
     setTimeout(() => renderDailyResultScreen(drill, isCorrect, isFizzle, isClutch, milestoneHit), 350);
     maybeShowRatingReveal(ratingResult, 1300);
+    maybeShowArchetypeReveal(checkArchetypeReveal(), 2000);
   } else if (currentMode === "tutorial") {
     setTimeout(() => renderTutorialOutro(), 600);
   } else if (currentMode === "speedrun") {
@@ -2428,6 +2622,7 @@ function finishPlayout(drill, choice) {
     showLswCoachCard(drill, choice, isCorrect, pnl, isClutch);
     updateRatingChip();
     maybeShowRatingReveal(ratingResult, 500);
+    maybeShowArchetypeReveal(checkArchetypeReveal(), 900);
   } else if (currentMode === "strategy_pack") {
     const pnl = computeStrategyPackPnl(drill, isCorrect);
     sessionResults.push({ pnl, correct: isCorrect, skipped: false, choice });
@@ -3792,6 +3987,101 @@ function showRatingRevealOverlay(icon, title, subtitle, shareMode, shareData) {
   document.getElementById("ratingDismissBtn").onclick = () => overlay.remove();
   document.getElementById("ratingShareBtn").onclick = () => generateAndShareCard(shareMode, shareData);
 }
+
+/* ---- Trader Archetype reveal (retention Stage 5) ---- */
+function maybeShowArchetypeReveal(archetypeKey, delayMs) {
+  if (!archetypeKey) return;
+  setTimeout(() => showArchetypeRevealOverlay(archetypeKey), delayMs || 900);
+}
+function showArchetypeRevealOverlay(key) {
+  const a = ARCHETYPES[key];
+  if (!a) return;
+  launchConfetti();
+  playMultiplier();
+  const overlay = document.createElement("div");
+  overlay.className = "milestone-overlay";
+  overlay.innerHTML = `
+    <div class="milestone-card">
+      <div class="milestone-flame">${a.icon}</div>
+      <div class="milestone-title">${escapeHtml(a.name)}</div>
+      <ul class="archetype-strengths">
+        ${a.strengths.map(s => `<li>${escapeHtml(s)}</li>`).join("")}
+      </ul>
+      <div class="archetype-leak"><strong>Your leak:</strong> ${escapeHtml(a.leak)}</div>
+      <button class="share-btn" id="archetypeShareBtn">📤 SHARE</button>
+      <button class="mode-btn practice-btn" id="archetypeDismissBtn">NICE →</button>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+  document.getElementById("archetypeDismissBtn").onclick = () => overlay.remove();
+  document.getElementById("archetypeShareBtn").onclick = () => generateAndShareCard("archetype", { key });
+}
+
+/* ---- Monthly Wrapped: swipeable recap on first visit of a new month ---- */
+function renderMonthlyWrapped(recap) {
+  const cards = [
+    { label: "DRILLS ANSWERED", value: recap.drillsAnswered, icon: "📊" },
+    { label: "ACCURACY", value: `${recap.accuracyPct}%`, icon: "🎯" },
+    { label: "BEST STREAK", value: recap.bestStreak, icon: "🔥" },
+    {
+      label: "RATING CHANGE", icon: "📈",
+      value: `${recap.ratingChange >= 0 ? "+" : ""}${recap.ratingChange}`,
+      sub: recap.archetype ? ARCHETYPES[recap.archetype].name : null,
+    },
+  ];
+  let idx = 0;
+  const overlay = document.createElement("div");
+  overlay.className = "milestone-overlay wrapped-overlay";
+
+  function finish() {
+    overlay.remove();
+    appState.lastWrappedShownMonth = recap.month;
+    saveState();
+    renderStartScreen();
+  }
+
+  function render() {
+    const c = cards[idx];
+    overlay.innerHTML = `
+      <div class="milestone-card wrapped-card">
+        <button class="wrapped-skip" id="wrappedSkipBtn">Skip</button>
+        <div class="wrapped-month">${escapeHtml(monthLabel(recap.month))} Wrapped</div>
+        <div class="milestone-flame">${c.icon}</div>
+        <div class="milestone-title">${escapeHtml(String(c.value))}</div>
+        <div class="wrapped-card-label">${c.label}</div>
+        ${c.sub ? `<div class="wrapped-card-sub">${escapeHtml(c.sub)}</div>` : ""}
+        <div class="wrapped-dots">
+          ${cards.map((_, i) => `<span class="wrapped-dot${i === idx ? " active" : ""}"></span>`).join("")}
+        </div>
+        <div class="wrapped-nav">
+          ${idx > 0 ? `<button class="text-link-btn" id="wrappedPrevBtn">← Back</button>` : `<span></span>`}
+          ${idx < cards.length - 1
+            ? `<button class="mode-btn practice-btn" id="wrappedNextBtn">Next →</button>`
+            : `<button class="mode-btn practice-btn" id="wrappedShareBtn">📤 SHARE</button>`}
+        </div>
+      </div>
+    `;
+    overlay.querySelector("#wrappedSkipBtn").onclick = finish;
+    const prevBtn = overlay.querySelector("#wrappedPrevBtn");
+    if (prevBtn) prevBtn.onclick = () => { idx--; render(); };
+    const nextBtn = overlay.querySelector("#wrappedNextBtn");
+    if (nextBtn) nextBtn.onclick = () => { idx++; render(); };
+    const shareBtn = overlay.querySelector("#wrappedShareBtn");
+    if (shareBtn) shareBtn.onclick = () => generateAndShareCard("wrapped", recap);
+  }
+  document.body.appendChild(overlay);
+  render();
+
+  let touchStartX = null;
+  overlay.addEventListener("touchstart", e => { touchStartX = e.touches[0].clientX; });
+  overlay.addEventListener("touchend", e => {
+    if (touchStartX === null) return;
+    const dx = e.changedTouches[0].clientX - touchStartX;
+    if (dx < -40 && idx < cards.length - 1) { idx++; render(); }
+    else if (dx > 40 && idx > 0) { idx--; render(); }
+    touchStartX = null;
+  });
+}
 // Picks one contextual nudge based on the player's current state — most
 // urgent (protect an active streak) first, falling back toward general
 // encouragement. Returns null if nothing qualifies yet.
@@ -4333,6 +4623,22 @@ function startStreakRiskCountdown() {
 }
 
 /* ============================= SHARE CARD ============================= */
+function wrapCanvasText(ctx, text, x, y, maxWidth, lineHeight) {
+  const words = String(text).split(" ");
+  let line = "";
+  let curY = y;
+  words.forEach((word, i) => {
+    const testLine = line + word + " ";
+    if (ctx.measureText(testLine).width > maxWidth && i > 0) {
+      ctx.fillText(line, x, curY);
+      line = word + " ";
+      curY += lineHeight;
+    } else {
+      line = testLine;
+    }
+  });
+  ctx.fillText(line, x, curY);
+}
 function drawMiniChart(ctx, candles, x, y, w, h) {
   if (!candles || !candles.length) return;
   let min = Infinity, max = -Infinity;
@@ -4404,6 +4710,39 @@ function generateShareCanvas(mode, data) {
     ctx.font = "700 48px Arial, sans-serif";
     ctx.fillStyle = "#f5b400";
     ctx.fillText(data.band, 540, 690);
+  } else if (mode === "archetype") {
+    const a = ARCHETYPES[data.key];
+    ctx.font = "900 130px Arial, sans-serif";
+    ctx.fillStyle = "#f5b400";
+    ctx.fillText(a.icon, 540, 460);
+    ctx.font = "900 64px Arial, sans-serif";
+    ctx.fillStyle = "#e6e9ef";
+    wrapCanvasText(ctx, a.name, 540, 580, 900, 74);
+    ctx.font = "400 34px Arial, sans-serif";
+    ctx.fillStyle = "#8b95a7";
+    wrapCanvasText(ctx, a.strengths[0], 540, 760, 820, 44);
+  } else if (mode === "wrapped") {
+    ctx.font = "700 44px Arial, sans-serif";
+    ctx.fillStyle = "#f5b400";
+    ctx.fillText(`${monthLabel(data.month)} Wrapped`, 540, 300);
+    const rows = [
+      ["📊", `${data.drillsAnswered} drills answered`],
+      ["🎯", `${data.accuracyPct}% accuracy`],
+      ["🔥", `Best streak: ${data.bestStreak}`],
+      ["📈", `Rating ${data.ratingChange >= 0 ? "+" : ""}${data.ratingChange}`],
+    ];
+    let rowY = 480;
+    rows.forEach(([icon, text]) => {
+      ctx.font = "700 54px Arial, sans-serif";
+      ctx.fillStyle = "#e6e9ef";
+      ctx.fillText(`${icon}  ${text}`, 540, rowY);
+      rowY += 110;
+    });
+    if (data.archetype && ARCHETYPES[data.archetype]) {
+      ctx.font = "700 40px Arial, sans-serif";
+      ctx.fillStyle = "#5c9eff";
+      ctx.fillText(ARCHETYPES[data.archetype].name, 540, rowY + 20);
+    }
   } else if (mode === "speedrun") {
     ctx.font = "900 110px Arial, sans-serif";
     ctx.fillStyle = "#f5b400";
@@ -4614,15 +4953,22 @@ let pendingDeepLinkMode = (function () {
 const pendingChallengeId = new URLSearchParams(location.search).get("challenge");
 const pendingReview = new URLSearchParams(location.search).get("review") === "1";
 const pendingStrategyPack = new URLSearchParams(location.search).get("strategyPack");
+const pendingViewWrapped = new URLSearchParams(location.search).get("viewWrapped") === "1";
 function goToStartOrDeepLink() {
   const mode = pendingDeepLinkMode;
   pendingDeepLinkMode = null;
   if (pendingReview && appState.missedDrills.length) { history.replaceState(null, "", location.pathname); startMissReview(); }
   else if (pendingStrategyPack && STRATEGY_PACKS.some(p => p.key === pendingStrategyPack)) { startStrategyPackSession(pendingStrategyPack); }
+  else if (pendingViewWrapped && appState.lastWrappedRecap) { history.replaceState(null, "", location.pathname); renderMonthlyWrapped(appState.lastWrappedRecap); }
   else if (mode === "daily") handleDailyButtonClick();
   else if (mode === "practice") startNewPracticeSession();
   else if (mode === "ordertrainer" || mode === "longshortwait") { appState.drillStyle = mode; saveState(); startNewPracticeSession(); }
-  else if (!maybeShowYesterdaysReveal()) renderStartScreen();
+  else if (!maybeShowYesterdaysReveal()) proceedFromBootChecks();
+}
+function proceedFromBootChecks() {
+  const recap = checkMonthlyWrapped();
+  if (recap) { renderMonthlyWrapped(recap); return; }
+  renderStartScreen();
 }
 
 /* ---- Yesterday's Reveal: first screen a returning player sees, once per day ---- */
@@ -4647,7 +4993,7 @@ async function renderYesterdaysReveal() {
       </div>
     </div>
   `;
-  document.getElementById("revealContinueBtn").onclick = renderStartScreen;
+  document.getElementById("revealContinueBtn").onclick = proceedFromBootChecks;
 
   const [pct, topStreak] = await Promise.all([
     authReady() ? tlFetchDailyPercentile(yesterday) : Promise.resolve(null),

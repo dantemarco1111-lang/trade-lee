@@ -168,6 +168,7 @@ async function tlMergeLocalIntoCloud(appState) {
       daily_win_streak: Math.max(appState.dailyWinStreak || 0, existingStats ? existingStats.daily_win_streak || 0 : 0),
       trader_rating: mergedTraderRating,
       rated_drills_count: Math.max(localRated, cloudRated),
+      archetype: appState.archetype || (existingStats ? existingStats.archetype : null) || null,
     };
     await sbClient.from("stats").upsert(merged);
 
@@ -244,6 +245,7 @@ async function tlSyncStats(appState) {
       daily_win_streak: appState.dailyWinStreak || 0,
       trader_rating: appState.traderRating || 1000,
       rated_drills_count: appState.ratedDrillsCount || 0,
+      archetype: appState.archetype || null,
     });
   } catch (e) {}
 }
@@ -445,7 +447,7 @@ async function tlFetchLeaderboard() {
   try {
     const { data, error } = await sbClient
       .from("stats")
-      .select("best_streak, correct_drills, total_drills, trader_rating, rated_drills_count, users(display_name)")
+      .select("best_streak, correct_drills, total_drills, trader_rating, rated_drills_count, archetype, users(display_name)")
       .gte("total_drills", 10)
       .order("best_streak", { ascending: false })
       .limit(50);
