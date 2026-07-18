@@ -1050,6 +1050,18 @@ const NEAR_MISS_SLOWDOWN_MS = 900;
 const CLUTCH_THRESHOLD_MS = 2000;
 const CLUTCH_BONUS_TICKS = 15;
 const DOUBLE_OR_NOTHING_CHANCE = 0.1;
+// retention: Trader Rating (Stage 3)
+const RATING_START = 1000;
+const RATING_K = 24;
+const RATING_UNRANKED_DRILLS = 20;
+const RATING_LOSS_DAMPENING = 0.6; // losses always hurt less than a symmetric Elo would suggest
+const RATING_BANDS = [
+  { max: 899, name: "Learning the Tape" },
+  { max: 1099, name: "Chart Reader" },
+  { max: 1299, name: "Breakout Hunter" },
+  { max: 1499, name: "Funded Material" },
+  { max: Infinity, name: "Market Sniper" },
+];
 const STORAGE_KEY = "tradeLeeState_v1";
 
 /* ============================= PERSISTED STATE ============================= */
@@ -1107,6 +1119,10 @@ function defaultState() {
     doubleOrNothingStats: { wins: 0, losses: 0 },
     // retention Stage 2: The 9:30 Drop
     lastRevealShownDate: null,
+    // retention Stage 3: Trader Rating
+    traderRating: RATING_START,
+    ratedDrillsCount: 0,
+    ratingColdStreak: 0,
   };
 }
 function loadPersistedState() {
@@ -1388,6 +1404,60 @@ function incrementGlobalStats(isCorrect) {
   if (isCorrect) appState.totalCorrect = (appState.totalCorrect || 0) + 1;
   saveState();
 }
+/* ---- Trader Rating: Elo-ish, weighted by a difficulty estimate derived ---- */
+/* ---- from pre-decision-visible signals only (never outcome fields).    ---- */
+function estimateDrillDifficulty(drill) {
+  const volRatio = drill.volume_ratio || 1;
+  const volObviousness = Math.min(1, Math.max(0, (volRatio - 1) / 2));
+  const contextCount = (drill.context_all && drill.context_all.length) || (drill.context ? 1 : 0);
+  const contextObviousness = Math.min(1, contextCount / 3);
+  const obviousness = volObviousness * 0.6 + contextObviousness * 0.4;
+  return 1 - obviousness; // 0 = obvious/easy, 1 = ambiguous/hard
+}
+function ratingBandFor(rating) {
+  const idx = RATING_BANDS.findIndex(b => rating <= b.max);
+  const i = idx === -1 ? RATING_BANDS.length - 1 : idx;
+  return { name: RATING_BANDS[i].name, rank: i };
+}
+function traderRatingIsRanked() {
+  return (appState.ratedDrillsCount || 0) >= RATING_UNRANKED_DRILLS;
+}
+// Never surfaces the formula to the player — floor protection (unranked
+// accrual) and cold-streak loss halving are both silent kindnesses.
+function updateTraderRating(drill, isCorrect) {
+  appState.traderRating = appState.traderRating || RATING_START;
+  appState.ratedDrillsCount = (appState.ratedDrillsCount || 0) + 1;
+  appState.ratingColdStreak = appState.ratingColdStreak || 0;
+
+  const difficulty = estimateDrillDifficulty(drill);
+  const opponentRating = RATING_START + (difficulty - 0.5) * 800;
+  const expected = 1 / (1 + Math.pow(10, (opponentRating - appState.traderRating) / 400));
+  const actual = isCorrect ? 1 : 0;
+  let delta = RATING_K * (actual - expected);
+
+  if (isCorrect) {
+    appState.ratingColdStreak = 0;
+  } else {
+    delta *= RATING_LOSS_DAMPENING;
+    if (appState.ratingColdStreak >= 2) delta *= 0.5;
+    appState.ratingColdStreak++;
+  }
+
+  const prevBand = ratingBandFor(appState.traderRating);
+  const wasRanked = appState.ratedDrillsCount - 1 >= RATING_UNRANKED_DRILLS;
+  appState.traderRating = Math.round(appState.traderRating + delta);
+  saveState();
+
+  const nowRanked = traderRatingIsRanked();
+  const newBand = ratingBandFor(appState.traderRating);
+  return {
+    delta: Math.round(delta),
+    rating: appState.traderRating,
+    nowRanked,
+    justUnranked: nowRanked && !wasRanked,
+    bandUp: (nowRanked && wasRanked && newBand.rank > prevBand.rank) ? newBand : null,
+  };
+}
 function updateBestStreakEver(streakVal) {
   if (streakVal > (appState.bestStreakEver || 0)) { appState.bestStreakEver = streakVal; saveState(); }
 }
@@ -1636,6 +1706,7 @@ function renderGameScreen(mode) {
         <div class="stat-chip"><span class="stat-value" id="pnlValue">$0</span><span class="stat-label">Session P&L</span></div>
         <div class="stat-chip"><span class="stat-value" id="streakValue">0</span><span class="stat-label">Streak</span></div>
         <div class="stat-chip"><span class="stat-value" id="bestStreakValue">0</span><span class="stat-label">Best</span></div>
+        <div class="stat-chip"><span class="stat-value" id="ratingValue">${traderRatingIsRanked() ? Math.round(appState.traderRating || RATING_START) : `${appState.ratedDrillsCount || 0}/${RATING_UNRANKED_DRILLS}`}</span><span class="stat-label">${traderRatingIsRanked() ? "Rating" : "Unranked"}</span></div>
         <div class="stat-chip"><span class="stat-value" id="timerLevelValue">${appState.practiceTimerSeconds || PRACTICE_TIMER_START}s</span><span class="stat-label">Timer</span></div>
         <div class="stat-chip"><span class="stat-value" id="drillCounter">1/10</span><span class="stat-label">Drill</span></div>
       </div>`;
@@ -1673,6 +1744,7 @@ function renderGameScreen(mode) {
       <div class="statsbar">
         <div class="stat-chip"><span class="stat-value" id="pnlValue">$0</span><span class="stat-label">Session P&L</span></div>
         <div class="stat-chip"><span class="stat-value" id="lswCorrectValue">0</span><span class="stat-label">Correct</span></div>
+        <div class="stat-chip"><span class="stat-value" id="ratingValue">${traderRatingIsRanked() ? Math.round(appState.traderRating || RATING_START) : `${appState.ratedDrillsCount || 0}/${RATING_UNRANKED_DRILLS}`}</span><span class="stat-label">${traderRatingIsRanked() ? "Rating" : "Unranked"}</span></div>
         <div class="stat-chip"><span class="stat-value" id="drillCounter">1/${LSW_DRILLS_PER_SESSION}</span><span class="stat-label">Drill</span></div>
       </div>`;
   } else if (mode === "ordertrainer") {
@@ -2238,6 +2310,8 @@ function finishPlayout(drill, choice) {
   const isCorrect = (currentMode === "longshortwait" || currentMode === "strategy_pack") ? choice === drill.correct_answer : choice === drill.outcome;
   const isFizzle = currentMode !== "longshortwait" && currentMode !== "strategy_pack" && drill.outcome === "fake" && drill.reversal_minutes === null && drill.resolution_bar_index === null;
   const isClutch = applyClutchIfEarned(isCorrect);
+  const ratingResult = (currentMode === "practice" || currentMode === "daily" || currentMode === "longshortwait")
+    ? updateTraderRating(drill, isCorrect) : null;
 
   if (currentMode !== "tutorial" && currentMode !== "longshortwait" && currentMode !== "strategy_pack") recordMissOrClear(drill, isCorrect);
   applyResultJuice(isCorrect, isFizzle);
@@ -2273,12 +2347,15 @@ function finishPlayout(drill, choice) {
     setTimeout(() => bankrollEl.classList.remove("flash-green", "flash-red"), 700);
 
     showCoachCard(drill, isCorrect, pnl, isFizzle, isClutch);
+    updateRatingChip();
+    maybeShowRatingReveal(ratingResult, 500);
   } else if (currentMode === "daily") {
     incrementGlobalStats(isCorrect);
     const milestoneHit = recordDailyResult(drill, isCorrect, isFizzle);
     updateNavStreak();
     if (authReady()) tlSyncDailyResult(isCorrect, appState, getEtDateString(0));
     setTimeout(() => renderDailyResultScreen(drill, isCorrect, isFizzle, isClutch, milestoneHit), 350);
+    maybeShowRatingReveal(ratingResult, 1300);
   } else if (currentMode === "tutorial") {
     setTimeout(() => renderTutorialOutro(), 600);
   } else if (currentMode === "speedrun") {
@@ -2314,6 +2391,8 @@ function finishPlayout(drill, choice) {
     if (correctEl) correctEl.textContent = correctSoFar;
 
     showLswCoachCard(drill, choice, isCorrect, pnl, isClutch);
+    updateRatingChip();
+    maybeShowRatingReveal(ratingResult, 500);
   } else if (currentMode === "strategy_pack") {
     const pnl = computeStrategyPackPnl(drill, isCorrect);
     sessionResults.push({ pnl, correct: isCorrect, skipped: false, choice });
@@ -3595,6 +3674,7 @@ function renderDailyResultScreen(drill, isCorrect, isFizzle, isClutch, milestone
       <div class="daily-streaks">
         <div class="mini-stat"><div class="v">${appState.dailyPlayStreak}</div><div class="l">Day Streak</div></div>
         <div class="mini-stat"><div class="v">${appState.dailyWinStreak}</div><div class="l">Win Streak</div></div>
+        <div class="mini-stat"><div class="v">${traderRatingIsRanked() ? Math.round(appState.traderRating || RATING_START) : `${appState.ratedDrillsCount || 0}/${RATING_UNRANKED_DRILLS}`}</div><div class="l">${traderRatingIsRanked() ? "Rating" : "Unranked"}</div></div>
       </div>
       <div class="daily-distribution" id="dailyDistribution"><div class="skeleton-line" style="width:80%;margin:0 auto;"></div></div>
       <div id="dailySigninPrompt"></div>
@@ -3634,6 +3714,47 @@ function showStreakMilestone(milestoneHit) {
   document.body.appendChild(overlay);
   document.getElementById("milestoneDismissBtn").onclick = () => overlay.remove();
   document.getElementById("milestoneShareBtn").onclick = () => generateAndShareCard("streak_milestone", milestoneHit);
+}
+
+/* ---- Trader Rating UI: stat chip + unranked reveal / band-up flourish ---- */
+function updateRatingChip() {
+  const el = document.getElementById("ratingValue");
+  if (!el) return;
+  const chip = el.closest(".stat-chip");
+  const labelEl = chip && chip.querySelector(".stat-label");
+  const ranked = traderRatingIsRanked();
+  if (labelEl) labelEl.textContent = ranked ? "Rating" : "Unranked";
+  if (ranked) animateStatNumber(el, Math.round(appState.traderRating || RATING_START));
+  else el.textContent = `${appState.ratedDrillsCount || 0}/${RATING_UNRANKED_DRILLS}`;
+}
+function maybeShowRatingReveal(ratingResult, delayMs) {
+  if (!ratingResult) return;
+  if (ratingResult.justUnranked) {
+    const band = ratingBandFor(ratingResult.rating);
+    setTimeout(() => showRatingRevealOverlay("🎯", "You're Ranked!", `${ratingResult.rating} — ${band.name}`,
+      "rating_ranked", { rating: ratingResult.rating, band: band.name }), delayMs || 500);
+  } else if (ratingResult.bandUp) {
+    setTimeout(() => showRatingRevealOverlay("📈", `${ratingResult.bandUp.name}!`, `Rating ${ratingResult.rating}`,
+      "rating_bandup", { rating: ratingResult.rating, band: ratingResult.bandUp.name }), delayMs || 500);
+  }
+}
+function showRatingRevealOverlay(icon, title, subtitle, shareMode, shareData) {
+  launchConfetti();
+  playMultiplier();
+  const overlay = document.createElement("div");
+  overlay.className = "milestone-overlay";
+  overlay.innerHTML = `
+    <div class="milestone-card">
+      <div class="milestone-flame">${icon}</div>
+      <div class="milestone-title">${escapeHtml(title)}</div>
+      <div class="milestone-bonus">${escapeHtml(subtitle)}</div>
+      <button class="share-btn" id="ratingShareBtn">📤 SHARE</button>
+      <button class="mode-btn practice-btn" id="ratingDismissBtn">NICE →</button>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+  document.getElementById("ratingDismissBtn").onclick = () => overlay.remove();
+  document.getElementById("ratingShareBtn").onclick = () => generateAndShareCard(shareMode, shareData);
 }
 // Picks one contextual nudge based on the player's current state — most
 // urgent (protect an active streak) first, falling back toward general
@@ -4236,6 +4357,16 @@ function generateShareCanvas(mode, data) {
     ctx.font = "700 44px Arial, sans-serif";
     ctx.fillStyle = "#22c55e";
     ctx.fillText(`+${data.bonus} Ticks`, 540, 700);
+  } else if (mode === "rating_ranked" || mode === "rating_bandup") {
+    ctx.font = "900 130px Arial, sans-serif";
+    ctx.fillStyle = "#5c9eff";
+    ctx.fillText(mode === "rating_ranked" ? "🎯" : "📈", 540, 480);
+    ctx.font = "900 90px Arial, sans-serif";
+    ctx.fillStyle = "#e6e9ef";
+    ctx.fillText(`${data.rating}`, 540, 610);
+    ctx.font = "700 48px Arial, sans-serif";
+    ctx.fillStyle = "#f5b400";
+    ctx.fillText(data.band, 540, 690);
   } else if (mode === "speedrun") {
     ctx.font = "900 110px Arial, sans-serif";
     ctx.fillStyle = "#f5b400";

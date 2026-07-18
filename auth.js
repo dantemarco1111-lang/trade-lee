@@ -137,6 +137,15 @@ async function tlMergeLocalIntoCloud(appState) {
     const mergedOnboarding = appState.onboardingProfile || (existingStats ? existingStats.onboarding_profile : null) || null;
     const mergedChartSettings = appState.chartSettings || (existingStats ? existingStats.chart_settings : null) || null;
 
+    // Trader Rating isn't a strict accumulator like ticks/total_drills — the
+    // side with MORE rated drills has the more informed number, so keep that
+    // side's rating outright rather than max()-ing two Elo values together.
+    const localRated = appState.ratedDrillsCount || 0;
+    const cloudRated = existingStats ? existingStats.rated_drills_count || 0 : 0;
+    const mergedTraderRating = localRated >= cloudRated
+      ? (appState.traderRating || 1000)
+      : (existingStats ? existingStats.trader_rating : 1000) || 1000;
+
     const merged = {
       user_id: uid,
       best_streak: Math.max(appState.bestStreakEver || 0, existingStats ? existingStats.best_streak : 0),
@@ -155,6 +164,10 @@ async function tlMergeLocalIntoCloud(appState) {
       ot_total_wins: Math.max(appState.orderTrainerStats ? appState.orderTrainerStats.wins : 0, existingStats ? existingStats.ot_total_wins : 0),
       sp_total_answered: Math.max(appState.strategyPackStats ? appState.strategyPackStats.totalAnswered : 0, existingStats ? existingStats.sp_total_answered : 0),
       sp_total_correct: Math.max(appState.strategyPackStats ? appState.strategyPackStats.totalCorrect : 0, existingStats ? existingStats.sp_total_correct : 0),
+      daily_play_streak: Math.max(appState.dailyPlayStreak || 0, existingStats ? existingStats.daily_play_streak || 0 : 0),
+      daily_win_streak: Math.max(appState.dailyWinStreak || 0, existingStats ? existingStats.daily_win_streak || 0 : 0),
+      trader_rating: mergedTraderRating,
+      rated_drills_count: Math.max(localRated, cloudRated),
     };
     await sbClient.from("stats").upsert(merged);
 
@@ -229,6 +242,8 @@ async function tlSyncStats(appState) {
       sp_total_correct: appState.strategyPackStats ? appState.strategyPackStats.totalCorrect : 0,
       daily_play_streak: appState.dailyPlayStreak || 0,
       daily_win_streak: appState.dailyWinStreak || 0,
+      trader_rating: appState.traderRating || 1000,
+      rated_drills_count: appState.ratedDrillsCount || 0,
     });
   } catch (e) {}
 }
@@ -335,7 +350,7 @@ async function tlFetchLeaderboard() {
   try {
     const { data, error } = await sbClient
       .from("stats")
-      .select("best_streak, correct_drills, total_drills, users(display_name)")
+      .select("best_streak, correct_drills, total_drills, trader_rating, rated_drills_count, users(display_name)")
       .gte("total_drills", 10)
       .order("best_streak", { ascending: false })
       .limit(50);

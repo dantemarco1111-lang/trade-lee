@@ -171,6 +171,7 @@ function defaultState() {
   return {
     bestSessionPnl: null, bestStreakEver: 0, dailyWinStreak: 0,
     totalDrillsAnswered: 0, totalCorrect: 0, ticksEarnedAllTime: 0,
+    traderRating: 1000, ratedDrillsCount: 0,
   };
 }
 function loadState() {
@@ -180,6 +181,7 @@ function loadState() {
     return Object.assign(defaultState(), JSON.parse(raw));
   } catch (e) { return defaultState(); }
 }
+const RATING_UNRANKED_DRILLS = 20;
 function formatMoney(n) {
   const sign = n < 0 ? "-" : "";
   return sign + "$" + Math.abs(Math.round(n)).toLocaleString("en-US");
@@ -191,6 +193,7 @@ function escapeHtml(s) {
 const state = loadState();
 function renderRecords() {
   const accuracy = state.totalDrillsAnswered ? Math.round(100 * state.totalCorrect / state.totalDrillsAnswered) : 0;
+  const isRanked = (state.ratedDrillsCount || 0) >= RATING_UNRANKED_DRILLS;
   const records = [
     { val: state.bestSessionPnl === null ? "—" : (state.bestSessionPnl >= 0 ? "+" : "") + formatMoney(state.bestSessionPnl), label: "Best Session P&L", cls: state.bestSessionPnl === null ? "neutral" : (state.bestSessionPnl >= 0 ? "" : "neg") },
     { val: state.bestStreakEver || 0, label: "Best Streak Ever", cls: "neutral" },
@@ -198,6 +201,7 @@ function renderRecords() {
     { val: state.totalDrillsAnswered || 0, label: "Total Drills", cls: "neutral" },
     { val: accuracy + "%", label: "Overall Accuracy", cls: "neutral" },
     { val: "⚡ " + (state.ticksEarnedAllTime || 0), label: "Ticks Earned All-Time", cls: "neutral" },
+    { val: isRanked ? Math.round(state.traderRating || 1000) : `${state.ratedDrillsCount || 0}/${RATING_UNRANKED_DRILLS}`, label: isRanked ? "Trader Rating" : "Trader Rating (Unranked)", cls: "neutral" },
   ];
   document.getElementById("recordsGrid").innerHTML = records.map(r => `
     <div class="record-cell">
@@ -255,12 +259,13 @@ async function loadGlobalLeaderboard() {
   const myName = tlProfile ? tlProfile.display_name : null;
   body.innerHTML = `
     <table class="data-table">
-      <thead><tr><th>#</th><th>Player</th><th>Best Streak</th><th>Accuracy</th></tr></thead>
+      <thead><tr><th>#</th><th>Player</th><th>Best Streak</th><th>Accuracy</th><th>Rating</th></tr></thead>
       <tbody>
         ${rows.map((r, i) => {
           const acc = r.total_drills ? Math.round(100 * r.correct_drills / r.total_drills) : 0;
           const isYou = myName && r.users.display_name === myName;
-          return `<tr class="${isYou ? "lb-row-you" : ""}"><td class="${i === 0 ? "lb-rank-1" : ""}">${i + 1}</td><td>${escapeHtml(r.users.display_name)}${isYou ? " (you)" : ""}</td><td>${r.best_streak}</td><td>${acc}%</td></tr>`;
+          const ratingText = (r.rated_drills_count || 0) >= RATING_UNRANKED_DRILLS ? Math.round(r.trader_rating || 1000) : "Unranked";
+          return `<tr class="${isYou ? "lb-row-you" : ""}"><td class="${i === 0 ? "lb-rank-1" : ""}">${i + 1}</td><td>${escapeHtml(r.users.display_name)}${isYou ? " (you)" : ""}</td><td>${r.best_streak}</td><td>${acc}%</td><td>${ratingText}</td></tr>`;
         }).join("")}
       </tbody>
     </table>
@@ -288,6 +293,8 @@ async function initAccounts() {
               state.totalCorrect = result.merged.correct_drills;
               state.ticksEarnedAllTime = result.merged.ticks;
               state.dailyWinStreak = recomputed.dailyWinStreak;
+              state.traderRating = result.merged.trader_rating || 1000;
+              state.ratedDrillsCount = result.merged.rated_drills_count || 0;
               try {
                 const raw = localStorage.getItem(STORAGE_KEY);
                 const full = raw ? JSON.parse(raw) : {};
@@ -308,6 +315,8 @@ async function initAccounts() {
                 full.dailyWinStreak = recomputed.dailyWinStreak;
                 full.lastDailyDate = recomputed.lastDailyDate || full.lastDailyDate;
                 full.lastDailyResult = recomputed.lastDailyResult || full.lastDailyResult;
+                full.traderRating = result.merged.trader_rating || 1000;
+                full.ratedDrillsCount = result.merged.rated_drills_count || 0;
                 localStorage.setItem(STORAGE_KEY, JSON.stringify(full));
               } catch (e) {}
             }
