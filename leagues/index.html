@@ -251,7 +251,7 @@ function startCountdown() {
 function renderAnonLockedPreview() {
   const el = document.getElementById("leagueSection");
   el.innerHTML = `
-    <h2><span class="card-num">🏆</span>This Week's League</h2>
+    <h2>This Week's League</h2>
     <div class="locked-preview">
       <table class="data-table locked-preview-table">
         <thead><tr><th>#</th><th>Player</th><th>Ticks</th></tr></thead>
@@ -280,7 +280,7 @@ function renderAnonLockedPreview() {
 function renderNeedsNameState() {
   const el = document.getElementById("leagueSection");
   el.innerHTML = `
-    <h2><span class="card-num">🏆</span>This Week's League</h2>
+    <h2>This Week's League</h2>
     <p style="color:var(--text-dim);">Finish setting up your account to join this week's league.</p>
     <button class="btn btn-primary" id="leagueClaimNameBtn">Continue sign in</button>
   `;
@@ -290,7 +290,7 @@ function renderNeedsNameState() {
 function renderErrorState() {
   const el = document.getElementById("leagueSection");
   el.innerHTML = `
-    <h2><span class="card-num">🏆</span>This Week's League</h2>
+    <h2>This Week's League</h2>
     <div class="offline-notice">Can't reach the league right now — try again in a moment.</div>
   `;
 }
@@ -302,7 +302,7 @@ function buildRolloverHeadline(prevResult, newTier, groupSize, shielded) {
   const oldTier = prevResult.tier;
   const promoted = tierRank(newTier) > tierRank(oldTier);
   const demoted = tierRank(newTier) < tierRank(oldTier);
-  const shieldSuffix = shielded ? " 🛡" : "";
+  const shieldSuffix = shielded ? " (shielded)" : "";
   if (promoted) return `You finished #${rank} — promoted to ${TIER_LABELS[newTier]}${shieldSuffix}`;
   if (demoted) return `You finished #${rank} — moved to ${TIER_LABELS[newTier]}`;
   return `Stayed in ${TIER_LABELS[oldTier]} — top 5 promotes${shieldSuffix}`;
@@ -423,7 +423,7 @@ async function loadLeaguePage() {
       rolloverHtml = `
         <div class="rollover-card">
           <div class="headline">${escapeHtml(headline)}</div>
-          <button class="btn btn-primary" id="rolloverShareBtn">📤 SHARE</button>
+          <button class="btn btn-primary" id="rolloverShareBtn">SHARE</button>
         </div>
       `;
       setTimeout(() => {

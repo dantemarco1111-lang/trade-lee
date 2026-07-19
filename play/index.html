@@ -258,8 +258,9 @@
     min-height: 340px;
     max-height: 540px;
     overflow: hidden;
+    will-change: transform;
   }
-  .chart-card.slide-in { animation: slideIn 0.3s ease-out; }
+  .chart-card.slide-in { animation: slideIn var(--duration-standard) var(--ease); }
   @keyframes slideIn {
     from { transform: translateX(24px); opacity: 0; }
     to { transform: translateX(0); opacity: 1; }
@@ -556,7 +557,7 @@
     background: linear-gradient(180deg, rgba(245, 180, 0, 0.08), rgba(245, 180, 0, 0.03));
     border: 1px solid rgba(245, 180, 0, 0.35); border-radius: 16px;
     padding: 16px 14px; text-align: center; margin: 2px 0 8px;
-    animation: donIn 0.3s cubic-bezier(.22,1,.36,1);
+    animation: donIn var(--duration-standard) var(--ease);
   }
   .don-card.hidden { display: none; }
   @keyframes donIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
@@ -580,7 +581,7 @@
     padding: 32px 24px; text-align: center; max-width: 340px; width: 100%;
     max-height: 90vh; overflow-y: auto; box-sizing: border-box;
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
-    animation: milestonePop 0.4s cubic-bezier(.34,1.56,.64,1);
+    animation: milestonePop var(--duration-emphasis) var(--ease-spring);
   }
   @keyframes milestonePop { from { opacity: 0; transform: scale(0.85) translateY(10px); } to { opacity: 1; transform: scale(1) translateY(0); } }
   .milestone-flame { font-size: 2.4rem; margin-bottom: 10px; }
@@ -633,7 +634,8 @@
   /* ---------- coach card ---------- */
   .coach-card {
     background: var(--card); border: 1px solid var(--border); border-radius: 16px;
-    padding: 16px 14px; text-align: center; animation: coachIn 0.3s cubic-bezier(.22,1,.36,1);
+    padding: 16px 14px; text-align: center; animation: coachIn var(--duration-standard) var(--ease);
+    will-change: transform, opacity;
   }
   @keyframes coachIn { from { opacity: 0; transform: translateY(22px); } to { opacity: 1; transform: translateY(0); } }
   .clutch-badge {
@@ -918,7 +920,7 @@
   .reveal-card {
     background: var(--card); border: 1px solid var(--border); border-radius: 20px;
     padding: 30px 22px; text-align: center; max-width: 380px; width: 100%;
-    animation: milestonePop 0.35s cubic-bezier(.22,1,.36,1);
+    animation: milestonePop var(--duration-emphasis) var(--ease);
   }
   .reveal-badge {
     font-family: var(--font-mono); font-size: 0.7rem; font-weight: 700; letter-spacing: 0.8px;
@@ -1079,7 +1081,7 @@
   .tutorial-outro p { color: var(--muted); margin-bottom: 26px; }
 
   /* ---------- onboarding quiz ---------- */
-  .onboarding-screen { padding: 40px 8px 10px; text-align: center; animation: coachIn 0.3s cubic-bezier(.22,1,.36,1); }
+  .onboarding-screen { padding: 40px 8px 10px; text-align: center; animation: coachIn var(--duration-standard) var(--ease); }
   .onboarding-dots { display: flex; justify-content: center; gap: 8px; margin-bottom: 34px; }
   .onboarding-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--border-strong); transition: background 0.2s, transform 0.2s; }
   .onboarding-dot.active { background: var(--green); transform: scale(1.3); }
@@ -1100,7 +1102,7 @@
     display: flex; flex-direction: column; align-items: center; gap: 14px; padding: 110px 12px;
     animation: coachIn 0.3s ease;
   }
-  .onboarding-summary { text-align: center; padding: 40px 10px 10px; animation: coachIn 0.3s cubic-bezier(.22,1,.36,1); }
+  .onboarding-summary { text-align: center; padding: 40px 10px 10px; animation: coachIn var(--duration-standard) var(--ease); }
   .onboarding-summary h2 { font-family: var(--font-display); margin: 0 0 22px; }
   .onboarding-plan-card {
     background: var(--card); border: 1px solid var(--border); border-radius: 16px;
@@ -1829,7 +1831,7 @@ function recordPracticeTimerProgress(isCorrect) {
     appState.practiceCorrectSinceAdjust = 0;
     if (newTimer !== prevTimer) {
       const faster = newTimer < prevTimer;
-      showToast(faster ? `You're getting faster — timer now ${newTimer}s ⚡` : `Taking it slower — timer now ${newTimer}s`);
+      showToast(faster ? `You're getting faster — timer now ${newTimer}s` : `Taking it slower — timer now ${newTimer}s`);
     }
     updateTimerLevelDisplay();
   }
@@ -1910,9 +1912,9 @@ function renderPowerupBar() {
     chips.push(`<button class="powerup-chip" id="useTimeExtendBtn">⏱ +5s <span class="chip-count">(${appState.ownedTimeExtends})</span></button>`);
   }
   if (doubleDownActiveThisDrill || doubleOrNothingActiveThisDrill) {
-    chips.push(`<span class="powerup-chip active">💰 2x ACTIVE</span>`);
+    chips.push(`<span class="powerup-chip active">2x ACTIVE</span>`);
   } else if ((appState.ownedDoubleDowns || 0) > 0) {
-    chips.push(`<button class="powerup-chip" id="useDoubleDownBtn">💰 Double Down <span class="chip-count">(${appState.ownedDoubleDowns})</span></button>`);
+    chips.push(`<button class="powerup-chip" id="useDoubleDownBtn">Double Down <span class="chip-count">(${appState.ownedDoubleDowns})</span></button>`);
   }
 
   if (!chips.length) { bar.classList.add("hidden"); bar.innerHTML = ""; return; }
@@ -1961,7 +1963,7 @@ function initChart(container) {
     width: container.clientWidth,
     height: container.clientHeight,
     layout: { background: { type: "solid", color: "#141922" }, textColor: "#ffffff" },
-    grid: { vertLines: { color: "#191e29" }, horzLines: { color: "#191e29" } },
+    grid: { vertLines: { color: "#171c26" }, horzLines: { color: "#171c26" } },
     timeScale: { timeVisible: true, secondsVisible: false, borderColor: "#262b36", rightOffset: 8, barSpacing: 9, rightBarStaysOnScroll: true },
     rightPriceScale: { borderColor: "#262b36" },
     leftPriceScale: { visible: false, borderColor: "#262b36" },
@@ -2099,7 +2101,7 @@ function renderGameScreen(mode) {
     headerHtml = `
       <div class="topbar">
         <div class="bankroll">
-          <div class="bankroll-label">📕 Review Misses</div>
+          <div class="bankroll-label">Review Misses</div>
           <div class="bankroll-value" style="font-size:1.15rem;">Untimed — no pressure</div>
         </div>
       </div>
@@ -3120,7 +3122,7 @@ function toggleTellsAnnotations() {
   const btn = document.getElementById("showTellsBtn");
   if (tellsMarkersActive) {
     clearTellsAnnotations();
-    if (btn) btn.textContent = "👁 Show the tells";
+    if (btn) btn.textContent = "Show the tells";
     return;
   }
   if (!candleSeries || !currentDrill) return;
@@ -3143,7 +3145,7 @@ function toggleTellsAnnotations() {
     }
   });
   tellsMarkersActive = true;
-  if (btn) btn.textContent = "🙈 Hide the tells";
+  if (btn) btn.textContent = "Hide the tells";
 }
 function renderWhyBullets(bullets) {
   return `<ul class="coach-why-list">${bullets.map(b => `<li>${escapeHtml(b)}</li>`).join("")}</ul>`;
@@ -3393,8 +3395,8 @@ function showCoachCard(drill, isCorrect, pnl, isFizzle, isClutch) {
   whyEl.innerHTML = renderCoachHeadline(fullReadRows, drill, isFizzle)
     + renderFullReadSection(fullReadRows)
     + `<div class="coach-actions-row">
-        <button class="text-link-btn" id="showTellsBtn">👁 Show the tells</button>
-        <a class="text-link-btn" href="${learnPatternUrl(drill, isFizzle)}">📚 Learn this pattern →</a>
+        <button class="text-link-btn" id="showTellsBtn">Show the tells</button>
+        <a class="text-link-btn" href="${learnPatternUrl(drill, isFizzle)}">Learn this pattern →</a>
       </div>`;
   document.getElementById("showTellsBtn").onclick = toggleTellsAnnotations;
   if (pnl === null) {
@@ -3419,7 +3421,7 @@ function showCoachCard(drill, isCorrect, pnl, isFizzle, isClutch) {
     const btn = document.createElement("button");
     btn.className = "second-chance-btn";
     btn.id = "secondChanceBtn";
-    btn.textContent = `🔄 Use Second Chance (${appState.ownedSecondChances})`;
+    btn.textContent = `Use Second Chance (${appState.ownedSecondChances})`;
     btn.onclick = useSecondChance;
     card.insertBefore(btn, document.getElementById("nextBtn"));
   } else if (currentMode === "speedrun") {
@@ -3500,7 +3502,7 @@ function showEndOfDay() {
 
   content.innerHTML = `
     <div class="end-of-day">
-      <h2>🏁 End of Trading Day</h2>
+      <h2>End of Trading Day</h2>
       <div class="eod-pnl ${sessionPnl >= 0 ? "pos" : "neg"}">${(sessionPnl >= 0 ? "+" : "")}${formatMoney(sessionPnl)}</div>
       <div style="color:var(--muted);font-size:0.85rem;margin-bottom:6px;">Session P&L</div>
       <div class="eod-grid">
@@ -3509,11 +3511,11 @@ function showEndOfDay() {
         <div class="cell"><div class="v">${formatMoney(bestWin)}</div><div class="l">Biggest Win</div></div>
       </div>
       <div class="eod-verdict">${verdictText(sessionPnl, correctCount)}</div>
-      ${sessionInsight ? `<div class="session-insight">🔍 ${escapeHtml(sessionInsight)}</div>` : ""}
+      ${sessionInsight ? `<div class="session-insight">${escapeHtml(sessionInsight)}</div>` : ""}
       <div id="eodSigninPrompt"></div>
       <button class="trade-again-btn" id="tradeAgainBtn">TRADE ANOTHER DAY</button>
-      <button class="share-btn" id="shareBtnPractice">📤 SHARE</button>
-      <button class="challenge-btn" id="challengeBtnPractice">⚔️ Challenge a friend</button>
+      <button class="share-btn" id="shareBtnPractice">SHARE</button>
+      <button class="challenge-btn" id="challengeBtnPractice">Challenge a friend</button>
       <div id="challengeLinkPanel"></div>
       <button class="text-link-btn" id="backToStartBtn2">← Back to start</button>
     </div>
@@ -4150,7 +4152,7 @@ function renderStrategyPickerScreen() {
   root.innerHTML = `
     <div class="topbar">
       <div class="bankroll">
-        <div class="bankroll-label">🎯 Strategy Packs</div>
+        <div class="bankroll-label">Strategy Packs</div>
         <div class="bankroll-value" style="font-size:1.15rem;">Pick a setup to drill</div>
       </div>
     </div>
@@ -4158,7 +4160,7 @@ function renderStrategyPickerScreen() {
       <div class="strategy-section-label">Classical</div>
       <div class="strategy-pack-grid">${classical.map(packCard).join("")}</div>
       <div class="strategy-section-label">ICT / Smart Money Concepts</div>
-      <div class="ict-honesty-banner">⚠️ ${escapeHtml(ICT_HONESTY_BLURB)} <a href="/about/" style="color:inherit;text-decoration:underline;">Read our full methodology →</a></div>
+      <div class="ict-honesty-banner">${escapeHtml(ICT_HONESTY_BLURB)} <a href="/about/" style="color:inherit;text-decoration:underline;">Read our full methodology →</a></div>
       <div class="strategy-pack-grid">${ict.map(packCard).join("")}</div>
       <button class="text-link-btn" id="strategyBackBtn" style="margin:14px 0 24px;">← Back to start</button>
     </div>
@@ -4223,7 +4225,7 @@ function showSpeedRunEnd() {
 
   content.innerHTML = `
     <div class="end-of-day">
-      <h2>⚡ Speed Run Complete</h2>
+      <h2>Speed Run Complete</h2>
       <div class="eod-pnl pos">${totalSeconds.toFixed(1)}s</div>
       <div style="color:var(--muted);font-size:0.85rem;margin-bottom:6px;">Total Time</div>
       <div class="eod-grid">
@@ -4234,8 +4236,8 @@ function showSpeedRunEnd() {
       <div class="eod-verdict">${speedRunVerdictText(accuracy, totalSeconds)}</div>
       <div id="srSigninPrompt"></div>
       <button class="trade-again-btn" id="srAgainBtn">RUN IT BACK</button>
-      <button class="share-btn" id="shareBtnSpeedRun">📤 SHARE</button>
-      <button class="challenge-btn" id="challengeBtnSpeedRun">⚔️ Challenge a friend</button>
+      <button class="share-btn" id="shareBtnSpeedRun">SHARE</button>
+      <button class="challenge-btn" id="challengeBtnSpeedRun">Challenge a friend</button>
       <div id="challengeLinkPanel"></div>
       <button class="text-link-btn" id="backToStartBtn3">← Back to start</button>
     </div>
@@ -4361,7 +4363,7 @@ function showChallengeResult() {
     tie = diff === 0;
     youWon = diff > 0;
     verdict = tie ? `Dead even with ${challenge.creator_name}.`
-      : youWon ? `You beat ${challenge.creator_name} by ${formatMoney(diff)} 🏆`
+      : youWon ? `You beat ${challenge.creator_name} by ${formatMoney(diff)}`
       : `${challenge.creator_name} takes it by ${formatMoney(-diff)}.`;
     updateBestSessionPnl(yourPnl);
     updateBestStreakEver(bestStreak);
@@ -4375,7 +4377,7 @@ function showChallengeResult() {
     tie = accuracy === challenge.accuracy && Math.abs(yourSeconds - theirSeconds) < 0.05;
     youWon = !tie && (accuracy !== challenge.accuracy ? accuracy > challenge.accuracy : yourSeconds < theirSeconds);
     verdict = tie ? `Dead even with ${challenge.creator_name}.`
-      : youWon ? `You beat ${challenge.creator_name} 🏆`
+      : youWon ? `You beat ${challenge.creator_name}`
       : `${challenge.creator_name} takes it.`;
     updateSpeedRunBestTime(lastSessionTimeMs, correctCount === totalDrills);
     updateSpeedRunBestAccuracy(accuracy);
@@ -4385,7 +4387,7 @@ function showChallengeResult() {
 
   content.innerHTML = `
     <div class="end-of-day">
-      <h2>⚔️ Challenge Result</h2>
+      <h2>Challenge Result</h2>
       <div class="challenge-vs-row">
         <div class="challenge-vs-side ${youWon ? "win" : ""}">
           <div class="challenge-vs-name">You</div>
@@ -4399,8 +4401,8 @@ function showChallengeResult() {
       </div>
       <div class="eod-verdict">${verdict}</div>
       <div id="challengeSigninPrompt"></div>
-      <button class="share-btn" id="shareBtnChallenge">📤 SHARE</button>
-      <button class="challenge-btn" id="challengeCreateBtn">⚔️ Challenge a friend</button>
+      <button class="share-btn" id="shareBtnChallenge">SHARE</button>
+      <button class="challenge-btn" id="challengeCreateBtn">Challenge a friend</button>
       <div id="challengeLinkPanel"></div>
       <button class="text-link-btn" id="backToStartBtn4">← Back to start</button>
     </div>
@@ -4417,7 +4419,7 @@ function renderChallengeFallback(message) {
   const root = document.getElementById("screenRoot");
   root.innerHTML = `
     <div class="start-screen">
-      <div class="start-wordmark">⚔️ Challenge</div>
+      <div class="start-wordmark">Challenge</div>
       <div class="start-sub">${escapeHtml(message)}</div>
       <button class="mode-btn practice-btn" id="challengeFallbackBtn">PLAY NORMALLY</button>
     </div>
@@ -4434,7 +4436,7 @@ function renderChallengeIntro(row) {
     : `finished in <strong>${((row.time_ms || 0) / 1000).toFixed(1)}s</strong> (${row.accuracy.toFixed(1)}% accuracy)`;
   root.innerHTML = `
     <div class="start-screen">
-      <div class="start-wordmark">⚔️ Challenge</div>
+      <div class="start-wordmark">Challenge</div>
       <div class="start-sub">${escapeHtml(row.creator_name)} ${scoreLine} on this run.</div>
       <div class="start-sub" style="margin-top:-10px;font-weight:700;color:var(--text);">Beat them.</div>
       <button class="mode-btn speedrun-btn" id="startChallengeBtn">START CHALLENGE →</button>
@@ -4524,7 +4526,7 @@ function renderReviewEnd() {
   const remaining = appState.missedDrills.length;
   content.innerHTML = `
     <div class="end-of-day">
-      <h2>📕 Review Complete</h2>
+      <h2>Review Complete</h2>
       <div class="eod-verdict">${remaining
         ? `${remaining} still on your miss list — every correct answer clears one.`
         : "Clean sheet — no misses left to review."}</div>
@@ -4568,7 +4570,7 @@ function renderDailyResultScreen(drill, isCorrect, isFizzle, isClutch, milestone
       <div class="daily-result-badge ${isCorrect ? "win" : "loss"}">${isCorrect ? "WIN ✅" : "LOSS ❌"}</div>
       <div class="daily-outcome-line">${outcomeText}</div>
       <div class="daily-why">${renderCoachHeadline(fullReadRows, drill, isFizzle)}${renderFullReadSection(fullReadRows)}
-        <div class="coach-actions-row"><a class="text-link-btn" href="${learnPatternUrl(drill, isFizzle)}">📚 Learn this pattern →</a></div>
+        <div class="coach-actions-row"><a class="text-link-btn" href="${learnPatternUrl(drill, isFizzle)}">Learn this pattern →</a></div>
       </div>
       <div class="daily-streaks">
         <div class="mini-stat"><div class="v">${appState.dailyPlayStreak}</div><div class="l">Day Streak</div></div>
@@ -4579,7 +4581,7 @@ function renderDailyResultScreen(drill, isCorrect, isFizzle, isClutch, milestone
       <div id="dailySigninPrompt"></div>
       <div id="nextActionNudge"></div>
       <div class="daily-countdown">Next Drop in <span id="countdownText">--:--:--</span></div>
-      <button class="share-btn" id="shareBtnDaily">📤 SHARE</button>
+      <button class="share-btn" id="shareBtnDaily">SHARE</button>
       <button class="trade-again-btn" id="dailyBackBtn">BACK TO START</button>
     </div>
   `;
@@ -4668,7 +4670,7 @@ function showStreakMilestone(milestoneHit) {
       <div class="milestone-flame">🔥</div>
       <div class="milestone-title">${milestoneHit.days} straight Drops ✅</div>
       <div class="milestone-bonus">+${milestoneHit.bonus} Ticks</div>
-      <button class="share-btn" id="milestoneShareBtn">📤 SHARE</button>
+      <button class="share-btn" id="milestoneShareBtn">SHARE</button>
       <button class="mode-btn practice-btn" id="milestoneDismissBtn">NICE →</button>
     </div>
   `;
@@ -4712,7 +4714,7 @@ function showRatingRevealOverlay(icon, title, subtitle, shareMode, shareData, is
       <div class="milestone-flame">${icon}</div>
       <div class="milestone-title">${escapeHtml(title)}</div>
       <div class="milestone-bonus">${escapeHtml(subtitle)}</div>
-      <button class="share-btn" id="ratingShareBtn">📤 SHARE</button>
+      <button class="share-btn" id="ratingShareBtn">SHARE</button>
       <button class="mode-btn practice-btn" id="ratingDismissBtn">NICE →</button>
     </div>
   `;
@@ -4744,7 +4746,7 @@ function showArchetypeRevealOverlay(key) {
         ${a.strengths.map(s => `<li>${escapeHtml(s)}</li>`).join("")}
       </ul>
       <div class="archetype-leak"><strong>Your leak:</strong> ${escapeHtml(a.leak)}</div>
-      <button class="share-btn" id="archetypeShareBtn">📤 SHARE</button>
+      <button class="share-btn" id="archetypeShareBtn">SHARE</button>
       <button class="mode-btn practice-btn" id="archetypeDismissBtn">NICE →</button>
     </div>
   `;
@@ -4793,7 +4795,7 @@ function renderMonthlyWrapped(recap) {
           ${idx > 0 ? `<button class="text-link-btn" id="wrappedPrevBtn">← Back</button>` : `<span></span>`}
           ${idx < cards.length - 1
             ? `<button class="mode-btn practice-btn" id="wrappedNextBtn">Next →</button>`
-            : `<button class="mode-btn practice-btn" id="wrappedShareBtn">📤 SHARE</button>`}
+            : `<button class="mode-btn practice-btn" id="wrappedShareBtn">SHARE</button>`}
         </div>
       </div>
     `;
@@ -4966,7 +4968,7 @@ function renderOnboardingSummary() {
     ? `<a class="onboarding-risk-link" href="/risk/">Risk rules matter most — read this after →</a>` : "";
   root.innerHTML = `
     <div class="onboarding-summary">
-      <div class="outro-emoji">📈</div>
+      
       <h2>Your plan is ready</h2>
       <div class="onboarding-plan-card">
         <div class="onboarding-plan-line">Your plan: <strong>${escapeHtml(marketLabel)}</strong> drills</div>
@@ -5047,7 +5049,7 @@ function renderTutorialOutro() {
   const root = document.getElementById("screenRoot");
   root.innerHTML = `
     <div class="tutorial-outro">
-      <div class="outro-emoji">🎉</div>
+      
       <h2>That's the game.</h2>
       <p>New drill every day.</p>
       <button class="mode-btn practice-btn" id="outroContinue">LET'S GO</button>
@@ -5262,8 +5264,8 @@ function renderStartScreen() {
       <div class="start-wordmark">📈 Trade Lee</div>
       <div class="start-sub">${subhead}</div>
 
-      ${showFreezeNotice ? `<div class="freeze-notice">🧊 Streak saved by freeze. Your streak didn't reset.</div>` : ""}
-      ${comebackBonusActiveToday() ? `<div class="comeback-notice">💪 Rough day yesterday. Today pays double.</div>` : ""}
+      ${showFreezeNotice ? `<div class="freeze-notice">Streak saved by freeze. Your streak didn't reset.</div>` : ""}
+      ${comebackBonusActiveToday() ? `<div class="comeback-notice">Rough day yesterday. Today pays double.</div>` : ""}
 
       <div class="start-daily-streak">
         <span>🔥</span> ${appState.dailyPlayStreak || 0} day streak
@@ -5271,14 +5273,14 @@ function renderStartScreen() {
         ${appState.ownedFreezes > 0 ? `<span class="freeze-icons">${"🧊".repeat(appState.ownedFreezes)}</span>` : ""}
       </div>
       ${streakAtRisk ? `<div class="streak-risk-line">Your ${appState.dailyPlayStreak}-day streak ends in <span id="streakRiskCountdown">--h --m</span>.</div>` : ""}
-      ${appState.onboardingProfile ? `<div class="daily-goal-chip">🎯 ${escapeHtml(TIME_GOAL_LABEL[appState.onboardingProfile.time] || "1 drill a day")}</div>` : ""}
+      ${appState.onboardingProfile ? `<div class="daily-goal-chip">${escapeHtml(TIME_GOAL_LABEL[appState.onboardingProfile.time] || "1 drill a day")}</div>` : ""}
 
       <button class="mode-btn daily-btn ${alreadyPlayedDaily ? "done" : dropUnlocked ? "" : "locked"}" id="dailyBtn" ${(!dropUnlocked && !alreadyPlayedDaily) ? "disabled" : ""}>
         ${alreadyPlayedDaily ? "THE 9:30 DROP ✓ DONE — VIEW RESULT" : dropUnlocked ? "THE 9:30 DROP" : `Next Drop in <span id="dropCountdownText">--h --m</span>`}
       </button>
 
       <div class="customize-panel">
-        <button class="customize-toggle" id="customizeToggle">⚙ Customize your drills <span class="customize-caret">▾</span></button>
+        <button class="customize-toggle" id="customizeToggle">Customize your drills <span class="customize-caret">▾</span></button>
         <div class="customize-body hidden" id="customizeBody">
           <div class="customize-group">
             <div class="customize-label">Drill Style</div>
@@ -5307,10 +5309,10 @@ function renderStartScreen() {
 
       <button class="mode-btn practice-btn" id="practiceBtn">${practiceButtonLabel()}</button>
       <div class="daily-limit-note" id="dailyLimitNote">${dailyLimitNoteText()}</div>
-      <button class="mode-btn speedrun-btn" id="speedRunBtn">⚡ SPEED RUN — 5 DRILLS, 5s EACH</button>
-      <button class="text-link-btn" id="strategyPacksBtn" style="padding:4px 0;">🎯 Strategy Packs (ORB, VWAP, ICT/SMC & more)</button>
-      <a class="text-link-btn" href="/academy/" style="padding:4px 0;display:block;">📚 Academy — lessons, quizzes &amp; a learning path</a>
-      ${appState.missedDrills.length ? `<button class="text-link-btn" id="missReviewBtn">📕 Review your misses (${BETA_FREE ? appState.missedDrills.length : Math.min(appState.missedDrills.length, FREE_MISS_REVIEW_LIMIT) + (appState.missedDrills.length > FREE_MISS_REVIEW_LIMIT ? ` of ${appState.missedDrills.length}` : "")})</button>` : ""}
+      <button class="mode-btn speedrun-btn" id="speedRunBtn">SPEED RUN — 5 DRILLS, 5s EACH</button>
+      <button class="text-link-btn" id="strategyPacksBtn" style="padding:4px 0;">Strategy Packs (ORB, VWAP, ICT/SMC & more)</button>
+      <a class="text-link-btn" href="/academy/" style="padding:4px 0;display:block;">Academy — lessons, quizzes &amp; a learning path</a>
+      ${appState.missedDrills.length ? `<button class="text-link-btn" id="missReviewBtn">Review your misses (${BETA_FREE ? appState.missedDrills.length : Math.min(appState.missedDrills.length, FREE_MISS_REVIEW_LIMIT) + (appState.missedDrills.length > FREE_MISS_REVIEW_LIMIT ? ` of ${appState.missedDrills.length}` : "")})</button>` : ""}
 
       <div class="start-stats-row">
         <div class="mini-stat"><div class="v">${accuracy.toFixed(1)}%</div><div class="l">Accuracy</div></div>
@@ -5485,14 +5487,14 @@ function generateShareCanvas(mode, data) {
     ctx.fillText(`${data.totalSeconds.toFixed(1)}s`, 540, 440);
     ctx.font = "400 32px Arial, sans-serif";
     ctx.fillStyle = "#8b95a7";
-    ctx.fillText("⚡ Speed Run", 540, 490);
+    ctx.fillText("Speed Run", 540, 490);
     ctx.font = "700 50px Arial, sans-serif";
     ctx.fillStyle = "#e6e9ef";
     ctx.fillText(`${data.correctCount}/${data.total} correct (${data.accuracy.toFixed(1)}%)`, 540, 620);
   } else if (mode === "challenge") {
     ctx.font = "700 54px Arial, sans-serif";
     ctx.fillStyle = "#e6e9ef";
-    ctx.fillText("⚔️ CHALLENGE", 540, 380);
+    ctx.fillText("CHALLENGE", 540, 380);
     ctx.font = "400 34px Arial, sans-serif";
     ctx.fillStyle = data.youWon ? "#22c55e" : "#8b95a7";
     ctx.fillText("You", 270, 470);
@@ -5551,7 +5553,7 @@ function renderNavAccountChip() {
   if (!el || !authReady()) return;
   el.classList.remove("hidden");
   if (tlIsSignedIn() && tlProfile) {
-    el.textContent = "👤 " + tlProfile.display_name;
+    el.textContent = tlProfile.display_name;
     el.title = "Signed in — tap to sign out";
     el.onclick = async () => { await tlSignOut(); renderNavAccountChip(); };
   } else {
