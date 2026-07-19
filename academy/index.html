@@ -113,16 +113,16 @@
   .acad-calc-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 14px 0 4px; }
   .acad-calc-field label { display: block; font-size: 0.68rem; color: var(--text-dim); margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.4px; }
   .acad-calc-field input { width: 100%; background: var(--surface-2); border: 1px solid var(--border-strong); border-radius: 8px; padding: 9px 10px; color: var(--text); font-family: var(--font-mono); font-size: 0.9rem; outline: none; box-sizing: border-box; }
-  .acad-calc-field input:focus { border-color: var(--green); }
+  .acad-calc-field input:focus { border-color: var(--border-strong); }
   .acad-calc-output { display: flex; gap: 10px; margin-top: 14px; }
-  .acad-calc-output .out-cell { flex: 1; background: rgba(34,197,94,0.08); border: 1px solid rgba(34,197,94,0.3); border-radius: 10px; padding: 12px 8px; text-align: center; }
-  .acad-calc-output .out-val { font-family: var(--font-mono); font-variant-numeric: tabular-nums; font-size: 1.35rem; font-weight: 700; color: var(--green); }
+  .acad-calc-output .out-cell { flex: 1; background: var(--surface-2); border: 1px solid var(--border); border-radius: 10px; padding: 12px 8px; text-align: center; }
+  .acad-calc-output .out-val { font-family: var(--font-mono); font-variant-numeric: tabular-nums; font-size: 1.35rem; font-weight: 700; color: var(--text-data); }
   .acad-calc-output .out-label { font-size: 0.62rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.4px; margin-top: 3px; }
 
   .data-table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 0.85rem; }
   .data-table th, .data-table td { padding: 8px 10px; text-align: left; border-bottom: 1px solid var(--border); }
   .data-table th { color: var(--text-dim); font-weight: 600; font-size: 0.68rem; text-transform: uppercase; }
-  .data-table td { font-family: var(--font-mono); }
+  .data-table td { font-family: var(--font-mono); font-variant-numeric: tabular-nums; color: var(--text-data); }
   .checklist { list-style: none; padding: 0; margin: 0; }
   .checklist li { display: flex; gap: 8px; padding: 9px 0; border-bottom: 1px solid var(--border); font-size: 0.88rem; line-height: 1.5; }
   .checklist li:last-child { border-bottom: none; }
@@ -199,6 +199,10 @@
   .paywall-dismiss {
     display: block; width: 100%; background: none; border: none; color: var(--text-dim);
     font-size: 0.85rem; padding: 8px; cursor: pointer; text-decoration: underline; font-family: var(--font-body);
+  }
+  @media (min-width: 960px) {
+    /* lesson list is one group, the quiz CTA below it is a distinct one */
+    .quiz-cta-btn { margin-top: 22px; }
   }
 </style>
 </head>

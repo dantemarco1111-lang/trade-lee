@@ -48,12 +48,12 @@
     font-size: 1.5rem; font-weight: 700; color: var(--green);
   }
   .record-val.neg { color: var(--red); }
-  .record-val.neutral { color: var(--text); }
+  .record-val.neutral { color: var(--text-data); }
   .record-label {
     font-size: 0.68rem; color: var(--text-dim); text-transform: uppercase;
     letter-spacing: 0.4px; margin-top: 6px;
   }
-  .lb-row-you { background: rgba(34, 197, 94, 0.08); }
+  .lb-row-you { background: var(--surface-2); outline: 1px solid var(--border-strong); outline-offset: -1px; }
   .lb-rank-1 { color: var(--gold); font-weight: 800; }
 </style>
 </head>
@@ -203,7 +203,7 @@ function escapeHtml(s) {
 
 const state = loadState();
 function renderRecords() {
-  const accuracy = state.totalDrillsAnswered ? Math.round(100 * state.totalCorrect / state.totalDrillsAnswered) : 0;
+  const accuracy = state.totalDrillsAnswered ? (100 * state.totalCorrect / state.totalDrillsAnswered).toFixed(1) : "0.0";
   const isRanked = (state.ratedDrillsCount || 0) >= RATING_UNRANKED_DRILLS;
   const records = [
     { val: state.bestSessionPnl === null ? "—" : (state.bestSessionPnl >= 0 ? "+" : "") + formatMoney(state.bestSessionPnl), label: "Best Session P&L", cls: state.bestSessionPnl === null ? "neutral" : (state.bestSessionPnl >= 0 ? "" : "neg") },
@@ -270,7 +270,7 @@ function renderLeaderboardTable() {
       <thead><tr><th>#</th><th>Player</th><th>Best Streak</th><th>Accuracy</th><th>Rating</th></tr></thead>
       <tbody>
         ${rows.map((r, i) => {
-          const acc = r.total_drills ? Math.round(100 * r.correct_drills / r.total_drills) : 0;
+          const acc = r.total_drills ? (100 * r.correct_drills / r.total_drills).toFixed(1) : "0.0";
           const isYou = myName && r.users.display_name === myName;
           const ratingText = (r.rated_drills_count || 0) >= RATING_UNRANKED_DRILLS ? Math.round(r.trader_rating || 1000) : "Unranked";
           const archetypeTag = showArchetypes && r.archetype ? ` <span style="color:var(--text-dim);font-size:0.78rem;">(${escapeHtml(ARCHETYPE_NAMES[r.archetype] || r.archetype)})</span>` : "";

@@ -151,6 +151,7 @@
     font-size: 2rem;
     font-weight: 700;
     letter-spacing: -0.5px;
+    color: var(--text-data);
     transition: color 0.2s;
   }
   .bankroll-value.flash-green { color: var(--green); }
@@ -194,6 +195,7 @@
     font-variant-numeric: tabular-nums;
     font-size: 1.05rem;
     font-weight: 700;
+    color: var(--text-data);
     display: inline-block;
     transition: transform 0.15s;
   }
@@ -903,7 +905,7 @@
     border-radius: 999px; cursor: pointer; transition: transform 0.15s cubic-bezier(.34,1.56,.64,1);
   }
   .pill-btn:active { transform: scale(0.94); }
-  .pill-btn.active { background: rgba(34,197,94,0.14); border-color: var(--green); color: var(--text); }
+  .pill-btn.active { background: var(--surface-raised); border-color: var(--border-strong); color: var(--text); }
   .pill-btn.disabled { opacity: 0.5; cursor: default; }
   .pill-btn .soon-tag { margin-left: 4px; }
   .which-pick-explainer {
@@ -998,7 +1000,7 @@
     cursor: pointer; transition: transform 0.15s cubic-bezier(.34,1.56,.64,1), border-color 0.15s ease;
   }
   .onboarding-option-btn:active { transform: scale(0.97); }
-  .onboarding-option-btn:hover { border-color: var(--green); }
+  .onboarding-option-btn:hover { border-color: var(--border-strong); }
   .onboarding-skip { color: var(--muted); opacity: 0.7; }
   .onboarding-building {
     display: flex; flex-direction: column; align-items: center; gap: 14px; padding: 110px 12px;
@@ -1049,16 +1051,23 @@
     #content { display: contents; }
     #screenRoot::after { content: ""; display: block; clear: both; }
     #screenRoot > .topbar { clear: both; }
+    /* 344px rail + 35px gutter (was 28px — +25%, the clearest distinct-group
+       seam on this screen: chart group vs. stats/decision group) */
     .chart-toolbar, .chart-card, .legend-row,
     #content > .chart-toolbar, #content > .chart-card, #content > .legend-row {
-      float: left; width: calc(100% - 372px); clear: left;
+      float: left; width: calc(100% - 379px); clear: left;
     }
     .statsbar, .powerup-bar, .timer-bar-wrap, .decision-prompt,
     .don-card, .buttons-row, .skip-message, .coach-card, .ot-ticket {
       float: right; width: 344px; clear: right;
     }
     .chart-card { margin-bottom: 12px; }
-    .coach-card { margin-top: 4px; }
+    /* statsbar is its own bordered instrument-panel group; the decision
+       controls below it (timer/prompt/buttons) are a second, tightly-coupled
+       group — give the boundary between them real room on desktop while
+       everything inside the decision group stays tight (grouping law). */
+    .statsbar { margin-bottom: 18px; }
+    .coach-card { margin-top: 16px; }
   }
 </style>
 </head>
@@ -1456,7 +1465,7 @@ function checkMonthlyWrapped() {
     accuracyPct: (() => {
       const drillsDelta = (appState.totalDrillsAnswered || 0) - prev.totalDrillsAnswered;
       const correctDelta = (appState.totalCorrect || 0) - prev.totalCorrect;
-      return drillsDelta > 0 ? Math.round(100 * correctDelta / drillsDelta) : 0;
+      return drillsDelta > 0 ? (100 * correctDelta / drillsDelta).toFixed(1) : "0.0";
     })(),
     bestStreak: appState.bestStreakEver || 0,
     ratingChange: Math.round((appState.traderRating || RATING_START) - prev.traderRating),
@@ -1857,8 +1866,8 @@ function initChart(container) {
   chart = LightweightCharts.createChart(container, {
     width: container.clientWidth,
     height: container.clientHeight,
-    layout: { background: { type: "solid", color: "#141922" }, textColor: "#c9d1d9" },
-    grid: { vertLines: { color: "#1d2330" }, horzLines: { color: "#1d2330" } },
+    layout: { background: { type: "solid", color: "#141922" }, textColor: "#ffffff" },
+    grid: { vertLines: { color: "#191e29" }, horzLines: { color: "#191e29" } },
     timeScale: { timeVisible: true, secondsVisible: false, borderColor: "#262b36", rightOffset: 8, barSpacing: 9, rightBarStaysOnScroll: true },
     rightPriceScale: { borderColor: "#262b36" },
     leftPriceScale: { visible: false, borderColor: "#262b36" },
@@ -2636,7 +2645,7 @@ function finishPlayout(drill, choice) {
     const pnlEl = document.getElementById("pnlValue");
     animateNumber(prevBankroll, bankroll, 600, v => bankrollEl.textContent = formatMoney(v));
     animateNumber(prevSessionPnl, sessionPnl, 600, v => {
-      pnlEl.textContent = formatMoney(v);
+      pnlEl.textContent = (v >= 0 ? "+" : "") + formatMoney(v);
       pnlEl.classList.toggle("pnl-up", v >= 0);
       pnlEl.classList.toggle("pnl-down", v < 0);
     });
@@ -2682,7 +2691,7 @@ function finishPlayout(drill, choice) {
     const pnlEl = document.getElementById("pnlValue");
     animateNumber(prevBankroll, bankroll, 600, v => bankrollEl.textContent = formatMoney(v));
     animateNumber(prevSessionPnl, sessionPnl, 600, v => {
-      pnlEl.textContent = formatMoney(v);
+      pnlEl.textContent = (v >= 0 ? "+" : "") + formatMoney(v);
       pnlEl.classList.toggle("pnl-up", v >= 0);
       pnlEl.classList.toggle("pnl-down", v < 0);
     });
@@ -2710,7 +2719,7 @@ function finishPlayout(drill, choice) {
     const pnlEl = document.getElementById("pnlValue");
     animateNumber(prevBankroll, bankroll, 600, v => bankrollEl.textContent = formatMoney(v));
     animateNumber(prevSessionPnl, sessionPnl, 600, v => {
-      pnlEl.textContent = formatMoney(v);
+      pnlEl.textContent = (v >= 0 ? "+" : "") + formatMoney(v);
       pnlEl.classList.toggle("pnl-up", v >= 0);
       pnlEl.classList.toggle("pnl-down", v < 0);
     });
@@ -2856,7 +2865,7 @@ function useSecondChance() {
   if (bankrollEl) bankrollEl.textContent = formatMoney(bankroll);
   const pnlEl = document.getElementById("pnlValue");
   if (pnlEl) {
-    pnlEl.textContent = formatMoney(sessionPnl);
+    pnlEl.textContent = (sessionPnl >= 0 ? "+" : "") + formatMoney(sessionPnl);
     pnlEl.classList.toggle("pnl-up", sessionPnl >= 0);
     pnlEl.classList.toggle("pnl-down", sessionPnl < 0);
   }
@@ -3009,7 +3018,7 @@ function showLswEnd() {
   const content = document.getElementById("content");
   const correctCount = sessionResults.filter(r => r.correct === true).length;
   const total = sessionDeck.length;
-  const accuracy = total ? Math.round(100 * correctCount / total) : 0;
+  const accuracy = total ? 100 * correctCount / total : 0;
   appState.practiceSessionsCompleted = (appState.practiceSessionsCompleted || 0) + 1;
   awardTicks(25);
   saveState();
@@ -3022,7 +3031,7 @@ function showLswEnd() {
       <div style="color:var(--muted);font-size:0.85rem;margin-bottom:6px;">Session P&L</div>
       <div class="eod-grid">
         <div class="cell"><div class="v">${correctCount}/${total}</div><div class="l">Correct</div></div>
-        <div class="cell"><div class="v">${accuracy}%</div><div class="l">Accuracy</div></div>
+        <div class="cell"><div class="v">${accuracy.toFixed(1)}%</div><div class="l">Accuracy</div></div>
         <div class="cell"><div class="v">${appState.lswStats ? appState.lswStats.totalAnswered : 0}</div><div class="l">All-Time</div></div>
       </div>
       <div class="eod-verdict">${accuracy >= 60 ? "Solid read on direction — including knowing when to sit out." : "Standing aside is a skill too — review the WAIT calls you missed."}</div>
@@ -3505,7 +3514,7 @@ function showStrategyPackEnd() {
   const content = document.getElementById("content");
   const correctCount = sessionResults.filter(r => r.correct === true).length;
   const total = sessionDeck.length;
-  const accuracy = total ? Math.round(100 * correctCount / total) : 0;
+  const accuracy = total ? 100 * correctCount / total : 0;
   appState.practiceSessionsCompleted = (appState.practiceSessionsCompleted || 0) + 1;
   awardTicks(25);
   saveState();
@@ -3518,7 +3527,7 @@ function showStrategyPackEnd() {
       <div style="color:var(--muted);font-size:0.85rem;margin-bottom:6px;">Session P&L</div>
       <div class="eod-grid">
         <div class="cell"><div class="v">${correctCount}/${total}</div><div class="l">Correct</div></div>
-        <div class="cell"><div class="v">${accuracy}%</div><div class="l">Accuracy</div></div>
+        <div class="cell"><div class="v">${accuracy.toFixed(1)}%</div><div class="l">Accuracy</div></div>
         <div class="cell"><div class="v">${appState.strategyPackStats ? appState.strategyPackStats.totalAnswered : 0}</div><div class="l">All-Time</div></div>
       </div>
       <button class="trade-again-btn" id="spAgainBtn">RUN IT AGAIN</button>
@@ -3619,10 +3628,10 @@ function showSpeedRunEnd() {
   const totalMs = performance.now() - speedRunStartTime;
   lastSessionTimeMs = totalMs;
   const totalSeconds = totalMs / 1000;
-  const accuracy = Math.round(100 * correctCount / sessionDeck.length);
+  const accuracy = 100 * correctCount / sessionDeck.length;
 
   const isNewBestTime = updateSpeedRunBestTime(totalMs, correctCount === sessionDeck.length);
-  updateSpeedRunBestAccuracy(accuracy);
+  updateSpeedRunBestAccuracy(Math.round(accuracy)); // best_speedrun_accuracy is an `int` column
   awardTicks(15);
   if (authReady()) tlSyncStats(appState);
 
@@ -3635,7 +3644,7 @@ function showSpeedRunEnd() {
       <div style="color:var(--muted);font-size:0.85rem;margin-bottom:6px;">Total Time</div>
       <div class="eod-grid">
         <div class="cell"><div class="v">${correctCount}/${sessionDeck.length}</div><div class="l">Correct</div></div>
-        <div class="cell"><div class="v">${accuracy}%</div><div class="l">Accuracy</div></div>
+        <div class="cell"><div class="v">${accuracy.toFixed(1)}%</div><div class="l">Accuracy</div></div>
         <div class="cell"><div class="v">${bestTimeText}</div><div class="l">Best Time</div></div>
       </div>
       <div class="eod-verdict">${speedRunVerdictText(accuracy, totalSeconds)}</div>
@@ -3762,8 +3771,8 @@ function showChallengeResult() {
   if (challenge.mode === "practice") {
     const yourPnl = sessionPnl;
     const theirPnl = challenge.pnl || 0;
-    yourScoreText = formatMoney(yourPnl);
-    theirScoreText = formatMoney(theirPnl);
+    yourScoreText = (yourPnl >= 0 ? "+" : "") + formatMoney(yourPnl);
+    theirScoreText = (theirPnl >= 0 ? "+" : "") + formatMoney(theirPnl);
     const diff = yourPnl - theirPnl;
     tie = diff === 0;
     youWon = diff > 0;
@@ -3777,8 +3786,8 @@ function showChallengeResult() {
     lastSessionTimeMs = performance.now() - speedRunStartTime;
     const yourSeconds = lastSessionTimeMs / 1000;
     const theirSeconds = (challenge.time_ms || 0) / 1000;
-    yourScoreText = `${yourSeconds.toFixed(1)}s (${accuracy}%)`;
-    theirScoreText = `${theirSeconds.toFixed(1)}s (${challenge.accuracy}%)`;
+    yourScoreText = `${yourSeconds.toFixed(1)}s (${accuracy.toFixed(1)}%)`;
+    theirScoreText = `${theirSeconds.toFixed(1)}s (${challenge.accuracy.toFixed(1)}%)`;
     tie = accuracy === challenge.accuracy && Math.abs(yourSeconds - theirSeconds) < 0.05;
     youWon = !tie && (accuracy !== challenge.accuracy ? accuracy > challenge.accuracy : yourSeconds < theirSeconds);
     verdict = tie ? `Dead even with ${challenge.creator_name}.`
@@ -3837,8 +3846,8 @@ function renderChallengeFallback(message) {
 function renderChallengeIntro(row) {
   const root = document.getElementById("screenRoot");
   const scoreLine = row.mode === "practice"
-    ? `scored <strong>${formatMoney(row.pnl || 0)}</strong>`
-    : `finished in <strong>${((row.time_ms || 0) / 1000).toFixed(1)}s</strong> (${row.accuracy}% accuracy)`;
+    ? `scored <strong>${(row.pnl || 0) >= 0 ? "+" : ""}${formatMoney(row.pnl || 0)}</strong>`
+    : `finished in <strong>${((row.time_ms || 0) / 1000).toFixed(1)}s</strong> (${row.accuracy.toFixed(1)}% accuracy)`;
   root.innerHTML = `
     <div class="start-screen">
       <div class="start-wordmark">⚔️ Challenge</div>
@@ -4579,7 +4588,7 @@ function renderStartScreen() {
   const today = getEtDateString(0);
   const alreadyPlayedDaily = appState.lastDailyDate === today;
   const dropUnlocked = isDailyUnlockedNow();
-  const accuracy = appState.totalDrillsAnswered ? Math.round(100 * appState.totalCorrect / appState.totalDrillsAnswered) : 0;
+  const accuracy = appState.totalDrillsAnswered ? 100 * appState.totalCorrect / appState.totalDrillsAnswered : 0;
   const showFreezeNotice = !!appState.freezeConsumedPending;
   if (showFreezeNotice) { appState.freezeConsumedPending = false; saveState(); }
 
@@ -4649,7 +4658,7 @@ function renderStartScreen() {
       ${appState.missedDrills.length ? `<button class="text-link-btn" id="missReviewBtn">📕 Review your misses (${BETA_FREE ? appState.missedDrills.length : Math.min(appState.missedDrills.length, FREE_MISS_REVIEW_LIMIT) + (appState.missedDrills.length > FREE_MISS_REVIEW_LIMIT ? ` of ${appState.missedDrills.length}` : "")})</button>` : ""}
 
       <div class="start-stats-row">
-        <div class="mini-stat"><div class="v">${accuracy}%</div><div class="l">Accuracy</div></div>
+        <div class="mini-stat"><div class="v">${accuracy.toFixed(1)}%</div><div class="l">Accuracy</div></div>
         <div class="mini-stat"><div class="v">${appState.bestStreakEver || 0}</div><div class="l">Best Streak</div></div>
         <a class="mini-stat" href="/powerups/"><div class="v">⚡ ${appState.ticks || 0}</div><div class="l">Ticks</div></a>
       </div>
@@ -4824,7 +4833,7 @@ function generateShareCanvas(mode, data) {
     ctx.fillText("⚡ Speed Run", 540, 490);
     ctx.font = "700 50px Arial, sans-serif";
     ctx.fillStyle = "#e6e9ef";
-    ctx.fillText(`${data.correctCount}/${data.total} correct (${data.accuracy}%)`, 540, 620);
+    ctx.fillText(`${data.correctCount}/${data.total} correct (${data.accuracy.toFixed(1)}%)`, 540, 620);
   } else if (mode === "challenge") {
     ctx.font = "700 54px Arial, sans-serif";
     ctx.fillStyle = "#e6e9ef";
@@ -5081,7 +5090,7 @@ async function renderYesterdaysReveal() {
   ]);
 
   const parts = [];
-  parts.push(pct === null ? "No data yet for yesterday's Drop." : `${Math.round(100 - pct)}% of traders got trapped.`);
+  parts.push(pct === null ? "No data yet for yesterday's Drop." : `${(100 - pct).toFixed(1)}% of traders got trapped.`);
   if (playedYesterday) parts.push(`You ${appState.lastDailyResult === "win" ? "got it ✅" : "got trapped ❌"}.`);
   parts.push(topStreak ? `Longest active streak: ${escapeHtml(topStreak.name)} (${topStreak.streak} days).` : "Be the first name on the board.");
 
