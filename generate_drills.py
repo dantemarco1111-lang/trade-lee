@@ -240,6 +240,15 @@ def find_breakouts_in_pack(df, symbol, pack_key, pack_cfg, outcome_window_bars):
                     direction, range_high, range_low, range_height, breakout_idx, period_df, j, outcome_window_bars
                 )
 
+                # Real consolidation length: walk backward from the fixed 9-bar tight
+                # window as long as price kept staying inside [range_low, range_high] —
+                # often longer than the 9-bar detection window itself.
+                bar_minutes = (times[1] - times[0]).total_seconds() / 60 if n > 1 else 5
+                consol_start = i - CONSOLIDATION_BARS + 1
+                while consol_start > 0 and lows[consol_start - 1] >= range_low and highs[consol_start - 1] <= range_high:
+                    consol_start -= 1
+                consolidation_minutes = int(round((i - consol_start + 1) * bar_minutes))
+
                 consol_avg_activity = activity[i - CONSOLIDATION_BARS + 1: i + 1].mean()
                 breakout_activity = activity[j]
                 breakout_price = round(float(closes[j]), 6)
@@ -272,6 +281,7 @@ def find_breakouts_in_pack(df, symbol, pack_key, pack_cfg, outcome_window_bars):
                     "outcome": outcome, "extension_multiple": extension_multiple, "reversal_minutes": reversal_minutes,
                     "resolution_bar_index": resolution_bar_index, "resolved_price": resolved_price,
                     "consol_avg_activity": consol_avg_activity, "breakout_activity": breakout_activity,
+                    "consolidation_minutes": consolidation_minutes,
                     "vwap_series": vwap_series, "chart_df": chart_df, "playout_df": playout_df,
                     "prior_period": prev_period_stats,
                 })
@@ -1775,6 +1785,9 @@ def build_pack(pack_key, pack_cfg, timeframe, interval, output_file):
             "context_all": context_all,
             "range_high": round(float(b["range_high"]), 6),
             "range_low": round(float(b["range_low"]), 6),
+            "consolidation_minutes": b["consolidation_minutes"],
+            "prior_period_high": round(float(b["prior_period"]["high"]), 6) if b["prior_period"] else None,
+            "prior_period_low": round(float(b["prior_period"]["low"]), 6) if b["prior_period"] else None,
             "breakout_time": int(b["breakout_ts"].timestamp()),
             "candles": candles,
             "playout_candles": playout_candles,

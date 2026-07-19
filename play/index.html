@@ -662,6 +662,40 @@
   .coach-why-list li::before {
     content: "•"; position: absolute; left: 2px; color: var(--gold); font-weight: 700;
   }
+
+  /* ---------- full read (Deeper Drill Insight pass) ---------- */
+  .full-read { text-align: left; margin: 0 0 10px; }
+  .full-read summary {
+    cursor: pointer; font-family: var(--font-display); font-size: 0.78rem; font-weight: 700;
+    color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.4px; padding: 4px 0;
+  }
+  .full-read-rows { margin-top: 6px; display: flex; flex-direction: column; gap: 5px; }
+  .full-read-row {
+    display: flex; align-items: flex-start; gap: 8px;
+    background: var(--surface-2); border-left: 3px solid var(--border-strong);
+    border-radius: 8px; padding: 7px 9px; font-size: 0.82rem; line-height: 1.4;
+  }
+  .full-read-row.tint-green { border-left-color: var(--green); }
+  .full-read-row.tint-red { border-left-color: var(--red); }
+  .full-read-row.tint-amber { border-left-color: var(--gold); }
+  .full-read-row .fr-icon { flex-shrink: 0; }
+  .full-read-row .fr-text { color: var(--text); }
+  .full-read-row .fr-label { font-weight: 700; color: var(--text-data); margin-right: 3px; }
+  .coach-actions-row {
+    display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    margin: 4px 0 12px; flex-wrap: wrap;
+  }
+  .coach-actions-row .text-link-btn {
+    background: none; border: none; color: var(--text-dim); font-size: 0.8rem;
+    font-family: var(--font-body); cursor: pointer; padding: 4px 0; text-decoration: underline;
+  }
+  .tells-label {
+    position: absolute; left: 8px; z-index: 18;
+    background: rgba(92, 158, 255, 0.15); border: 1px solid rgba(92, 158, 255, 0.5);
+    color: #5c9eff; font-family: var(--font-mono); font-size: 0.62rem; font-weight: 700;
+    padding: 3px 7px; border-radius: 6px; white-space: nowrap; pointer-events: none;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4); max-width: calc(100% - 78px); text-overflow: ellipsis; overflow: hidden;
+  }
   .coach-pnl { font-family: var(--font-mono); font-variant-numeric: tabular-nums; font-size: 0.95rem; font-weight: 700; margin-bottom: 10px; }
   .coach-pnl.pos { color: var(--green); }
   .coach-pnl.neg { color: var(--red); }
@@ -687,6 +721,11 @@
   .eod-verdict {
     background: var(--card); border: 1px solid var(--border); border-radius: 14px;
     padding: 14px; font-size: 0.95rem; margin-bottom: 16px; line-height: 1.4;
+  }
+  .session-insight {
+    background: rgba(245, 180, 0, 0.08); border: 1px solid rgba(245, 180, 0, 0.3);
+    border-radius: 12px; padding: 12px 14px; font-size: 0.85rem; line-height: 1.4;
+    text-align: left; margin: -6px 0 16px; color: var(--text);
   }
   .trade-again-btn {
     width: 100%; padding: 17px; font-size: 1.05rem; font-weight: 700; font-family: var(--font-display); border-radius: 16px;
@@ -2577,6 +2616,290 @@ function coachWhyBullets(drill) {
   if (!bullets.length) bullets = ["No standout signal here — this one came down to feel."];
   return bullets.map(humanizeContextLine);
 }
+
+/* ============================= FULL READ (Deeper Drill Insight pass) =============================
+   Structured, multi-row breakdown of a classic breakout/fakeout drill, built from fields the
+   generator already computes (range_high/low, volume_ratio, vwap, prior_period_high/low,
+   consolidation_minutes) plus a client-side session-timing lookup. Only classic market-pack
+   drills carry this schema (practice/daily/speedrun/review) — LSW and strategy-pack drills keep
+   the older single-WHY-line coachWhyBullets() treatment since they don't have these fields. */
+function barMinutesFor(drill) { return drill.timeframe === "15m" ? 15 : 5; }
+function formatDurationShort(mins) {
+  if (mins < 60) return `${mins}m`;
+  const h = Math.floor(mins / 60), m = mins % 60;
+  return m ? `${h}h ${m}m` : `${h}h`;
+}
+function formatEtTime(unixSeconds) {
+  return new Intl.DateTimeFormat("en-US", { timeZone: "America/New_York", hour: "numeric", minute: "2-digit", hour12: true }).format(new Date(unixSeconds * 1000)) + " ET";
+}
+function pipSizeFor(ticker) { return (ticker || "").includes("JPY") ? 0.01 : 0.0001; }
+
+const SESSION_NOTES = {
+  stocks: {
+    open: "the open — highest volatility and most breakout attempts, but also the most fakeouts as early flow fades",
+    midday: "lunch-hour chop — volume dries up and breakouts fail more often here",
+    power_hour: "power hour — trend-day continuations often start in this window",
+  },
+  futures: {
+    open: "the stock-market open — a classic volatility trigger for index futures",
+    midday: "midday chop — thinner participation, breakouts less reliable",
+    power_hour: "power hour — trend continuations often start here",
+    overnight: "the overnight session — thinner liquidity, moves can be less reliable",
+  },
+  forex: {
+    asian: "the Asian session — typically the quietest, tightest ranges",
+    london: "the London session — where volatility usually picks up",
+    new_york: "the New York session — overlaps London early, often the most volatile window",
+  },
+  crypto: {
+    us_hours: "US trading hours — most participation, most reliable follow-through",
+    overnight: "overnight — thinner liquidity, moves can fade faster",
+  },
+};
+
+function computeVwapAlignment(drill) {
+  if (!drill.vwap || !drill.vwap.length || !drill.candles || !drill.candles.length) return null;
+  const vwapMap = new Map(drill.vwap.map(v => [v.time, v.value]));
+  const lastCandle = drill.candles[drill.candles.length - 1];
+  const vwapAtBreakout = vwapMap.get(lastCandle.time);
+  if (vwapAtBreakout == null) return null;
+  const position = drill.breakout_price > vwapAtBreakout ? "above" : "below";
+  const consolBars = drill.consolidation_minutes ? Math.max(1, Math.round(drill.consolidation_minutes / barMinutesFor(drill))) : 9;
+  const trailCandles = drill.candles.slice(-consolBars);
+  let consistent = true;
+  for (const c of trailCandles) {
+    const v = vwapMap.get(c.time);
+    if (v == null) continue;
+    if ((c.close > v ? "above" : "below") !== position) { consistent = false; break; }
+  }
+  return { position, consistent, priceAtBreakout: vwapAtBreakout };
+}
+
+function nearestLevelInfo(drill) {
+  if (drill.prior_period_high == null || drill.prior_period_low == null) return null;
+  const target = drill.direction === "long" ? drill.prior_period_high : drill.prior_period_low;
+  if (!target) return null;
+  const periodWord = drill.market === "stocks" ? "yesterday's" : "the prior session's";
+  const label = drill.direction === "long" ? `${periodWord} high` : `${periodWord} low`;
+  const distancePct = Math.abs(drill.breakout_price - target) / target * 100;
+  return { price: target, label, distancePct, into: distancePct < 0.5 };
+}
+
+function buildOutcomeRow(drill, isFizzle) {
+  if (isFizzle) {
+    return { icon: "🏁", label: "OUTCOME", text: "No follow-through — it just died without ever confirming either way", tint: "amber" };
+  }
+  if (drill.outcome === "real") {
+    const mins = drill.resolution_bar_index != null ? (drill.resolution_bar_index + 1) * barMinutesFor(drill) : null;
+    return {
+      icon: "🏁", label: "OUTCOME",
+      text: mins != null ? `Ran +${drill.extension_multiple}x the range in ${mins} min, never retested` : `Ran +${drill.extension_multiple}x the range, never retested`,
+      tint: "green",
+    };
+  }
+  return {
+    icon: "🏁", label: "OUTCOME",
+    text: drill.reversal_minutes != null ? `Held ${drill.reversal_minutes} min, then trapped — closed back inside` : "Trapped — closed back inside the range",
+    tint: "red",
+  };
+}
+
+// Shared by the Full Read rows and the "show the tells" chart annotations, so the two always agree.
+function computeFullReadFacts(drill) {
+  const isFx = !drill.has_volume;
+  const heightPct = (drill.range_high - drill.range_low) / drill.range_low * 100;
+  const ratio = drill.volume_ratio || 1;
+  const vwapInfo = computeVwapAlignment(drill);
+  const level = nearestLevelInfo(drill);
+  return { isFx, heightPct, ratio, vwapInfo, level };
+}
+
+// Running session insights (Deeper Drill Insight pass, part 4) — reuses the same
+// factor-categorization as the Full Read rows, tallied per-session (practice only,
+// reset each session) so the end-of-day screen can call out a real blind spot.
+let sessionInsightSignals = {};
+function resetSessionInsightSignals() { sessionInsightSignals = {}; }
+function recordSessionInsightSignal(choice, drill, isCorrect) {
+  if (isCorrect || choice !== "real" || drill.outcome !== "fake") return; // only tally real traps: took it, it faked
+  const { ratio, vwapInfo, level } = computeFullReadFacts(drill);
+  let type = null;
+  if (ratio < 0.8) type = "lowVolume";
+  else if (level && level.into) type = "levelReject";
+  else if (vwapInfo && !vwapInfo.consistent) type = "vwapFight";
+  if (!type) return;
+  sessionInsightSignals[type] = (sessionInsightSignals[type] || 0) + 1;
+}
+const SESSION_INSIGHT_TEXT = {
+  lowVolume: n => `You got trapped on ${n} low-volume breaks today — volume is your blind spot.`,
+  levelReject: n => `You got trapped ${n} times breaking into a level that held — respect resistance/support more.`,
+  vwapFight: n => `You took ${n} breaks fighting VWAP today — trade with the flow, not against it.`,
+};
+function computeSessionInsight() {
+  const entries = Object.entries(sessionInsightSignals).filter(([, v]) => v >= 3);
+  if (!entries.length) return null;
+  entries.sort((a, b) => b[1] - a[1]);
+  const [type, count] = entries[0];
+  return SESSION_INSIGHT_TEXT[type] ? SESSION_INSIGHT_TEXT[type](count) : null;
+}
+
+function buildFullReadRows(drill, isFizzle) {
+  const { isFx, heightPct, ratio, vwapInfo, level } = computeFullReadFacts(drill);
+  const rows = [];
+
+  // SETUP
+  const consolText = drill.consolidation_minutes ? formatDurationShort(drill.consolidation_minutes) : null;
+  const widthText = isFx
+    ? `${Math.round((drill.range_high - drill.range_low) / pipSizeFor(drill.ticker))} pips`
+    : `$${(drill.range_high - drill.range_low).toFixed(2)}`;
+  rows.push({
+    icon: "📏", label: "SETUP",
+    text: consolText
+      ? `Coiled for ${consolText} — range ${heightPct.toFixed(2)}% (${widthText}) wide`
+      : `Range ${heightPct.toFixed(2)}% (${widthText}) wide before the break`,
+    tint: "neutral",
+  });
+
+  // VOLUME / ACTIVITY (forex has no real volume data — say Activity, never Volume)
+  const activityWord = isFx ? "Activity" : "Volume";
+  const heavy = ratio >= 1.5, light = ratio < 0.8;
+  const barCount = Math.max(1, Math.min(6, Math.round(ratio * 2.5)));
+  rows.push({
+    icon: "📊", label: activityWord.toUpperCase(),
+    text: `${activityWord} ${ratio.toFixed(1)}x avg ${"▮".repeat(barCount)} — ${heavy ? "heavy participation" : light ? "no fuel" : "average turnout"}`,
+    tint: heavy ? "green" : light ? "red" : "amber",
+  });
+
+  // TREND (VWAP)
+  if (vwapInfo) {
+    const withFlow = (vwapInfo.position === "above") === (drill.direction === "long");
+    rows.push({
+      icon: "📈", label: "TREND",
+      text: vwapInfo.consistent
+        ? `${vwapInfo.position === "above" ? "Above" : "Below"} VWAP all session — ${withFlow ? "with the flow" : "against the flow"}`
+        : "Fighting VWAP — crossed back and forth before the break",
+      tint: vwapInfo.consistent ? (withFlow ? "green" : "amber") : "amber",
+    });
+  }
+
+  // LEVELS
+  if (level) {
+    const sellersOrBuyers = drill.direction === "long" ? "sellers likely waiting" : "buyers likely waiting";
+    rows.push({
+      icon: "🧱", label: "LEVELS",
+      text: level.into
+        ? `Broke INTO ${level.label} ${level.distancePct.toFixed(2)}% away — ${sellersOrBuyers}`
+        : `Nearest level: ${level.label}, ${level.distancePct.toFixed(1)}% away — clear runway`,
+      tint: level.into ? "amber" : "green",
+    });
+  }
+
+  // SESSION
+  const sessionNote = (SESSION_NOTES[drill.market] || {})[drill.session];
+  if (sessionNote) {
+    rows.push({ icon: "🕒", label: "SESSION", text: `${formatEtTime(drill.breakout_time)} — ${sessionNote}`, tint: "neutral" });
+  }
+
+  // OUTCOME
+  rows.push(buildOutcomeRow(drill, isFizzle));
+
+  return rows.slice(0, 6);
+}
+
+function renderFullReadRows(rows) {
+  const rowsHtml = rows.map(r => `
+    <div class="full-read-row tint-${r.tint}">
+      <span class="fr-icon">${r.icon}</span>
+      <span class="fr-text"><span class="fr-label">${r.label}</span> ${escapeHtml(r.text)}</span>
+    </div>`).join("");
+  const collapsedByDefault = window.innerWidth < 600;
+  return `<details class="full-read" ${collapsedByDefault ? "" : "open"}>
+    <summary>Full Read (${rows.length})</summary>
+    <div class="full-read-rows">${rowsHtml}</div>
+  </details>`;
+}
+
+// "Learn this pattern" — links to the Academy unit matching whichever factor was most decisive.
+const FACTOR_UNIT_MAP = {
+  volume: { unitKey: "volume", lessonIdx: 1 },
+  levels: { unitKey: "levels", lessonIdx: 0 },
+  vwap: { unitKey: "vwap_trend", lessonIdx: 2 },
+  setup: { unitKey: "breakouts", lessonIdx: 2 },
+};
+function dominantFactorType(drill) {
+  const { ratio, vwapInfo, level } = computeFullReadFacts(drill);
+  const volStrength = Math.abs(ratio - 1);
+  const levelStrength = level && level.into ? Math.max(0, 1 - level.distancePct) : 0;
+  const vwapStrength = vwapInfo ? (vwapInfo.consistent ? 0.5 : 0.9) : 0;
+  const scored = [["volume", volStrength], ["levels", levelStrength], ["vwap", vwapStrength]];
+  scored.sort((a, b) => b[1] - a[1]);
+  return scored[0][1] > 0.15 ? scored[0][0] : "setup";
+}
+function learnPatternUrl(drill) {
+  const map = FACTOR_UNIT_MAP[dominantFactorType(drill)];
+  return `/academy/?unit=${map.unitKey}&lesson=${map.lessonIdx}`;
+}
+
+// "Show the tells" — draws the 2-3 most decisive clues directly on the still-visible chart.
+let tellsMarkersActive = false;
+let tellsPriceLines = [];
+let tellsAnnotationEls = [];
+function computeDecisiveClues(drill) {
+  const { ratio, vwapInfo, level } = computeFullReadFacts(drill);
+  const clues = [];
+  if (ratio >= 1.5 || ratio <= 0.7) {
+    clues.push({
+      strength: Math.abs(ratio - 1), price: drill.breakout_price,
+      label: ratio >= 1.5 ? `${ratio.toFixed(1)}x volume here — fuel for the move` : `Volume dried up here — ${ratio.toFixed(1)}x avg`,
+    });
+  }
+  if (level && level.into) {
+    clues.push({ strength: Math.max(0.3, 1 - level.distancePct), price: level.price, label: `${level.label} — likely to reject here` });
+  }
+  if (vwapInfo) {
+    clues.push({
+      strength: vwapInfo.consistent ? 0.5 : 0.9, price: vwapInfo.priceAtBreakout,
+      label: vwapInfo.consistent ? "Riding VWAP all session" : "VWAP rejection here",
+    });
+  }
+  clues.sort((a, b) => b.strength - a.strength);
+  return clues.slice(0, 3);
+}
+function clearTellsAnnotations() {
+  tellsPriceLines.forEach(l => { try { candleSeries.removePriceLine(l); } catch (e) {} });
+  tellsPriceLines = [];
+  tellsAnnotationEls.forEach(el => el.remove());
+  tellsAnnotationEls = [];
+  tellsMarkersActive = false;
+}
+function toggleTellsAnnotations() {
+  const btn = document.getElementById("showTellsBtn");
+  if (tellsMarkersActive) {
+    clearTellsAnnotations();
+    if (btn) btn.textContent = "👁 Show the tells";
+    return;
+  }
+  if (!candleSeries || !currentDrill) return;
+  const chartCard = document.getElementById("chartCard");
+  computeDecisiveClues(currentDrill).forEach(clue => {
+    try {
+      tellsPriceLines.push(candleSeries.createPriceLine({
+        price: clue.price, color: "#5c9eff", lineWidth: 1,
+        lineStyle: LightweightCharts.LineStyle.Dotted, axisLabelVisible: true,
+      }));
+    } catch (e) {}
+    const y = candleSeries.priceToCoordinate(clue.price);
+    if (y !== null && chartCard) {
+      const el = document.createElement("div");
+      el.className = "tells-label";
+      el.textContent = clue.label;
+      el.style.top = Math.max(40, y - 9) + "px"; // clear of the chart-settings gear at top-left
+      chartCard.appendChild(el);
+      tellsAnnotationEls.push(el);
+    }
+  });
+  tellsMarkersActive = true;
+  if (btn) btn.textContent = "🙈 Hide the tells";
+}
 function renderWhyBullets(bullets) {
   return `<ul class="coach-why-list">${bullets.map(b => `<li>${escapeHtml(b)}</li>`).join("")}</ul>`;
 }
@@ -2617,6 +2940,7 @@ function finishPlayout(drill, choice) {
   if (currentMode === "practice" || currentMode === "daily" || currentMode === "longshortwait") {
     recordArchetypeSignal(currentMode, choice, drill, isCorrect);
   }
+  if (currentMode === "practice") recordSessionInsightSignal(choice, drill, isCorrect);
 
   if (currentMode !== "tutorial" && currentMode !== "longshortwait" && currentMode !== "strategy_pack") recordMissOrClear(drill, isCorrect);
   applyResultJuice(isCorrect, isFizzle);
@@ -2818,7 +3142,13 @@ function showCoachCard(drill, isCorrect, pnl, isFizzle, isClutch) {
     outcomeEl.className = "coach-outcome " + (isCorrect ? "correct" : "wrong");
   }
   outcomeEl.textContent = outcomeText;
-  whyEl.innerHTML = renderWhyBullets(coachWhyBullets(drill));
+  clearTellsAnnotations();
+  whyEl.innerHTML = renderFullReadRows(buildFullReadRows(drill, isFizzle))
+    + `<div class="coach-actions-row">
+        <button class="text-link-btn" id="showTellsBtn">👁 Show the tells</button>
+        <a class="text-link-btn" href="${learnPatternUrl(drill)}">📚 Learn this pattern →</a>
+      </div>`;
+  document.getElementById("showTellsBtn").onclick = toggleTellsAnnotations;
   if (pnl === null) {
     pnlEl.classList.add("hidden");
   } else {
@@ -2915,6 +3245,7 @@ function showEndOfDay() {
   appState.practiceSessionsCompleted = (appState.practiceSessionsCompleted || 0) + 1;
   saveState();
   if (authReady()) tlSyncStats(appState);
+  const sessionInsight = computeSessionInsight();
 
   content.innerHTML = `
     <div class="end-of-day">
@@ -2927,6 +3258,7 @@ function showEndOfDay() {
         <div class="cell"><div class="v">${formatMoney(bestWin)}</div><div class="l">Biggest Win</div></div>
       </div>
       <div class="eod-verdict">${verdictText(sessionPnl, correctCount)}</div>
+      ${sessionInsight ? `<div class="session-insight">🔍 ${escapeHtml(sessionInsight)}</div>` : ""}
       <div id="eodSigninPrompt"></div>
       <button class="trade-again-btn" id="tradeAgainBtn">TRADE ANOTHER DAY</button>
       <button class="share-btn" id="shareBtnPractice">📤 SHARE</button>
@@ -2967,6 +3299,7 @@ function startNewSession(fixedDeck, sourcePool) {
   sessionIndex = 0; sessionPnl = 0; bankroll = STARTING_BANKROLL;
   streak = 0; bestStreak = 0; multiplier = 1; sessionResults = [];
   secondChanceUsedThisSession = false;
+  resetSessionInsightSignals();
   sessionDeck = fixedDeck || buildSessionDeck(sourcePool);
   document.getElementById("bankrollValue").textContent = formatMoney(bankroll);
   document.getElementById("pnlValue").textContent = "$0";
@@ -3982,7 +4315,9 @@ function renderDailyResultScreen(drill, isCorrect, isFizzle, isClutch, milestone
       ${isClutch ? `<div class="clutch-badge pop">CLUTCH ✅</div>` : ""}
       <div class="daily-result-badge ${isCorrect ? "win" : "loss"}">${isCorrect ? "WIN ✅" : "LOSS ❌"}</div>
       <div class="daily-outcome-line">${outcomeText}</div>
-      <div class="daily-why">${renderWhyBullets(coachWhyBullets(drill))}</div>
+      <div class="daily-why">${renderFullReadRows(buildFullReadRows(drill, isFizzle))}
+        <div class="coach-actions-row"><a class="text-link-btn" href="${learnPatternUrl(drill)}">📚 Learn this pattern →</a></div>
+      </div>
       <div class="daily-streaks">
         <div class="mini-stat"><div class="v">${appState.dailyPlayStreak}</div><div class="l">Day Streak</div></div>
         <div class="mini-stat"><div class="v">${appState.dailyWinStreak}</div><div class="l">Win Streak</div></div>

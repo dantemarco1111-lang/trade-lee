@@ -984,7 +984,22 @@ function renderQuizResult(unitKey) {
   document.getElementById("pathBtn").onclick = renderPath;
 }
 
-renderPath();
+// Deep link from a drill's "Learn this pattern" link: /academy/?unit=volume&lesson=1
+(function bootFromDeepLink() {
+  const params = new URLSearchParams(location.search);
+  const unitKey = params.get("unit");
+  const lessonIdx = parseInt(params.get("lesson"), 10);
+  const unit = unitKey ? ACADEMY_UNITS.find(u => u.key === unitKey) : null;
+  if (unit && !isNaN(lessonIdx) && unit.lessons[lessonIdx]) {
+    history.replaceState(null, "", location.pathname);
+    renderLesson(unitKey, lessonIdx);
+  } else if (unit) {
+    history.replaceState(null, "", location.pathname);
+    renderUnitDetail(unitKey);
+  } else {
+    renderPath();
+  }
+})();
 </script>
 </body>
 </html>
