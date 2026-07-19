@@ -4590,6 +4590,7 @@ function renderDailyResultScreen(drill, isCorrect, isFizzle, isClutch, milestone
   loadDailyDistribution(getEtDateString(0), isCorrect);
   renderSigninPromptInto("dailySigninPrompt");
   renderNextActionNudge();
+  maybeShowWaitlistNudge();
 
   startCountdown();
 
@@ -4616,6 +4617,44 @@ function maybeShowFundedNudge(reason) {
   `;
   document.body.appendChild(el);
   el.querySelector(".fn-close").onclick = () => el.remove();
+  setTimeout(() => { if (el.parentNode) el.remove(); }, 12000);
+}
+/* ---- Pro waitlist nudge (Revenue Infrastructure Stage 4) ----
+   Post-daily-drill only, at most 1 in every 5 qualifying sessions, and only
+   for signed-in players (so the join is a genuine one-tap using the email
+   already on the account — no typing). Skips if a funded-nudge is already
+   showing so the two never stack. */
+const WAITLIST_NUDGE_COUNT_KEY = "tl_waitlist_nudge_count";
+function maybeShowWaitlistNudge() {
+  if (typeof tlIsSignedIn !== "function" || !tlIsSignedIn() || !tlSession || !tlSession.user.email) return;
+  if (document.querySelector(".funded-nudge-card")) return;
+  let count;
+  try {
+    count = (parseInt(localStorage.getItem(WAITLIST_NUDGE_COUNT_KEY) || "0", 10) + 1) % 5;
+    localStorage.setItem(WAITLIST_NUDGE_COUNT_KEY, String(count));
+  } catch (e) { return; }
+  if (count !== 0) return;
+
+  const email = tlSession.user.email;
+  const el = document.createElement("div");
+  el.className = "funded-nudge-card";
+  el.innerHTML = `
+    <div class="fn-text">Pro is coming — founding members lock the price. <a href="#" id="waitlistNudgeJoin">Join free →</a></div>
+    <button class="fn-close" aria-label="Dismiss">✕</button>
+  `;
+  document.body.appendChild(el);
+  el.querySelector(".fn-close").onclick = () => el.remove();
+  el.querySelector("#waitlistNudgeJoin").onclick = async (e) => {
+    e.preventDefault();
+    const link = e.currentTarget;
+    link.textContent = "Joining…";
+    try {
+      await tlJoinWaitlist(email);
+      el.querySelector(".fn-text").textContent = "You're on the founding list — we'll email you when Pro launches.";
+    } catch (err) {
+      link.textContent = "Join free →";
+    }
+  };
   setTimeout(() => { if (el.parentNode) el.remove(); }, 12000);
 }
 function showStreakMilestone(milestoneHit) {
