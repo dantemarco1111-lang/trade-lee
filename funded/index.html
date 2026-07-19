@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Get Funded — Trade Lee</title>
+<meta name="description" content="An honest readiness check before you spend money on a prop firm evaluation, plus the firms worth knowing once your numbers back it up.">
+<meta property="og:title" content="Get Funded — Trade Lee">
+<meta property="og:description" content="An honest readiness check before you spend money on a prop firm evaluation, plus the firms worth knowing once your numbers back it up.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://trade-lee.vercel.app/funded/">
+<meta property="og:image" content="https://trade-lee.vercel.app/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Get Funded — Trade Lee">
+<meta name="twitter:description" content="An honest readiness check before you spend money on a prop firm evaluation.">
+<meta name="twitter:image" content="https://trade-lee.vercel.app/og-image.png">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230b0e14'/%3E%3Cline x1='11' y1='4' x2='11' y2='28' stroke='%2326a69a' stroke-width='2.2'/%3E%3Crect x='7' y='10' width='8' height='10' rx='1' fill='%2326a69a'/%3E%3Cline x1='23' y1='6' x2='23' y2='25' stroke='%23ef5350' stroke-width='2.2'/%3E%3Crect x='19' y='12' width='8' height='7' rx='1' fill='%23ef5350'/%3E%3C/svg%3E">
+<link rel="manifest" href="/manifest.json">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta name="theme-color" content="#0b0e14">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@500;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@500;700&display=swap">
+<link rel="stylesheet" href="/theme.css">
+<style>
+  html, body {
+    margin: 0; padding: 0;
+    color: var(--text);
+    font-family: var(--font-body);
+    overflow-x: hidden;
+    -webkit-tap-highlight-color: transparent;
+    min-height: 100vh;
+  }
+  a { color: inherit; }
+  .wrap { max-width: 1100px; margin: 0 auto; padding: 0 20px; }
+
+  /* ---------- readiness gate ---------- */
+  .readiness-gate { border-color: var(--border-strong); }
+  .rg-badge {
+    display: inline-block; font-family: var(--font-mono); font-size: 0.7rem; font-weight: 800;
+    letter-spacing: 1px; padding: 4px 10px; border-radius: 999px;
+  }
+  .rg-badge-ready { background: rgba(34, 197, 94, 0.15); border: 1px solid rgba(34, 197, 94, 0.4); color: var(--green); }
+  .rg-badge-notready { background: rgba(245, 180, 0, 0.15); border: 1px solid rgba(245, 180, 0, 0.4); color: var(--gold); }
+  .readiness-gate h2 { font-family: var(--font-display); font-size: 1.25rem; margin: 8px 0 10px; }
+  .rg-gap-list { margin: 0 0 12px; padding-left: 20px; line-height: 1.6; color: var(--text-dim); }
+  .rg-gap-list strong { color: var(--text-data); font-family: var(--font-mono); }
+  .rg-cta-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 14px; }
+  .rg-cta-row .btn { flex: 1 1 180px; text-align: center; text-decoration: none; }
+  .rg-pending-note {
+    background: var(--surface-2); border: 1px solid var(--border); border-radius: 10px;
+    padding: 12px 14px; font-size: 0.88rem; color: var(--text-dim); margin-top: 12px;
+  }
+
+  /* ---------- disclosure + risk ---------- */
+  .disclosure-banner {
+    background: rgba(245, 180, 0, 0.07);
+    border: 1px solid rgba(245, 180, 0, 0.3);
+    border-radius: 12px;
+    padding: 14px 16px;
+    font-size: 0.85rem;
+    line-height: 1.5;
+    color: var(--text);
+    margin: 8px 0 16px;
+  }
+  .disclosure-banner strong { color: var(--gold); }
+  .risk-line {
+    display: flex; align-items: center; gap: 8px;
+    background: rgba(239, 68, 68, 0.07); border: 1px solid rgba(239, 68, 68, 0.25);
+    border-radius: 10px; padding: 10px 14px; font-size: 0.85rem; color: var(--text);
+    margin-bottom: 20px;
+  }
+  .risk-line b { color: var(--red); }
+
+  /* ---------- firm cards ---------- */
+  .firm-card-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 6px; flex-wrap: wrap; }
+  .firm-name { font-family: var(--font-display); font-size: 1.15rem; font-weight: 700; }
+  .drawdown-badge {
+    font-family: var(--font-mono); font-size: 0.66rem; font-weight: 700; letter-spacing: 0.3px;
+    padding: 3px 9px; border-radius: 999px; white-space: nowrap;
+    background: var(--surface-2); border: 1px solid var(--border-strong); color: var(--text-dim);
+  }
+  .firm-tags { display: flex; gap: 6px; margin-bottom: 10px; flex-wrap: wrap; }
+  .firm-tag {
+    font-family: var(--font-mono); font-size: 0.62rem; text-transform: uppercase; letter-spacing: 0.4px;
+    color: var(--text-dim); background: var(--surface-2); border: 1px solid var(--border);
+    border-radius: 5px; padding: 2px 6px;
+  }
+  .firm-desc { margin: 0 0 10px; color: var(--text); }
+  .firm-known-for {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 14px;
+    font-size: 0.88rem;
+    color: var(--text-dim);
+    margin-bottom: 16px;
+    line-height: 1.5;
+  }
+  .firm-known-for strong { color: var(--text); }
+  .firm-cta { width: 100%; text-align: center; text-decoration: none; box-sizing: border-box; }
+  .firm-sep { border: none; border-top: 1px solid var(--border); margin: 22px 0; }
+  .firm-empty-note { color: var(--text-dim); font-size: 0.9rem; }
+
+  .reality-check { border-color: rgba(239, 68, 68, 0.25); }
+  .reality-check h2 .card-num { background: rgba(239, 68, 68, 0.12); color: var(--red); }
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="wrap site-header-inner">
+    <a class="nav-wordmark" href="/">📈 Trade Lee</a>
+    <nav class="nav-links-desktop">
+      <div class="nav-dropdown" id="playDropdown">
+        <button class="nav-dropdown-trigger" type="button">Play <span class="caret">▾</span></button>
+        <div class="nav-dropdown-menu">
+          <a href="/play/?mode=daily">The 9:30 Drop</a>
+          <a href="/play/?mode=practice">Practice</a>
+        </div>
+      </div>
+      <div class="nav-dropdown" id="learnDropdown">
+        <button class="nav-dropdown-trigger" type="button">Learn <span class="caret">▾</span></button>
+        <div class="nav-dropdown-menu">
+          <a href="/academy/">Academy</a>
+          <a href="/risk/">Risk</a>
+          <a href="/strategies/">Strategies</a>
+          <a href="/learn/">Lessons</a>
+          <a href="/about/">About</a>
+        </div>
+      </div>
+      <a href="/funded/">Get Funded</a>
+      <a href="/leaderboard/">Leaderboard</a>
+      <a href="/leagues/">Leagues</a>
+      <a href="/premium/">Pro <span class="soon-tag">BETA</span></a>
+    </nav>
+    <button class="hamburger-btn" id="hamburgerBtn" aria-label="Open menu">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</header>
+
+<div class="mobile-menu-overlay" id="mobileMenuOverlay">
+  <button class="mobile-menu-close" id="mobileMenuClose" aria-label="Close menu">✕</button>
+  <div class="mobile-menu-label">Play</div>
+  <a href="/play/?mode=daily">The 9:30 Drop</a>
+  <a href="/play/?mode=practice">Practice</a>
+  <div class="mobile-menu-label">Learn</div>
+  <a href="/academy/">Academy</a>
+  <a href="/risk/">Risk</a>
+  <a href="/strategies/">Strategies</a>
+  <a href="/learn/">Lessons</a>
+  <a href="/about/">About</a>
+  <div class="mobile-menu-label">More</div>
+  <a href="/funded/">Get Funded</a>
+  <a href="/leaderboard/">Leaderboard</a>
+  <a href="/leagues/">Leagues</a>
+  <a href="/premium/">Pro <span class="soon-tag">BETA</span></a>
+</div>
+
+<main class="content-page">
+  <div class="content-hero">
+    <div class="badge">GET FUNDED</div>
+    <h1>Trade with a firm's capital</h1>
+    <p>Prop firms stake you real trading capital and let you keep 80-90% of the profits — you pay an evaluation fee upfront to prove you can trade with discipline first.</p>
+  </div>
+
+  <section class="content-card card readiness-gate" id="readinessGate">
+    <!-- populated by renderReadinessGate() below, from this device's local stats -->
+  </section>
+
+  <section class="content-card card reality-check">
+    <h2><span class="card-num">!</span>Reality Check</h2>
+    <p>~86% of evaluations fail. Most failures are risk violations, not bad strategies.</p>
+    <p><strong>Do not buy an eval until you can pass our daily drills consistently and you know your firm's drawdown rules cold.</strong></p>
+    <a class="content-cta" href="/risk/">Review the risk rules first →</a>
+  </section>
+
+  <section class="content-card card">
+    <h2><span class="card-num">✓</span>When You're Ready</h2>
+    <p>These are firms worth knowing once your numbers back it up. One-line honest take on each, no hype.</p>
+    <div class="disclosure-banner">
+      <strong>Transparency:</strong> the links below are affiliate links — Trade Lee may earn a commission at no extra cost to you if you sign up through them. It's how the game stays free. We only list firms we'd actually use.
+    </div>
+    <div class="risk-line">🛑 <span><b>Evaluations cost money and most attempts fail — train first.</b> Nothing on this page is financial advice.</span></div>
+
+    <div id="firmCardsWrap"><p class="firm-empty-note">Loading…</p></div>
+  </section>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <div class="footer-wordmark">📈 Trade Lee</div>
+    <div class="footer-tagline">Trade Lee — train your eye. © 2026</div>
+    <div class="footer-links">
+      <a href="#" data-social="tiktok">TikTok</a>
+      <a href="#" data-social="x">X</a>
+      <a href="#" data-social="instagram">Instagram</a>
+      <a href="#" data-social="youtube">YouTube</a>
+    </div>
+    <div class="footer-disclaimer">Educational content, not financial advice. Trading involves substantial risk of loss.</div>
+  </div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/supabase-config.js"></script>
+<script src="/auth.js"></script>
+<script src="/analytics.js"></script>
+<script src="/social-links.js"></script>
+<script>
+function escapeHtml(str) {
+  const div = document.createElement("div");
+  div.textContent = str == null ? "" : String(str);
+  return div.innerHTML;
+}
+
+// ============================================================
+// Affiliate firm roster. `status` is the only thing that gates rendering —
+// "pending" firms never show on the live page no matter how complete their
+// entry is, so this file can be filled in ahead of approvals without risking
+// a dead-link "Visit" button in front of real traffic. To go live on a firm:
+//   1. Get the real affiliate/referral URL and CPA terms from the firm.
+//   2. Re-verify `knownFor`/`drawdown` are still accurate — prop firm rules
+//      change; this data reflects general public knowledge at write time,
+//      not a live feed.
+//   3. Set url to the real link and status to "live".
+// ============================================================
+const DRAWDOWN_LABELS = { eod: "EOD Trailing", intraday: "Intraday Trailing", static: "Static" };
+const FIRM_LINKS = {
+  apex: {
+    name: "Apex Trader Funding", url: "#", cpaNote: "CPA pending approval",
+    tags: ["futures"], status: "pending", drawdown: "intraday",
+    desc: "One of the most popular futures prop firms, mostly thanks to aggressive evaluation discounts.",
+    knownFor: "Frequent eval sales that undercut most of the market. Drawdown trails your unrealized intraday peak, so read the rules before your first trade.",
+  },
+  topstep: {
+    name: "TopStep", url: "#", cpaNote: "CPA pending approval",
+    tags: ["futures"], status: "pending", drawdown: "eod",
+    desc: "One of the oldest names in futures funding, generally considered a more forgiving structure for newer traders.",
+    knownFor: "An end-of-day drawdown, not intraday unrealized — a meaningfully more forgiving rule set than trailing-intraday firms.",
+  },
+  tradeify: {
+    name: "Tradeify", url: "#", cpaNote: "CPA pending approval",
+    tags: ["futures"], status: "pending", drawdown: "intraday",
+    desc: "A newer entrant to the futures funding space, worth knowing for its straightforward rule set.",
+    knownFor: "Simpler evaluation rules than some legacy firms; still a trailing intraday drawdown underneath.",
+  },
+  bulenox: {
+    name: "Bulenox", url: "#", cpaNote: "CPA pending approval",
+    tags: ["futures"], status: "pending", drawdown: "intraday",
+    desc: "A budget-friendly futures funding option that's picked up traction on price alone.",
+    knownFor: "Cheap evals; trailing intraday drawdown, so a green day can still tighten your cushion if you give back the peak.",
+  },
+  takeprofittrader: {
+    name: "TakeProfitTrader", url: "#", cpaNote: "CPA pending approval",
+    tags: ["futures"], status: "pending", drawdown: "eod",
+    desc: "A futures funding firm built around a straightforward, end-of-day rule set.",
+    knownFor: "End-of-day drawdown option — check current account types, since rules vary by plan.",
+  },
+  ftmo: {
+    name: "FTMO", url: "#", cpaNote: "CPA pending approval",
+    tags: ["forex", "crypto"], status: "pending", drawdown: "static",
+    desc: "One of the most established multi-asset prop firms, with a well-documented two-phase evaluation.",
+    knownFor: "Max drawdown calculated from your initial balance rather than a trailing unrealized peak — read as more static than the intraday-trailing futures firms above.",
+  },
+  fundednext: {
+    name: "FundedNext", url: "#", cpaNote: "CPA pending approval",
+    tags: ["forex"], status: "pending", drawdown: "intraday",
+    desc: "A forex-focused firm known for flexible evaluation formats and frequent promos.",
+    knownFor: "Multiple account model options — verify the specific drawdown type (some are trailing, some capped) for whichever plan you pick.",
+  },
+  the5ers: {
+    name: "The5%ers", url: "#", cpaNote: "CPA pending approval",
+    tags: ["forex"], status: "pending", drawdown: "static",
+    desc: "A forex prop firm known for funding real, lower-friction account sizes rather than pure evaluation volume.",
+    knownFor: "Static max drawdown from the initial balance — one of the more forgiving structures once you clear the eval.",
+  },
+};
+
+function renderFirmCards() {
+  const wrap = document.getElementById("firmCardsWrap");
+  const live = Object.entries(FIRM_LINKS).filter(([, f]) => f.status === "live");
+  if (!live.length) {
+    wrap.innerHTML = `<p class="firm-empty-note">We're finalizing firm partnerships — check back soon.</p>`;
+    return;
+  }
+  wrap.innerHTML = live.map(([key, f]) => `
+    <div class="firm-card">
+      <div class="firm-card-top">
+        <div class="firm-name">${escapeHtml(f.name)}</div>
+        <span class="drawdown-badge">${DRAWDOWN_LABELS[f.drawdown] || f.drawdown}</span>
+      </div>
+      <div class="firm-tags">${f.tags.map(t => `<span class="firm-tag">${escapeHtml(t)}</span>`).join("")}</div>
+      <p class="firm-desc">${escapeHtml(f.desc)}</p>
+      <div class="firm-known-for"><strong>Known for:</strong> ${escapeHtml(f.knownFor)}</div>
+      <a class="btn btn-primary firm-cta" href="${escapeHtml(f.url)}" target="_blank" rel="sponsored noopener" data-firm="${key}">Visit ${escapeHtml(f.name)} →</a>
+    </div>
+  `).join('<hr class="firm-sep">');
+  wrap.querySelectorAll("[data-firm]").forEach(a => {
+    a.addEventListener("click", () => {
+      if (typeof tlTrack === "function") tlTrack("firm_click", { firm: a.dataset.firm });
+    });
+  });
+}
+
+// ============================================================
+// Eval Readiness Gate — reads this device's local game stats (same
+// localStorage key play/index.html writes to) and decides whether to show
+// an earned "you're ready" state with the firm roster, or an honest "here's
+// your gap" state with links back into training. No account required.
+// ============================================================
+const RG_RATING_BANDS = [
+  { max: 899, name: "Learning the Tape" },
+  { max: 1099, name: "Chart Reader" },
+  { max: 1299, name: "Breakout Hunter" },
+  { max: 1499, name: "Funded Material" },
+  { max: Infinity, name: "Market Sniper" },
+];
+function rgBandName(rating) {
+  const b = RG_RATING_BANDS.find(b => rating <= b.max);
+  return b ? b.name : RG_RATING_BANDS[RG_RATING_BANDS.length - 1].name;
+}
+function rgLoadLocalState() {
+  try {
+    const raw = localStorage.getItem("tradeLeeState_v1");
+    return raw ? JSON.parse(raw) : {};
+  } catch (e) { return {}; }
+}
+function renderReadinessGate() {
+  const state = rgLoadLocalState();
+  const drills = state.totalDrillsAnswered || 0;
+  const correct = state.totalCorrect || 0;
+  const accuracy = drills ? correct / drills : 0;
+  const rating = state.traderRating || 1000;
+  const ratedCount = state.ratedDrillsCount || 0;
+  const isRanked = ratedCount >= 20;
+  const el = document.getElementById("readinessGate");
+
+  const drillsOk = drills >= 100;
+  const accuracyOk = accuracy >= 0.55;
+  const ready = drillsOk && accuracyOk;
+
+  if (ready) {
+    if (typeof tlTrack === "function") tlTrack("readiness_gate_ready");
+    el.innerHTML = `
+      <div class="rg-badge rg-badge-ready">✓ READY</div>
+      <h2>Your numbers look ready</h2>
+      <p>${drills} drills answered, ${Math.round(accuracy * 100)}% accuracy${isRanked ? `, rated ${Math.round(rating)} — ${escapeHtml(rgBandName(rating))}` : ""}. That's a real base to walk into an evaluation with — the firms below are worth a look.</p>
+    `;
+  } else {
+    const gaps = [];
+    if (!drillsOk) gaps.push(`You've answered <strong>${drills}/100</strong> drills — build more reps first.`);
+    if (!accuracyOk) gaps.push(`Your accuracy is <strong>${drills ? Math.round(accuracy * 100) : "—"}%</strong> — aim for 55%+ before spending real money on an eval.`);
+    el.innerHTML = `
+      <div class="rg-badge rg-badge-notready">NOT YET</div>
+      <h2>Here's your gap</h2>
+      <ul class="rg-gap-list">${gaps.map(g => `<li>${g}</li>`).join("")}</ul>
+      <p>That's not a knock — it's the whole point of training first.</p>
+      <div class="rg-cta-row">
+        <a class="btn btn-primary" href="/play/?mode=practice">Practice now →</a>
+        <a class="btn btn-ghost" href="/academy/">Open the Academy →</a>
+      </div>
+    `;
+  }
+}
+
+renderReadinessGate();
+renderFirmCards();
+
+(function () {
+  const overlay = document.getElementById("mobileMenuOverlay");
+  document.getElementById("hamburgerBtn").onclick = () => overlay.classList.add("open");
+  document.getElementById("mobileMenuClose").onclick = () => overlay.classList.remove("open");
+  overlay.querySelectorAll("a").forEach(a => a.addEventListener("click", () => overlay.classList.remove("open")));
+
+  document.querySelectorAll(".nav-dropdown").forEach(dd => {
+    const trigger = dd.querySelector(".nav-dropdown-trigger");
+    trigger.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const isOpen = dd.classList.contains("open");
+      document.querySelectorAll(".nav-dropdown.open").forEach(o => o.classList.remove("open"));
+      if (!isOpen) dd.classList.add("open");
+    });
+  });
+  document.addEventListener("click", () => {
+    document.querySelectorAll(".nav-dropdown.open").forEach(o => o.classList.remove("open"));
+  });
+})();
+</script>
+</body>
+</html>

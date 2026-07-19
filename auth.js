@@ -401,6 +401,7 @@ async function tlJoinWaitlist(email) {
     user_id: tlSession ? tlSession.user.id : null,
   });
   if (error) throw error;
+  if (typeof tlTrack === "function") tlTrack("waitlist_signup");
 }
 
 // Creates a "challenge a friend" link. Works whether the creator is signed

@@ -29,6 +29,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="/supabase-config.js"></script>
 <script src="/auth.js"></script>
+<script src="/analytics.js"></script>
 <style>
   :root {
     --card: var(--surface);
@@ -877,6 +878,24 @@
   }
 
   #confettiLayer { position: fixed; inset: 0; pointer-events: none; z-index: 999; overflow: hidden; }
+  /* ---------- funded conversion nudge (Revenue Infrastructure) ----------
+     Earned moments only (7-day streak, rating band-up), throttled to once a
+     week client-side. Never blocks a drill — always injected after the
+     player has already dismissed that moment's own celebration overlay. */
+  .funded-nudge-card {
+    position: fixed; left: 16px; right: 16px; bottom: 20px; z-index: 500;
+    max-width: 420px; margin: 0 auto;
+    background: var(--card); border: 1px solid rgba(245, 180, 0, 0.35);
+    border-radius: 14px; padding: 14px 16px; box-shadow: var(--shadow-lg);
+    display: flex; align-items: center; gap: 10px;
+    animation: toastIn 0.3s cubic-bezier(.34,1.56,.64,1);
+  }
+  .funded-nudge-card .fn-text { flex: 1; font-size: 0.85rem; line-height: 1.4; color: var(--text); }
+  .funded-nudge-card .fn-text a { color: var(--gold); font-weight: 700; text-decoration: underline; }
+  .funded-nudge-card .fn-close {
+    flex-shrink: 0; background: none; border: none; color: var(--text-dim);
+    font-size: 1rem; cursor: pointer; padding: 4px;
+  }
   #toastLayer {
     position: fixed; left: 0; right: 0; bottom: 24px; z-index: 998;
     display: flex; flex-direction: column; align-items: center; gap: 8px;
@@ -3158,6 +3177,7 @@ function applyClutchIfEarned(isCorrect) {
   return true;
 }
 function finishPlayout(drill, choice) {
+  if (typeof tlTrack === "function") tlTrack("drill_complete", { mode: currentMode });
   const isCorrect = (currentMode === "longshortwait" || currentMode === "strategy_pack") ? choice === drill.correct_answer : choice === drill.outcome;
   const isFizzle = currentMode !== "longshortwait" && currentMode !== "strategy_pack" && drill.outcome === "fake" && drill.reversal_minutes === null && drill.resolution_bar_index === null;
   const isClutch = applyClutchIfEarned(isCorrect);
@@ -4576,6 +4596,28 @@ function renderDailyResultScreen(drill, isCorrect, isFizzle, isClutch, milestone
   if (milestoneHit) setTimeout(() => showStreakMilestone(milestoneHit), 500);
 }
 /* ---- streak milestones: day 3/7/14/30 (retention Stage 2) ---- */
+/* ---- Funded-eval conversion nudge (Revenue Infrastructure Stage 1) ----
+   Fires only after an earned moment (7-day streak, rating band-up), never
+   mid-drill, throttled to once a week via localStorage. */
+const FUNDED_NUDGE_THROTTLE_KEY = "tl_funded_nudge_last_shown";
+const FUNDED_NUDGE_THROTTLE_MS = 7 * 24 * 60 * 60 * 1000;
+function maybeShowFundedNudge(reason) {
+  try {
+    const last = parseInt(localStorage.getItem(FUNDED_NUDGE_THROTTLE_KEY) || "0", 10);
+    if (Date.now() - last < FUNDED_NUDGE_THROTTLE_MS) return;
+    localStorage.setItem(FUNDED_NUDGE_THROTTLE_KEY, String(Date.now()));
+  } catch (e) { return; }
+  const lead = reason === "streak" ? "Training's paying off — 7 days straight." : "Training's paying off.";
+  const el = document.createElement("div");
+  el.className = "funded-nudge-card";
+  el.innerHTML = `
+    <div class="fn-text">${lead} When you're ready for a funded eval, <a href="/funded/">see the firms →</a></div>
+    <button class="fn-close" aria-label="Dismiss">✕</button>
+  `;
+  document.body.appendChild(el);
+  el.querySelector(".fn-close").onclick = () => el.remove();
+  setTimeout(() => { if (el.parentNode) el.remove(); }, 12000);
+}
 function showStreakMilestone(milestoneHit) {
   launchConfetti();
   playMultiplier();
@@ -4592,7 +4634,10 @@ function showStreakMilestone(milestoneHit) {
     </div>
   `;
   document.body.appendChild(overlay);
-  document.getElementById("milestoneDismissBtn").onclick = () => overlay.remove();
+  document.getElementById("milestoneDismissBtn").onclick = () => {
+    overlay.remove();
+    if (milestoneHit.days === 7) maybeShowFundedNudge("streak");
+  };
   document.getElementById("milestoneShareBtn").onclick = () => generateAndShareCard("streak_milestone", milestoneHit);
 }
 
@@ -4615,10 +4660,10 @@ function maybeShowRatingReveal(ratingResult, delayMs) {
       "rating_ranked", { rating: ratingResult.rating, band: band.name }), delayMs || 500);
   } else if (ratingResult.bandUp) {
     setTimeout(() => showRatingRevealOverlay("📈", `${ratingResult.bandUp.name}!`, `Rating ${ratingResult.rating}`,
-      "rating_bandup", { rating: ratingResult.rating, band: ratingResult.bandUp.name }), delayMs || 500);
+      "rating_bandup", { rating: ratingResult.rating, band: ratingResult.bandUp.name }, true), delayMs || 500);
   }
 }
-function showRatingRevealOverlay(icon, title, subtitle, shareMode, shareData) {
+function showRatingRevealOverlay(icon, title, subtitle, shareMode, shareData, isBandUp) {
   launchConfetti();
   playMultiplier();
   const overlay = document.createElement("div");
@@ -4633,7 +4678,10 @@ function showRatingRevealOverlay(icon, title, subtitle, shareMode, shareData) {
     </div>
   `;
   document.body.appendChild(overlay);
-  document.getElementById("ratingDismissBtn").onclick = () => overlay.remove();
+  document.getElementById("ratingDismissBtn").onclick = () => {
+    overlay.remove();
+    if (isBandUp) maybeShowFundedNudge("bandup");
+  };
   document.getElementById("ratingShareBtn").onclick = () => generateAndShareCard(shareMode, shareData);
 }
 
