@@ -219,6 +219,10 @@
     text-align: center;
   }
   .how-card .icon { margin-bottom: 12px; display: flex; justify-content: center; }
+  .how-illo { margin-bottom: 16px; }
+  .how-illo svg { max-width: 200px; width: 100%; height: auto; }
+  .how-streak-pulse { animation: howStreakPulse 1.6s ease-in-out infinite; }
+  @keyframes howStreakPulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.45; } }
   .how-card h3 {
     font-family: var(--font-display); font-size: 1.05rem; font-weight: 700; letter-spacing: -0.2px; margin: 0 0 8px;
   }
@@ -228,16 +232,27 @@
   .ticker-tape {
     overflow: hidden; white-space: nowrap;
     border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);
-    background: var(--surface); padding: 9px 0;
+    background: var(--surface); padding: 12px 0;
   }
-  .ticker-tape-track { display: inline-flex; animation: tickerScroll 34s linear infinite; }
+  .ticker-tape-track { display: inline-flex; align-items: center; animation: tickerScroll 60s linear infinite; }
+  .ticker-tape:hover .ticker-tape-track,
+  .ticker-tape:focus-within .ticker-tape-track { animation-play-state: paused; }
   .ticker-item {
-    font-family: var(--font-mono); font-variant-numeric: tabular-nums; font-size: 0.76rem;
-    color: var(--text-dim); padding: 0 26px; display: inline-flex; align-items: center; gap: 8px;
+    display: inline-flex; align-items: center; gap: 7px; padding: 0 18px;
   }
-  .ticker-item .up { color: var(--green); font-weight: 600; }
-  .ticker-item .down { color: var(--red); font-weight: 600; }
-  .ticker-item .sep { color: var(--border-strong); }
+  .ticker-symbol {
+    font-family: var(--font-mono); font-size: 0.68rem; font-weight: 700; letter-spacing: 0.3px;
+    color: var(--text-data); background: var(--surface-2); border: 1px solid var(--border);
+    border-radius: 5px; padding: 2px 7px; flex-shrink: 0;
+  }
+  .ticker-sep-inline { color: var(--text-dim); opacity: 0.5; font-size: 0.72rem; }
+  .ticker-stat {
+    font-family: var(--font-mono); font-variant-numeric: tabular-nums; font-size: 0.78rem;
+    color: var(--text-dim);
+  }
+  .ticker-stat .up { color: var(--green); font-weight: 600; }
+  .ticker-stat .down { color: var(--red); font-weight: 600; }
+  .ticker-dot { color: var(--border-strong); font-size: 0.6rem; flex-shrink: 0; }
   @keyframes tickerScroll {
     from { transform: translateX(0); }
     to { transform: translateX(-50%); }
@@ -363,31 +378,72 @@
     <div class="section-title">How it works</div>
     <div class="how-grid">
       <div class="card how-card">
-        <div class="icon">
-          <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <line x1="10" y1="4" x2="10" y2="16" stroke="#c9d1de" stroke-width="2.5"/>
-            <rect x="6" y="16" width="8" height="12" rx="1.5" fill="#c9d1de"/>
-            <line x1="26" y1="10" x2="26" y2="34" stroke="#c9d1de" stroke-width="2.5"/>
-            <rect x="22" y="14" width="8" height="10" rx="1.5" fill="#c9d1de"/>
+        <div class="icon how-illo">
+          <svg viewBox="0 0 200 100" width="100%" height="100" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">
+            <rect x="10" y="30" width="180" height="26" fill="rgba(245,180,0,0.08)" stroke="rgba(245,180,0,0.4)" stroke-width="1" stroke-dasharray="3 2"/>
+            <g stroke-width="1.5">
+              <line x1="20" y1="34" x2="20" y2="52" stroke="#ef5350"/><rect x="16" y="38" width="8" height="10" fill="#ef5350"/>
+              <line x1="38" y1="32" x2="38" y2="50" stroke="#26a69a"/><rect x="34" y="36" width="8" height="9" fill="#26a69a"/>
+              <line x1="56" y1="36" x2="56" y2="54" stroke="#ef5350"/><rect x="52" y="40" width="8" height="10" fill="#ef5350"/>
+              <line x1="74" y1="33" x2="74" y2="51" stroke="#26a69a"/><rect x="70" y="37" width="8" height="9" fill="#26a69a"/>
+              <line x1="92" y1="35" x2="92" y2="53" stroke="#ef5350"/><rect x="88" y="39" width="8" height="10" fill="#ef5350"/>
+              <line x1="110" y1="32" x2="110" y2="50" stroke="#26a69a"/><rect x="106" y="36" width="8" height="9" fill="#26a69a"/>
+              <line x1="128" y1="34" x2="128" y2="52" stroke="#ef5350"/><rect x="124" y="38" width="8" height="10" fill="#ef5350"/>
+              <line x1="146" y1="33" x2="146" y2="51" stroke="#26a69a"/><rect x="142" y="37" width="8" height="9" fill="#26a69a"/>
+              <line x1="164" y1="35" x2="164" y2="53" stroke="#ef5350"/><rect x="160" y="39" width="8" height="10" fill="#ef5350"/>
+            </g>
+            <g opacity="0.55">
+              <rect x="16" y="72" width="8" height="14" fill="#ef5350"/>
+              <rect x="34" y="68" width="8" height="18" fill="#26a69a"/>
+              <rect x="52" y="74" width="8" height="12" fill="#ef5350"/>
+              <rect x="70" y="70" width="8" height="16" fill="#26a69a"/>
+              <rect x="88" y="76" width="8" height="10" fill="#ef5350"/>
+              <rect x="106" y="69" width="8" height="17" fill="#26a69a"/>
+              <rect x="124" y="73" width="8" height="13" fill="#ef5350"/>
+              <rect x="142" y="71" width="8" height="15" fill="#26a69a"/>
+              <rect x="160" y="75" width="8" height="11" fill="#ef5350"/>
+            </g>
           </svg>
         </div>
         <h3>Read the setup</h3>
         <p>Real chart, real volume, real levels — no simulations.</p>
       </div>
       <div class="card how-card">
-        <div class="icon">
-          <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M22 4L10 22H18L16 36L30 16H21L22 4Z" fill="#c9d1de"/>
+        <div class="icon how-illo">
+          <svg viewBox="0 0 200 100" width="100%" height="100" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">
+            <rect x="10" y="30" width="150" height="26" fill="rgba(245,180,0,0.08)" stroke="rgba(245,180,0,0.4)" stroke-width="1" stroke-dasharray="3 2"/>
+            <g stroke-width="1.5">
+              <line x1="20" y1="34" x2="20" y2="52" stroke="#ef5350"/><rect x="16" y="38" width="8" height="10" fill="#ef5350"/>
+              <line x1="38" y1="32" x2="38" y2="50" stroke="#26a69a"/><rect x="34" y="36" width="8" height="9" fill="#26a69a"/>
+              <line x1="56" y1="36" x2="56" y2="54" stroke="#ef5350"/><rect x="52" y="40" width="8" height="10" fill="#ef5350"/>
+              <line x1="74" y1="33" x2="74" y2="51" stroke="#26a69a"/><rect x="70" y="37" width="8" height="9" fill="#26a69a"/>
+              <line x1="92" y1="35" x2="92" y2="53" stroke="#ef5350"/><rect x="88" y="39" width="8" height="10" fill="#ef5350"/>
+              <line x1="110" y1="32" x2="110" y2="50" stroke="#26a69a"/><rect x="106" y="36" width="8" height="9" fill="#26a69a"/>
+              <line x1="128" y1="34" x2="128" y2="52" stroke="#ef5350"/><rect x="124" y="38" width="8" height="10" fill="#ef5350"/>
+              <line x1="148" y1="10" x2="148" y2="45" stroke="#26a69a" stroke-width="2"/><rect x="143" y="16" width="10" height="26" fill="#26a69a"/>
+            </g>
+            <circle cx="176" cy="24" r="13" fill="none" stroke="rgba(255,255,255,0.12)" stroke-width="2.5"/>
+            <circle cx="176" cy="24" r="13" fill="none" stroke="#f5b400" stroke-width="2.5" stroke-dasharray="81.7" stroke-dashoffset="24" stroke-linecap="round" transform="rotate(-90 176 24)"/>
           </svg>
         </div>
         <h3>Make the call</h3>
         <p>Take it or fade it — you've got 10 seconds.</p>
       </div>
       <div class="card how-card">
-        <div class="icon">
-          <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M20 3C20 3 9 15 9 24C9 30.6 13.9 36 20 36C26.1 36 31 30.6 31 24C31 15 20 3 20 3Z" fill="#f5b400"/>
-            <path d="M20 14C20 14 15 20 15 25C15 28.3 17.2 31 20 31C22.8 31 25 28.3 25 25C25 20 20 14 20 14Z" fill="#05070c" opacity="0.35"/>
+        <div class="icon how-illo">
+          <svg viewBox="0 0 200 100" width="100%" height="100" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">
+            <rect x="5" y="34" width="22" height="22" rx="5" fill="rgba(34,197,94,0.12)" stroke="rgba(34,197,94,0.4)" stroke-width="1"/>
+            <path transform="translate(9,38)" d="M7 1C7 1 2.5 6 2.5 9.5C2.5 12 4.5 14 7 14C9.5 14 11.5 12 11.5 9.5C11.5 6 7 1 7 1Z" fill="#f5b400"/>
+            <rect x="32" y="34" width="22" height="22" rx="5" fill="rgba(34,197,94,0.12)" stroke="rgba(34,197,94,0.4)" stroke-width="1"/>
+            <path transform="translate(36,38)" d="M7 1C7 1 2.5 6 2.5 9.5C2.5 12 4.5 14 7 14C9.5 14 11.5 12 11.5 9.5C11.5 6 7 1 7 1Z" fill="#f5b400"/>
+            <rect x="59" y="34" width="22" height="22" rx="5" fill="rgba(34,197,94,0.12)" stroke="rgba(34,197,94,0.4)" stroke-width="1"/>
+            <path transform="translate(63,38)" d="M7 1C7 1 2.5 6 2.5 9.5C2.5 12 4.5 14 7 14C9.5 14 11.5 12 11.5 9.5C11.5 6 7 1 7 1Z" fill="#f5b400"/>
+            <rect x="86" y="34" width="22" height="22" rx="5" fill="rgba(34,197,94,0.12)" stroke="rgba(34,197,94,0.4)" stroke-width="1"/>
+            <path transform="translate(90,38)" d="M7 1C7 1 2.5 6 2.5 9.5C2.5 12 4.5 14 7 14C9.5 14 11.5 12 11.5 9.5C11.5 6 7 1 7 1Z" fill="#f5b400"/>
+            <rect class="how-streak-pulse" x="113" y="34" width="22" height="22" rx="5" fill="rgba(245,180,0,0.18)" stroke="#f5b400" stroke-width="1.5"/>
+            <path transform="translate(117,38)" d="M7 1C7 1 2.5 6 2.5 9.5C2.5 12 4.5 14 7 14C9.5 14 11.5 12 11.5 9.5C11.5 6 7 1 7 1Z" fill="#f5b400"/>
+            <rect x="140" y="34" width="22" height="22" rx="5" fill="none" stroke="rgba(255,255,255,0.12)" stroke-width="1"/>
+            <rect x="167" y="34" width="22" height="22" rx="5" fill="none" stroke="rgba(255,255,255,0.12)" stroke-width="1"/>
           </svg>
         </div>
         <h3>Build your streak</h3>
@@ -592,16 +648,21 @@
   const track = document.getElementById("tickerTapeTrack");
   if (!track) return;
   const items = [
-    { label: "SPY breakouts that ran", value: "+1.4x the range", dir: "up" },
-    { label: "NQ fakeouts", value: "trapped back in ~10 min avg", dir: "down" },
-    { label: "EURUSD breakouts that ran", value: "+1.3x the range", dir: "up" },
-    { label: "BTC breakouts that ran", value: "+1.5x the range", dir: "up" },
-    { label: "QQQ fakeouts", value: "trapped back in ~16 min avg", dir: "down" },
-    { label: "GBPUSD fakeouts", value: "trapped back in ~17 min avg", dir: "down" },
+    { symbol: "SPY", stat: "breakouts run +1.4x the range", dir: "up" },
+    { symbol: "NQ", stat: "fakeouts trap in ~10 min avg", dir: "down" },
+    { symbol: "EURUSD", stat: "breakouts run +1.3x the range", dir: "up" },
+    { symbol: "BTC", stat: "breakouts run +1.5x the range", dir: "up" },
+    { symbol: "QQQ", stat: "fakeouts trap in ~16 min avg", dir: "down" },
+    { symbol: "GBPUSD", stat: "fakeouts trap in ~17 min avg", dir: "down" },
   ];
-  const html = items.map(i =>
-    `<span class="ticker-item">${i.label} <span class="${i.dir}">${i.value}</span></span><span class="ticker-item sep">•</span>`
-  ).join("");
+  const html = items.map(i => `
+    <span class="ticker-item">
+      <span class="ticker-symbol">${i.symbol}</span>
+      <span class="ticker-sep-inline">&middot;</span>
+      <span class="ticker-stat"><span class="${i.dir}">${i.stat}</span></span>
+    </span>
+    <span class="ticker-dot">&bull;</span>
+  `).join("");
   track.innerHTML = html + html; // duplicated once for a seamless loop
 })();
 </script>
