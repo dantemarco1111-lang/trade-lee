@@ -1011,6 +1011,8 @@
   .which-pick-explainer p { margin: 0 0 8px; }
   .which-pick-explainer p:last-child { margin-bottom: 0; }
   .start-stats-row { display: flex; gap: 8px; margin-top: 24px; }
+  .start-legal-link { text-align: center; margin-top: 16px; font-size: 0.72rem; color: var(--text-dim); opacity: 0.7; }
+  .start-legal-link a { color: var(--text-dim); text-decoration: underline; text-underline-offset: 2px; }
   .mini-stat {
     flex: 1; background: var(--card); border: 1px solid var(--border); border-radius: 12px;
     padding: 12px 4px; position: relative; cursor: default;
@@ -4007,6 +4009,7 @@ function showPaywallSheet(title, body, opts) {
         <input type="email" id="paywallEmail" placeholder="you@email.com" required>
         <button type="submit" class="paywall-join-btn">Join waitlist</button>
       </form>
+      <p class="legal-consent-line">By joining you agree to the <a href="/terms/">Terms</a> &amp; <a href="/privacy/">Privacy Policy</a>.</p>
       <div class="paywall-msg hidden" id="paywallMsg"></div>
       <button class="paywall-dismiss" id="paywallDismiss">Maybe later</button>
     </div>
@@ -5319,6 +5322,7 @@ function renderStartScreen() {
         <div class="mini-stat"><div class="v">${appState.bestStreakEver || 0}</div><div class="l">Best Streak</div></div>
         <a class="mini-stat" href="/powerups/"><div class="v">⚡ ${appState.ticks || 0}</div><div class="l">Ticks</div></a>
       </div>
+      <div class="start-legal-link"><a href="/privacy/">Privacy</a> · <a href="/terms/">Terms</a></div>
     </div>
   `;
   document.getElementById("dailyBtn").onclick = handleDailyButtonClick;

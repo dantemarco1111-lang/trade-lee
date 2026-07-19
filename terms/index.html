@@ -3,18 +3,18 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Strategies — Trade Lee</title>
-<meta name="description" content="Three intraday strategy breakdowns: Opening Range Breakout, VWAP Pullback, and Breakout + Volume Confirmation — setup, entry, stop, and the honest catch for each.">
-<meta property="og:title" content="Strategies — Trade Lee">
-<meta property="og:description" content="Three intraday strategy breakdowns: Opening Range Breakout, VWAP Pullback, and Breakout + Volume Confirmation — setup, entry, stop, and the honest catch for each.">
+<title>Terms of Service — Trade Lee</title>
+<meta name="description" content="Trade Lee's terms: educational use only, not financial advice, no guarantee of results, and how accounts can be removed for abuse.">
+<meta property="og:title" content="Terms of Service — Trade Lee">
+<meta property="og:description" content="Trade Lee's terms: educational use only, not financial advice, no guarantee of results.">
 <meta property="og:type" content="website">
-<meta property="og:url" content="https://trade-lee.vercel.app/strategies/">
+<meta property="og:url" content="https://trade-lee.vercel.app/terms/">
 <meta property="og:image" content="https://trade-lee.vercel.app/og-image.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Strategies — Trade Lee">
-<meta name="twitter:description" content="Three intraday strategy breakdowns — setup, entry, stop, and the honest catch for each.">
+<meta name="twitter:title" content="Terms of Service — Trade Lee">
+<meta name="twitter:description" content="Educational use only, not financial advice, no guarantee of results.">
 <meta name="twitter:image" content="https://trade-lee.vercel.app/og-image.png">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230b0e14'/%3E%3Cline x1='11' y1='4' x2='11' y2='28' stroke='%2326a69a' stroke-width='2.2'/%3E%3Crect x='7' y='10' width='8' height='10' rx='1' fill='%2326a69a'/%3E%3Cline x1='23' y1='6' x2='23' y2='25' stroke='%23ef5350' stroke-width='2.2'/%3E%3Crect x='19' y='12' width='8' height='7' rx='1' fill='%23ef5350'/%3E%3C/svg%3E">
 <link rel="manifest" href="/manifest.json">
@@ -26,16 +26,19 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@500;700&display=swap">
 <link rel="stylesheet" href="/theme.css">
 <style>
-  html, body {
-    margin: 0; padding: 0;
-    color: var(--text);
-    font-family: var(--font-body);
-    overflow-x: hidden;
-    -webkit-tap-highlight-color: transparent;
-    min-height: 100vh;
-  }
+  html, body { margin: 0; padding: 0; color: var(--text); font-family: var(--font-body); overflow-x: hidden; -webkit-tap-highlight-color: transparent; min-height: 100vh; }
   a { color: inherit; }
   .wrap { max-width: 1100px; margin: 0 auto; padding: 0 20px; }
+  .updated-note { color: var(--text-dim); font-size: 0.82rem; text-align: center; margin: -24px 0 40px; }
+  .content-card ul { margin: 0 0 14px; padding-left: 20px; color: var(--text); line-height: 1.65; font-size: 0.96rem; }
+  .content-card ul li { margin-bottom: 6px; }
+  .content-card a.inline-link { color: var(--green); text-decoration: underline; text-underline-offset: 2px; }
+  .contact-box {
+    background: var(--surface-2); border: 1px solid var(--border); border-radius: 10px;
+    padding: 14px 16px; margin-top: 10px; font-size: 0.92rem;
+  }
+  .contact-box a { color: var(--green); font-weight: 600; text-decoration: none; }
+  .contact-box a:hover { text-decoration: underline; }
 </style>
 </head>
 <body>
@@ -86,67 +89,56 @@
   <div class="mobile-menu-label">More</div>
   <a href="/funded/">Get Funded</a>
   <a href="/leaderboard/">Leaderboard</a>
-      <a href="/leagues/">Leagues</a>
+  <a href="/leagues/">Leagues</a>
   <a href="/premium/">Pro <span class="soon-tag">BETA</span></a>
 </div>
 
 <main class="content-page">
   <div class="content-hero">
-    <div class="badge">STRATEGIES</div>
-    <h1>Three setups worth knowing</h1>
-    <p>No secrets, no black boxes — just the setups, the entries, and the honest weaknesses of each.</p>
+    <div class="badge">LEGAL</div>
+    <h1>Terms of Service</h1>
+    <p>The short version: this is an educational game, not a trading platform or financial advice. Here's the rest.</p>
   </div>
+  <div class="updated-note">Last updated July 2026</div>
 
   <section class="content-card card">
-    <h2><span class="card-num">1</span>Opening Range Breakout (ORB)</h2>
-    <p class="summary">The most studied intraday setup — a 2023 academic study (Zarattini &amp; Aziz) backtested a 5-minute ORB on US equities and found significant edge on high-volume days.</p>
-    <div class="strategy-block-label">The setup</div>
-    <ul class="checklist">
-      <li><span class="check-icon">→</span>Mark the high/low of the first 15 minutes after 9:30 AM ET</li>
-      <li><span class="check-icon">→</span>Enter on a 5-min candle CLOSE beyond the range — not a wick poke</li>
-      <li><span class="check-icon">→</span>Stop at the opposite side of the range</li>
-      <li><span class="check-icon">→</span>Target 1.5-2x your risk</li>
-      <li><span class="check-icon">→</span>Only trade it 9:45-11:00 AM, when volume is real</li>
-    </ul>
-    <div class="the-catch">
-      <span class="catch-label">The catch</span>
-      Most breakouts fail in chop — it wins by catching a few big trend days, so expect strings of small losses. Never move your stop.
-    </div>
-    <a class="content-cta" href="/play/?mode=daily">Train this pattern → Play The 9:30 Drop</a>
+    <h2><span class="card-num">1</span>Educational use only</h2>
+    <p>Trade Lee is a chart-reading practice game built to help you get faster and more honest about spotting breakouts, fakeouts, and other price-action patterns. That's it. It's not a trading platform, not a broker, not a signal service, and nothing you do here places a real order or touches real money — every "bankroll," P&L number, and streak in the app is simulated.</p>
   </section>
 
   <section class="content-card card">
-    <h2><span class="card-num">2</span>VWAP Pullback</h2>
-    <p class="summary">Institutions benchmark their fills to VWAP, so trending stocks repeatedly bounce off it.</p>
-    <div class="strategy-block-label">The setup</div>
-    <ul class="checklist">
-      <li><span class="check-icon">→</span>Stock trending clearly above VWAP with rising volume</li>
-      <li><span class="check-icon">→</span>Wait for a pullback that TOUCHES VWAP and prints a rejection candle — long lower wick or engulfing</li>
-      <li><span class="check-icon">→</span>Enter on that candle's close</li>
-      <li><span class="check-icon">→</span>Stop just below VWAP</li>
-      <li><span class="check-icon">→</span>Ride toward the prior high</li>
-    </ul>
-    <div class="the-catch">
-      <span class="catch-label">The catch</span>
-      Dead in sideways markets — if price is crossing VWAP repeatedly, there's no trend to pull back within. Stay out.
-    </div>
-    <a class="content-cta" href="/play/?mode=daily">Train this pattern → Play The 9:30 Drop</a>
+    <h2><span class="card-num">2</span>Not financial advice</h2>
+    <p>Nothing in Trade Lee — drills, Academy lessons, strategy pack write-ups, the readiness gate on <a class="inline-link" href="/funded/">/funded/</a>, or anything else — is financial, investment, or trading advice. We're not licensed financial advisors, and nothing here should be treated as a recommendation to buy, sell, or hold any security, or to pursue any specific trading strategy. If you trade real money based on anything you learn here, that decision and its risks are entirely your own.</p>
   </section>
 
   <section class="content-card card">
-    <h2><span class="card-num">3</span>Breakout + Volume Confirmation</h2>
-    <p class="summary">A breakout is only as real as its volume — this is literally what The 9:30 Drop trains your eye to see.</p>
-    <div class="strategy-block-label">The setup</div>
-    <ul class="checklist">
-      <li><span class="check-icon">→</span>Consolidation of at least 45 minutes with a tight range</li>
-      <li><span class="check-icon">→</span>Breakout candle closes beyond the range on 1.5-2x+ average volume → higher odds of follow-through</li>
-      <li><span class="check-icon">→</span>Weak volume breakout = fade candidate back into the range</li>
-    </ul>
-    <div class="the-catch">
-      <span class="catch-label">The catch</span>
-      Volume confirms, it doesn't guarantee — even confirmed breaks fail into major levels overhead (prior day high, big round numbers). Always know what's above you.
-    </div>
-    <a class="content-cta" href="/play/?mode=daily">Train this pattern → Play The 9:30 Drop</a>
+    <h2><span class="card-num">3</span>No guarantee of results</h2>
+    <p>Getting good at Trade Lee — high accuracy, long streaks, a strong Trader Rating — does not guarantee you'll be profitable trading real money, or that you'll pass a real prop firm evaluation. Markets are harder and more expensive than a 10-second drill. We say this directly on <a class="inline-link" href="/funded/">/funded/</a> too: most evaluation attempts fail, and most failures are risk-management mistakes, not pattern-reading mistakes.</p>
+  </section>
+
+  <section class="content-card card">
+    <h2><span class="card-num">4</span>Where the data comes from</h2>
+    <p>Drills are built from real historical market data (see <a class="inline-link" href="/about/">/about/</a> for exactly how) — nothing is hand-drawn or faked. But every drill runs as a simulation: no real order is ever sent to any exchange or broker, and no drill outcome reflects live, real-time market conditions. Treat it as reps against real historical price action, not a live-market trading environment.</p>
+  </section>
+
+  <section class="content-card card">
+    <h2><span class="card-num">5</span>Accounts & leaderboard integrity</h2>
+    <p>Creating an account is free and requires only an email. We reserve the right to remove or suspend an account without notice for: abusing the global leaderboard or leagues (bots, scripted play, exploiting bugs to inflate a streak or rating), harassment of other users, or any attempt to disrupt the service. If we remove your account for one of these reasons, we'll typically explain why if you email us.</p>
+  </section>
+
+  <section class="content-card card">
+    <h2><span class="card-num">6</span>Affiliate links</h2>
+    <p>The firm cards on <a class="inline-link" href="/funded/">/funded/</a> contain affiliate links — see the disclosure directly on that page for the full explanation. Short version: we may earn a commission if you sign up with a firm through our link, at no extra cost to you. That doesn't change the honesty of the readiness check above it, and we only list firms we'd actually use ourselves.</p>
+  </section>
+
+  <section class="content-card card">
+    <h2><span class="card-num">7</span>Changes to these terms</h2>
+    <p>We may update these terms as the app grows. Material changes will be reflected here with an updated date at the top of this page. Continuing to use Trade Lee after a change means you accept the updated terms.</p>
+  </section>
+
+  <section class="content-card card">
+    <h2><span class="card-num">!</span>Contact</h2>
+    <div class="contact-box">Questions about these terms? Email <a href="mailto:tradeleeapp@gmail.com">tradeleeapp@gmail.com</a>.</div>
   </section>
 </main>
 

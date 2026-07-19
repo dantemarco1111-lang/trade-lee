@@ -513,6 +513,7 @@ function tlRenderAuthModalStep(step, ctx) {
       <input type="email" id="authEmailInput" placeholder="you@email.com" autocomplete="email">
       <div class="auth-modal-error hidden" id="authModalErr"></div>
       <button class="btn btn-primary" id="authSendBtn">Send magic link</button>
+      <p class="legal-consent-line">By continuing you agree to the <a href="/terms/">Terms</a> &amp; <a href="/privacy/">Privacy Policy</a>.</p>
     `;
     document.getElementById("authSendBtn").onclick = async () => {
       const input = document.getElementById("authEmailInput");

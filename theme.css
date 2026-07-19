@@ -390,6 +390,20 @@ body {
   transition: border-color 0.15s ease, color 0.15s ease;
 }
 .site-footer .footer-links a:hover { border-color: var(--text-dim); color: var(--text); }
+.site-footer .footer-legal {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 6px 12px;
+  margin-bottom: 10px;
+  font-size: 0.78rem;
+}
+.site-footer .footer-legal a {
+  color: var(--text-dim);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.site-footer .footer-legal a:hover { color: var(--text); }
 .site-footer .footer-disclaimer {
   color: var(--text-dim);
   font-size: 0.75rem;
@@ -622,6 +636,11 @@ body {
 }
 .auth-modal-card h3 { font-family: var(--font-display); font-size: 1.3rem; margin: 0 0 8px; }
 .auth-modal-card p { color: var(--text-dim); font-size: 0.9rem; line-height: 1.5; margin: 0 0 18px; }
+.legal-consent-line, .auth-modal-card p.legal-consent-line {
+  font-size: 0.75rem; color: var(--text-dim); opacity: 0.75; text-align: center;
+  margin: 10px 0 0; line-height: 1.4;
+}
+.legal-consent-line a { color: var(--text-dim); text-decoration: underline; text-underline-offset: 2px; }
 .auth-modal-card input {
   width: 100%; background: var(--surface-2); border: 1px solid var(--border-strong); border-radius: 10px;
   padding: 12px 14px; color: var(--text); font-family: var(--font-body); font-size: 0.95rem;
