@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Stats — Trade Lee</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230b0e14'/%3E%3Cline x1='11' y1='4' x2='11' y2='28' stroke='%2326a69a' stroke-width='2.2'/%3E%3Crect x='7' y='10' width='8' height='10' rx='1' fill='%2326a69a'/%3E%3Cline x1='23' y1='6' x2='23' y2='25' stroke='%23ef5350' stroke-width='2.2'/%3E%3Crect x='19' y='12' width='8' height='7' rx='1' fill='%23ef5350'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@500;700&display=swap">
+<link rel="stylesheet" href="/theme.css">
+<style>
+  html, body { margin: 0; padding: 0; color: var(--text); font-family: var(--font-body); min-height: 100vh; }
+  .wrap { max-width: 880px; margin: 0 auto; padding: 40px 20px 80px; }
+  h1 { font-family: var(--font-display); font-size: 1.6rem; margin: 0 0 4px; }
+  .si-sub { color: var(--text-dim); font-size: 0.85rem; margin: 0 0 28px; }
+  .si-section-title {
+    font-family: var(--font-display); font-size: 0.85rem; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-dim);
+    margin: 28px 0 12px;
+  }
+  .si-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+  @media (min-width: 640px) { .si-grid { grid-template-columns: repeat(4, 1fr); } }
+  .si-cell {
+    background: var(--surface-2); border: 1px solid var(--border); border-radius: 12px;
+    padding: 16px 14px;
+  }
+  .si-val { font-family: var(--font-mono); font-variant-numeric: tabular-nums; font-size: 1.5rem; font-weight: 700; color: var(--text-data); }
+  .si-label { font-size: 0.68rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.4px; margin-top: 4px; }
+  .si-error {
+    background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.3);
+    border-radius: 10px; padding: 14px; color: var(--text); font-size: 0.88rem; margin-bottom: 20px;
+  }
+  .si-refresh {
+    background: var(--surface-2); border: 1px solid var(--border-strong); color: var(--text);
+    font-family: var(--font-body); font-size: 0.82rem; padding: 8px 14px; border-radius: 8px; cursor: pointer;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>📈 Trade Lee — Internal Stats</h1>
+  <p class="si-sub">Not linked anywhere in the app. Aggregate counts only — no raw events, no session data, no PII.</p>
+  <button class="si-refresh" id="refreshBtn">↻ Refresh</button>
+
+  <div id="errorBox"></div>
+
+  <div class="si-section-title">Traffic</div>
+  <div class="si-grid">
+    <div class="si-cell"><div class="si-val" id="visitorsToday">—</div><div class="si-label">Visitors Today</div></div>
+    <div class="si-cell"><div class="si-val" id="visitors7d">—</div><div class="si-label">Visitors 7d</div></div>
+    <div class="si-cell"><div class="si-val" id="visitors30d">—</div><div class="si-label">Visitors 30d</div></div>
+    <div class="si-cell"><div class="si-val" id="pageviewsTotal">—</div><div class="si-label">Pageviews Total</div></div>
+  </div>
+
+  <div class="si-section-title">Product</div>
+  <div class="si-grid">
+    <div class="si-cell"><div class="si-val" id="drillsTotal">—</div><div class="si-label">Drills Played (Total)</div></div>
+    <div class="si-cell"><div class="si-val" id="drills7d">—</div><div class="si-label">Drills Played 7d</div></div>
+    <div class="si-cell"><div class="si-val" id="waitlistTotal">—</div><div class="si-label">Waitlist Signups</div></div>
+    <div class="si-cell"><div class="si-val" id="waitlist7d">—</div><div class="si-label">Waitlist 7d</div></div>
+  </div>
+
+  <div class="si-section-title">Funded — Affiliate Funnel</div>
+  <div class="si-grid">
+    <div class="si-cell"><div class="si-val" id="fundedViewsTotal">—</div><div class="si-label">/funded/ Views (Total)</div></div>
+    <div class="si-cell"><div class="si-val" id="fundedViews7d">—</div><div class="si-label">/funded/ Views 7d</div></div>
+    <div class="si-cell"><div class="si-val" id="firmClicksTotal">—</div><div class="si-label">Firm Clicks (Total)</div></div>
+    <div class="si-cell"><div class="si-val" id="firmClicks7d">—</div><div class="si-label">Firm Clicks 7d</div></div>
+  </div>
+
+  <div class="si-section-title">Clicks by Firm</div>
+  <table class="data-table" id="firmTable"><tbody><tr><td>—</td></tr></tbody></table>
+
+  <div class="si-section-title">Pageviews, Last 14 Days</div>
+  <table class="data-table" id="dayTable"><tbody><tr><td>—</td></tr></tbody></table>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/supabase-config.js"></script>
+<script>
+let sbClient = null;
+try {
+  if (window.supabase && typeof SUPABASE_URL !== "undefined" && SUPABASE_URL) {
+    sbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  }
+} catch (e) { sbClient = null; }
+
+function escapeHtml(str) {
+  const div = document.createElement("div");
+  div.textContent = str == null ? "" : String(str);
+  return div.innerHTML;
+}
+function set(id, val) {
+  const el = document.getElementById(id);
+  if (el) el.textContent = val == null ? "—" : val;
+}
+
+async function loadStats() {
+  const errorBox = document.getElementById("errorBox");
+  errorBox.innerHTML = "";
+  if (!sbClient) {
+    errorBox.innerHTML = `<div class="si-error">Supabase isn't configured on this deploy — can't load stats.</div>`;
+    return;
+  }
+  const { data, error } = await sbClient.rpc("get_internal_stats");
+  if (error) {
+    errorBox.innerHTML = `<div class="si-error">Couldn't load stats: ${escapeHtml(error.message)}. Have you run supabase/stage-revenue1-analytics-schema.sql yet?</div>`;
+    return;
+  }
+  set("visitorsToday", data.visitors_today);
+  set("visitors7d", data.visitors_7d);
+  set("visitors30d", data.visitors_30d);
+  set("pageviewsTotal", data.pageviews_total);
+  set("drillsTotal", data.drills_played_total);
+  set("drills7d", data.drills_played_7d);
+  set("waitlistTotal", data.waitlist_signups_total);
+  set("waitlist7d", data.waitlist_signups_7d);
+  set("fundedViewsTotal", data.funded_pageviews_total);
+  set("fundedViews7d", data.funded_pageviews_7d);
+  set("firmClicksTotal", data.firm_clicks_total);
+  set("firmClicks7d", data.firm_clicks_7d);
+
+  const firmRows = data.firm_clicks_by_firm || [];
+  document.getElementById("firmTable").innerHTML = firmRows.length
+    ? `<thead><tr><th>Firm</th><th>Clicks</th></tr></thead><tbody>${
+        firmRows.map(r => `<tr><td>${escapeHtml(r.firm || "unknown")}</td><td>${r.clicks}</td></tr>`).join("")
+      }</tbody>`
+    : `<tbody><tr><td>No firm clicks yet.</td></tr></tbody>`;
+
+  const dayRows = data.pageviews_last_14d_by_day || [];
+  document.getElementById("dayTable").innerHTML = dayRows.length
+    ? `<thead><tr><th>Day</th><th>Pageviews</th></tr></thead><tbody>${
+        dayRows.map(r => `<tr><td>${escapeHtml(r.day)}</td><td>${r.pageviews}</td></tr>`).join("")
+      }</tbody>`
+    : `<tbody><tr><td>No data yet.</td></tr></tbody>`;
+}
+
+document.getElementById("refreshBtn").onclick = loadStats;
+loadStats();
+</script>
+</body>
+</html>
