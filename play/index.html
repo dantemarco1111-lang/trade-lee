@@ -663,32 +663,68 @@
     content: "•"; position: absolute; left: 2px; color: var(--gold); font-weight: 700;
   }
 
-  /* ---------- full read (Deeper Drill Insight pass) ---------- */
-  .full-read { text-align: left; margin: 0 0 10px; }
-  .full-read summary {
-    cursor: pointer; font-family: var(--font-display); font-size: 0.78rem; font-weight: 700;
-    color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.4px; padding: 4px 0;
+  /* ---------- full read (Deeper Drill Insight pass + anti-clutter pass) ----------
+     Type rhythm: the outcome banner above is the only large text on this card. This
+     headline sentence and every factor row below share one small size — only the
+     verdict word/phrase inside each ever gets a color; icons stay monochrome and rows
+     stay neutral, so nothing floods the card with color except that one word. */
+  .coach-headline-factor {
+    font-size: 0.95rem; font-weight: 600; line-height: 1.4; text-align: left;
+    margin: 0 0 10px; color: var(--text);
   }
-  .full-read-rows { margin-top: 6px; display: flex; flex-direction: column; gap: 5px; }
+  .verdict { font-weight: 800; }
+  .verdict.tint-green { color: var(--green); }
+  .verdict.tint-red { color: var(--red); }
+  .verdict.tint-amber { color: var(--gold); }
+  .full-read-toggle {
+    display: flex; align-items: center; justify-content: space-between; width: 100%;
+    background: none; border: none; cursor: pointer; padding: 6px 0;
+    font-family: var(--font-display); font-size: 0.78rem; font-weight: 700;
+    color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.4px;
+  }
+  .full-read-toggle .fr-chev { transition: transform var(--transition-base); display: inline-block; }
+  .full-read-toggle[aria-expanded="true"] .fr-chev { transform: rotate(180deg); }
+  .full-read-panel { max-height: 0; overflow: hidden; transition: max-height 0.2s ease; }
+  .full-read-rows { display: flex; flex-direction: column; gap: 5px; padding-top: 6px; }
   .full-read-row {
-    display: flex; align-items: flex-start; gap: 8px;
-    background: var(--surface-2); border-left: 3px solid var(--border-strong);
-    border-radius: 8px; padding: 7px 9px; font-size: 0.82rem; line-height: 1.4;
+    display: flex; align-items: center; gap: 8px;
+    background: var(--surface-2); border: 1px solid var(--border);
+    border-radius: 8px; padding: 7px 9px; font-size: 0.82rem; line-height: 1.3;
   }
-  .full-read-row.tint-green { border-left-color: var(--green); }
-  .full-read-row.tint-red { border-left-color: var(--red); }
-  .full-read-row.tint-amber { border-left-color: var(--gold); }
-  .full-read-row .fr-icon { flex-shrink: 0; }
-  .full-read-row .fr-text { color: var(--text); }
+  .full-read-row .fr-icon {
+    flex-shrink: 0; width: 14px; height: 14px; color: var(--text-dim); display: flex;
+  }
+  .full-read-row .fr-icon svg { width: 100%; height: 100%; }
+  .full-read-row .fr-text {
+    color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; flex: 1;
+  }
   .full-read-row .fr-label { font-weight: 700; color: var(--text-data); margin-right: 3px; }
   .coach-actions-row {
     display: flex; align-items: center; justify-content: space-between; gap: 10px;
-    margin: 4px 0 12px; flex-wrap: wrap;
+    margin: 10px 0 12px; flex-wrap: wrap;
   }
   .coach-actions-row .text-link-btn {
     background: none; border: none; color: var(--text-dim); font-size: 0.8rem;
     font-family: var(--font-body); cursor: pointer; padding: 4px 0; text-decoration: underline;
   }
+  /* mobile: Full Read opens as a swipeable bottom sheet instead of an inline panel,
+     so it never pushes the chart off-screen */
+  .full-read-sheet-backdrop {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 999;
+    display: flex; align-items: flex-end; justify-content: center;
+  }
+  .full-read-sheet {
+    background: var(--card); border-top: 1px solid var(--border);
+    border-radius: 20px 20px 0 0; padding: 10px 18px 24px; max-width: 480px; width: 100%;
+    max-height: 80vh; overflow-y: auto; box-sizing: border-box;
+    animation: paywallSlideUp 0.25s ease;
+  }
+  .full-read-sheet-handle { width: 40px; height: 4px; background: var(--border-strong); border-radius: 2px; margin: 0 auto 12px; touch-action: none; }
+  .full-read-sheet-title {
+    font-family: var(--font-display); font-weight: 700; font-size: 0.95rem;
+    margin-bottom: 10px; text-align: left;
+  }
+  .full-read-sheet .full-read-row .fr-text { white-space: normal; overflow: visible; text-overflow: clip; }
   .tells-label {
     position: absolute; left: 8px; z-index: 18;
     background: rgba(92, 158, 255, 0.15); border: 1px solid rgba(92, 158, 255, 0.5);
@@ -2685,22 +2721,28 @@ function nearestLevelInfo(drill) {
   return { price: target, label, distancePct, into: distancePct < 0.5 };
 }
 
+// Row shape everywhere below: { type, iconKey, label, prefix, verdict, suffix, tint, strength }.
+// prefix/suffix render as plain neutral text; only `verdict` (short, evaluative) ever gets a
+// tint color — never a whole row (anti-clutter pass, part 5). `strength` is how decisive this
+// factor is, shared by the headline picker, the pattern-library link, and nothing else needs it
+// to differ between the two so they can never disagree with each other.
 function buildOutcomeRow(drill, isFizzle) {
   if (isFizzle) {
-    return { icon: "🏁", label: "OUTCOME", text: "No follow-through — it just died without ever confirming either way", tint: "amber" };
+    return { type: "outcome", iconKey: "outcome", label: "OUTCOME", prefix: "", verdict: "No follow-through", suffix: " — it just died without ever confirming either way", tint: "amber", strength: 0 };
   }
   if (drill.outcome === "real") {
     const mins = drill.resolution_bar_index != null ? (drill.resolution_bar_index + 1) * barMinutesFor(drill) : null;
     return {
-      icon: "🏁", label: "OUTCOME",
-      text: mins != null ? `Ran +${drill.extension_multiple}x the range in ${mins} min, never retested` : `Ran +${drill.extension_multiple}x the range, never retested`,
-      tint: "green",
+      type: "outcome", iconKey: "outcome", label: "OUTCOME", prefix: "Ran ",
+      verdict: `+${drill.extension_multiple}x the range`,
+      suffix: mins != null ? ` in ${mins} min, never retested` : ", never retested",
+      tint: "green", strength: 0,
     };
   }
   return {
-    icon: "🏁", label: "OUTCOME",
-    text: drill.reversal_minutes != null ? `Held ${drill.reversal_minutes} min, then trapped — closed back inside` : "Trapped — closed back inside the range",
-    tint: "red",
+    type: "outcome", iconKey: "outcome", label: "OUTCOME",
+    prefix: drill.reversal_minutes != null ? `Held ${drill.reversal_minutes} min, then ` : "",
+    verdict: "trapped", suffix: " — closed back inside", tint: "red", strength: 0,
   };
 }
 
@@ -2742,21 +2784,21 @@ function computeSessionInsight() {
   return SESSION_INSIGHT_TEXT[type] ? SESSION_INSIGHT_TEXT[type](count) : null;
 }
 
-function buildFullReadRows(drill, isFizzle) {
+function computeFactorRows(drill, isFizzle) {
   const { isFx, heightPct, ratio, vwapInfo, level } = computeFullReadFacts(drill);
   const rows = [];
 
-  // SETUP
+  // SETUP — descriptive only, never the headline factor
   const consolText = drill.consolidation_minutes ? formatDurationShort(drill.consolidation_minutes) : null;
   const widthText = isFx
     ? `${Math.round((drill.range_high - drill.range_low) / pipSizeFor(drill.ticker))} pips`
     : `$${(drill.range_high - drill.range_low).toFixed(2)}`;
   rows.push({
-    icon: "📏", label: "SETUP",
-    text: consolText
+    type: "setup", iconKey: "setup", label: "SETUP",
+    prefix: consolText
       ? `Coiled for ${consolText} — range ${heightPct.toFixed(2)}% (${widthText}) wide`
       : `Range ${heightPct.toFixed(2)}% (${widthText}) wide before the break`,
-    tint: "neutral",
+    verdict: "", suffix: "", tint: "neutral", strength: 0,
   });
 
   // VOLUME / ACTIVITY (forex has no real volume data — say Activity, never Volume)
@@ -2764,39 +2806,59 @@ function buildFullReadRows(drill, isFizzle) {
   const heavy = ratio >= 1.5, light = ratio < 0.8;
   const barCount = Math.max(1, Math.min(6, Math.round(ratio * 2.5)));
   rows.push({
-    icon: "📊", label: activityWord.toUpperCase(),
-    text: `${activityWord} ${ratio.toFixed(1)}x avg ${"▮".repeat(barCount)} — ${heavy ? "heavy participation" : light ? "no fuel" : "average turnout"}`,
-    tint: heavy ? "green" : light ? "red" : "amber",
+    type: "volume", iconKey: "volume", label: activityWord.toUpperCase(),
+    prefix: `${activityWord} ${ratio.toFixed(1)}x avg ${"▮".repeat(barCount)} — `,
+    verdict: heavy ? "heavy participation" : light ? "no fuel" : "average turnout",
+    suffix: "", tint: heavy ? "green" : light ? "red" : "amber",
+    strength: Math.abs(ratio - 1),
   });
 
   // TREND (VWAP)
   if (vwapInfo) {
     const withFlow = (vwapInfo.position === "above") === (drill.direction === "long");
-    rows.push({
-      icon: "📈", label: "TREND",
-      text: vwapInfo.consistent
-        ? `${vwapInfo.position === "above" ? "Above" : "Below"} VWAP all session — ${withFlow ? "with the flow" : "against the flow"}`
-        : "Fighting VWAP — crossed back and forth before the break",
-      tint: vwapInfo.consistent ? (withFlow ? "green" : "amber") : "amber",
-    });
+    if (vwapInfo.consistent) {
+      rows.push({
+        type: "vwap", iconKey: "trend", label: "TREND",
+        prefix: `${vwapInfo.position === "above" ? "Above" : "Below"} VWAP all session — `,
+        verdict: withFlow ? "with the flow" : "against the flow",
+        suffix: "", tint: withFlow ? "green" : "amber", strength: 0.5,
+      });
+    } else {
+      rows.push({
+        type: "vwap", iconKey: "trend", label: "TREND", prefix: "",
+        verdict: "Fighting VWAP", suffix: " — crossed back and forth before the break",
+        tint: "amber", strength: 0.9,
+      });
+    }
   }
 
   // LEVELS
   if (level) {
     const sellersOrBuyers = drill.direction === "long" ? "sellers likely waiting" : "buyers likely waiting";
-    rows.push({
-      icon: "🧱", label: "LEVELS",
-      text: level.into
-        ? `Broke INTO ${level.label} ${level.distancePct.toFixed(2)}% away — ${sellersOrBuyers}`
-        : `Nearest level: ${level.label}, ${level.distancePct.toFixed(1)}% away — clear runway`,
-      tint: level.into ? "amber" : "green",
-    });
+    if (level.into) {
+      rows.push({
+        type: "levels", iconKey: "levels", label: "LEVELS",
+        prefix: `Broke into ${level.label} ${level.distancePct.toFixed(2)}% away — `,
+        verdict: sellersOrBuyers, suffix: "", tint: "amber",
+        strength: Math.max(0.3, 1 - level.distancePct),
+      });
+    } else {
+      rows.push({
+        type: "levels", iconKey: "levels", label: "LEVELS",
+        prefix: `Nearest level: ${level.label}, ${level.distancePct.toFixed(1)}% away — `,
+        verdict: "clear runway", suffix: "", tint: "green", strength: 0,
+      });
+    }
   }
 
-  // SESSION
+  // SESSION — descriptive only, never the headline factor
   const sessionNote = (SESSION_NOTES[drill.market] || {})[drill.session];
   if (sessionNote) {
-    rows.push({ icon: "🕒", label: "SESSION", text: `${formatEtTime(drill.breakout_time)} — ${sessionNote}`, tint: "neutral" });
+    rows.push({
+      type: "session", iconKey: "session", label: "SESSION",
+      prefix: `${formatEtTime(drill.breakout_time)} — ${sessionNote}`,
+      verdict: "", suffix: "", tint: "neutral", strength: 0,
+    });
   }
 
   // OUTCOME
@@ -2804,39 +2866,203 @@ function buildFullReadRows(drill, isFizzle) {
 
   return rows.slice(0, 6);
 }
+// Kept as the old name too so nothing else has to change call sites.
+function buildFullReadRows(drill, isFizzle) { return computeFactorRows(drill, isFizzle); }
 
-function renderFullReadRows(rows) {
-  const rowsHtml = rows.map(r => `
-    <div class="full-read-row tint-${r.tint}">
-      <span class="fr-icon">${r.icon}</span>
-      <span class="fr-text"><span class="fr-label">${r.label}</span> ${escapeHtml(r.text)}</span>
-    </div>`).join("");
-  const collapsedByDefault = window.innerWidth < 600;
-  return `<details class="full-read" ${collapsedByDefault ? "" : "open"}>
-    <summary>Full Read (${rows.length})</summary>
-    <div class="full-read-rows">${rowsHtml}</div>
-  </details>`;
+function pickHeadlineRow(rows) {
+  const candidates = rows.filter(r => r.type === "volume" || r.type === "vwap" || r.type === "levels");
+  candidates.sort((a, b) => b.strength - a.strength);
+  return candidates.length && candidates[0].strength > 0.15 ? candidates[0] : null;
 }
 
-// "Learn this pattern" — links to the Academy unit matching whichever factor was most decisive.
+const ROW_ICON_SVG = {
+  setup: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M4 3v10M12 3v10M4 8h8"/></svg>',
+  volume: '<svg viewBox="0 0 16 16" fill="currentColor"><rect x="1.5" y="9" width="3" height="5"/><rect x="6.5" y="5" width="3" height="9"/><rect x="11.5" y="2" width="3" height="12"/></svg>',
+  trend: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12L12 3M7 3h5v5"/></svg>',
+  levels: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M2 5h12M2 11h8"/></svg>',
+  session: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><circle cx="8" cy="8" r="6"/><path d="M8 5v3l2 1.5" stroke-linecap="round"/></svg>',
+  outcome: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"><path d="M4 2v12M4 3h8l-2 2.5L12 8H4"/></svg>',
+};
+// prefix/suffix render as plain neutral text; only the verdict clause ever gets tinted —
+// never a whole row or the headline sentence flooded with color (anti-clutter pass, part 5).
+function renderTintedLine(prefix, verdict, suffix, tint) {
+  const verdictHtml = verdict ? `<b class="verdict tint-${tint}">${escapeHtml(verdict)}</b>` : "";
+  return `${escapeHtml(prefix)}${verdictHtml}${escapeHtml(suffix)}`;
+}
+function rowPlainText(r) { return `${r.prefix}${r.verdict}${r.suffix}`; }
+function renderFullReadRows(rows) {
+  return rows.map(r => `
+    <div class="full-read-row" title="${escapeHtml(rowPlainText(r))}">
+      <span class="fr-icon">${ROW_ICON_SVG[r.iconKey] || ""}</span>
+      <span class="fr-text"><span class="fr-label">${r.label}</span> ${renderTintedLine(r.prefix, r.verdict, r.suffix, r.tint)}</span>
+    </div>`).join("");
+}
+function renderFullReadSection(rows) {
+  return `
+    <button class="full-read-toggle" id="fullReadToggle" type="button" aria-expanded="false">
+      <span>Full Read (${rows.length})</span><span class="fr-chev">▾</span>
+    </button>
+    <div class="full-read-panel" id="fullReadPanel"><div class="full-read-rows">${renderFullReadRows(rows)}</div></div>`;
+}
+
+// Standalone headline sentence — the single most decisive factor, phrased as one bold
+// sentence (anti-clutter pass, part 1). Deliberately built fresh rather than reusing a row's
+// prefix/suffix verbatim (rows carry compact chart-style shorthand like volume bars that don't
+// read well as a headline), but always driven by the SAME picked factor so the headline, the
+// "Learn this pattern" link, and the chart tells never disagree about what mattered most.
+function buildHeadlineSentence(picked, drill) {
+  if (!picked) return null;
+  const { isFx, ratio, vwapInfo, level } = computeFullReadFacts(drill);
+  const activityWord = isFx ? "Activity" : "Volume";
+  if (picked.type === "volume") {
+    return {
+      prefix: `${activityWord} was ${ratio.toFixed(1)}x average — `,
+      verdict: ratio >= 1.5 ? "heavy participation, real fuel" : "no fuel, no follow-through",
+      suffix: ".", tint: picked.tint,
+    };
+  }
+  if (picked.type === "vwap") {
+    if (vwapInfo.consistent) {
+      const withFlow = (vwapInfo.position === "above") === (drill.direction === "long");
+      return {
+        prefix: `Traded ${vwapInfo.position} VWAP all session — `,
+        verdict: withFlow ? "with the flow" : "against the flow",
+        suffix: ".", tint: picked.tint,
+      };
+    }
+    return { prefix: "", verdict: "Fought VWAP the whole way", suffix: " — no clean trend to lean on.", tint: picked.tint };
+  }
+  if (picked.type === "levels" && level) {
+    return {
+      prefix: `Broke into ${level.label} ${level.distancePct.toFixed(2)}% away — `,
+      verdict: "that level was always going to matter", suffix: ".", tint: picked.tint,
+    };
+  }
+  return null;
+}
+function renderCoachHeadline(rows, drill, isFizzle) {
+  if (isFizzle) {
+    return `<div class="coach-headline-factor">No follow-through — <b class="verdict tint-amber">it just died</b> before ever confirming either way.</div>`;
+  }
+  const h = buildHeadlineSentence(pickHeadlineRow(rows), drill);
+  return h ? `<div class="coach-headline-factor">${renderTintedLine(h.prefix, h.verdict, h.suffix, h.tint)}</div>` : "";
+}
+
+// "Learn this pattern" — links to the Academy unit matching whichever factor was most decisive
+// (the same pick the headline sentence uses).
 const FACTOR_UNIT_MAP = {
   volume: { unitKey: "volume", lessonIdx: 1 },
   levels: { unitKey: "levels", lessonIdx: 0 },
   vwap: { unitKey: "vwap_trend", lessonIdx: 2 },
   setup: { unitKey: "breakouts", lessonIdx: 2 },
 };
-function dominantFactorType(drill) {
-  const { ratio, vwapInfo, level } = computeFullReadFacts(drill);
-  const volStrength = Math.abs(ratio - 1);
-  const levelStrength = level && level.into ? Math.max(0, 1 - level.distancePct) : 0;
-  const vwapStrength = vwapInfo ? (vwapInfo.consistent ? 0.5 : 0.9) : 0;
-  const scored = [["volume", volStrength], ["levels", levelStrength], ["vwap", vwapStrength]];
-  scored.sort((a, b) => b[1] - a[1]);
-  return scored[0][1] > 0.15 ? scored[0][0] : "setup";
-}
-function learnPatternUrl(drill) {
-  const map = FACTOR_UNIT_MAP[dominantFactorType(drill)];
+function learnPatternUrl(drill, isFizzle) {
+  const picked = pickHeadlineRow(computeFactorRows(drill, isFizzle));
+  const map = FACTOR_UNIT_MAP[picked ? picked.type : "setup"];
   return `/academy/?unit=${map.unitKey}&lesson=${map.lessonIdx}`;
+}
+
+// Progressive-disclosure learning (anti-clutter pass, part 2): 3 consecutive manual expands in a
+// row defaults the panel open from then on; 2 consecutive manual collapses defaults it closed.
+// Until a preference is earned, fall back to the old width heuristic (open on desktop, closed on
+// mobile). Auto-opens from an already-earned preference never count toward the streak — only
+// deliberate taps do.
+function recordFullReadToggle(didOpen) {
+  const s = appState.fullReadPrefStreak || 0;
+  if (didOpen) {
+    const next = s > 0 ? s + 1 : 1;
+    appState.fullReadPrefStreak = next;
+    if (next >= 3) appState.fullReadDefaultOpen = true;
+  } else {
+    const next = s < 0 ? s - 1 : -1;
+    appState.fullReadPrefStreak = next;
+    if (next <= -2) appState.fullReadDefaultOpen = false;
+  }
+  saveState();
+}
+function fullReadShouldStartOpen() {
+  if (appState.fullReadDefaultOpen === true) return true;
+  if (appState.fullReadDefaultOpen === false) return false;
+  return window.innerWidth >= 600;
+}
+function openFullReadPanel() {
+  const panel = document.getElementById("fullReadPanel");
+  const toggle = document.getElementById("fullReadToggle");
+  if (!panel || !toggle) return;
+  panel.style.maxHeight = panel.scrollHeight + "px";
+  toggle.setAttribute("aria-expanded", "true");
+}
+function closeFullReadPanel() {
+  const panel = document.getElementById("fullReadPanel");
+  const toggle = document.getElementById("fullReadToggle");
+  if (!panel || !toggle) return;
+  panel.style.maxHeight = "0px";
+  toggle.setAttribute("aria-expanded", "false");
+}
+// Mobile (anti-clutter pass, part 6): expanding never pushes the chart off-screen — it opens a
+// swipeable bottom sheet instead, dismissible by dragging the handle down.
+function openFullReadSheet(rows) {
+  closeFullReadSheet();
+  const backdrop = document.createElement("div");
+  backdrop.className = "full-read-sheet-backdrop";
+  backdrop.id = "fullReadSheetBackdrop";
+  backdrop.innerHTML = `
+    <div class="full-read-sheet" id="fullReadSheet">
+      <div class="full-read-sheet-handle"></div>
+      <div class="full-read-sheet-title">Full Read</div>
+      <div class="full-read-rows">${renderFullReadRows(rows)}</div>
+    </div>`;
+  document.body.appendChild(backdrop);
+  backdrop.addEventListener("click", e => { if (e.target === backdrop) closeFullReadSheet(true); });
+  wireFullReadSheetDrag(document.getElementById("fullReadSheet"));
+  const toggle = document.getElementById("fullReadToggle");
+  if (toggle) toggle.setAttribute("aria-expanded", "true");
+}
+function closeFullReadSheet(userInitiated) {
+  const backdrop = document.getElementById("fullReadSheetBackdrop");
+  if (backdrop) backdrop.remove();
+  const toggle = document.getElementById("fullReadToggle");
+  if (toggle) toggle.setAttribute("aria-expanded", "false");
+  if (userInitiated) recordFullReadToggle(false);
+}
+function wireFullReadSheetDrag(sheet) {
+  if (!sheet) return;
+  const handle = sheet.querySelector(".full-read-sheet-handle");
+  if (!handle) return;
+  let startY = null, dragY = 0;
+  handle.addEventListener("touchstart", e => { startY = e.touches[0].clientY; sheet.style.transition = "none"; }, { passive: true });
+  handle.addEventListener("touchmove", e => {
+    if (startY === null) return;
+    dragY = Math.max(0, e.touches[0].clientY - startY);
+    sheet.style.transform = `translateY(${dragY}px)`;
+  }, { passive: true });
+  handle.addEventListener("touchend", () => {
+    if (startY === null) return;
+    sheet.style.transition = "";
+    if (dragY > 90) closeFullReadSheet(true); else sheet.style.transform = "";
+    startY = null; dragY = 0;
+  });
+}
+function toggleFullRead(rows) {
+  const toggle = document.getElementById("fullReadToggle");
+  const isOpen = toggle && toggle.getAttribute("aria-expanded") === "true";
+  const isMobile = window.innerWidth < 600;
+  if (isOpen) {
+    if (isMobile) closeFullReadSheet(true); else closeFullReadPanel();
+    recordFullReadToggle(false);
+  } else {
+    if (isMobile) openFullReadSheet(rows); else openFullReadPanel();
+    recordFullReadToggle(true);
+  }
+}
+function wireFullReadToggle(rows) {
+  const toggle = document.getElementById("fullReadToggle");
+  if (!toggle) return;
+  toggle.onclick = () => toggleFullRead(rows);
+  if (fullReadShouldStartOpen()) {
+    // Earned/default open — not a user action, so it never feeds the learning streak.
+    if (window.innerWidth < 600) openFullReadSheet(rows); else openFullReadPanel();
+  }
 }
 
 // "Show the tells" — draws the 2-3 most decisive clues directly on the still-visible chart.
@@ -3143,10 +3369,12 @@ function showCoachCard(drill, isCorrect, pnl, isFizzle, isClutch) {
   }
   outcomeEl.textContent = outcomeText;
   clearTellsAnnotations();
-  whyEl.innerHTML = renderFullReadRows(buildFullReadRows(drill, isFizzle))
+  const fullReadRows = computeFactorRows(drill, isFizzle);
+  whyEl.innerHTML = renderCoachHeadline(fullReadRows, drill, isFizzle)
+    + renderFullReadSection(fullReadRows)
     + `<div class="coach-actions-row">
         <button class="text-link-btn" id="showTellsBtn">👁 Show the tells</button>
-        <a class="text-link-btn" href="${learnPatternUrl(drill)}">📚 Learn this pattern →</a>
+        <a class="text-link-btn" href="${learnPatternUrl(drill, isFizzle)}">📚 Learn this pattern →</a>
       </div>`;
   document.getElementById("showTellsBtn").onclick = toggleTellsAnnotations;
   if (pnl === null) {
@@ -3157,7 +3385,10 @@ function showCoachCard(drill, isCorrect, pnl, isFizzle, isClutch) {
     pnlEl.className = "coach-pnl " + (pnl >= 0 ? "pos" : "neg");
   }
 
+  // Card must be visible (display != none) before measuring the Full Read panel's
+  // scrollHeight for the auto-open animation, or scrollHeight reads 0.
   card.classList.remove("hidden");
+  wireFullReadToggle(fullReadRows);
   document.getElementById("buttonsRow").classList.add("hidden");
 
   const existingSecondChance = document.getElementById("secondChanceBtn");
@@ -4305,6 +4536,7 @@ function renderDailyResultScreen(drill, isCorrect, isFizzle, isClutch, milestone
   const outcomeText = isFizzle
     ? "NO FOLLOW-THROUGH — it just died"
     : drill.outcome === "real" ? `IT RAN ✅ +${drill.extension_multiple}x the range` : `TRAPPED ❌ back inside in ${drill.reversal_minutes} min`;
+  const fullReadRows = computeFactorRows(drill, isFizzle);
 
   const root = document.getElementById("screenRoot");
   root.innerHTML = `
@@ -4315,8 +4547,8 @@ function renderDailyResultScreen(drill, isCorrect, isFizzle, isClutch, milestone
       ${isClutch ? `<div class="clutch-badge pop">CLUTCH ✅</div>` : ""}
       <div class="daily-result-badge ${isCorrect ? "win" : "loss"}">${isCorrect ? "WIN ✅" : "LOSS ❌"}</div>
       <div class="daily-outcome-line">${outcomeText}</div>
-      <div class="daily-why">${renderFullReadRows(buildFullReadRows(drill, isFizzle))}
-        <div class="coach-actions-row"><a class="text-link-btn" href="${learnPatternUrl(drill)}">📚 Learn this pattern →</a></div>
+      <div class="daily-why">${renderCoachHeadline(fullReadRows, drill, isFizzle)}${renderFullReadSection(fullReadRows)}
+        <div class="coach-actions-row"><a class="text-link-btn" href="${learnPatternUrl(drill, isFizzle)}">📚 Learn this pattern →</a></div>
       </div>
       <div class="daily-streaks">
         <div class="mini-stat"><div class="v">${appState.dailyPlayStreak}</div><div class="l">Day Streak</div></div>
@@ -4333,6 +4565,7 @@ function renderDailyResultScreen(drill, isCorrect, isFizzle, isClutch, milestone
   `;
   document.getElementById("dailyBackBtn").onclick = renderStartScreen;
   document.getElementById("shareBtnDaily").onclick = () => generateAndShareCard("daily", { drill, isCorrect });
+  wireFullReadToggle(fullReadRows);
 
   loadDailyDistribution(getEtDateString(0), isCorrect);
   renderSigninPromptInto("dailySigninPrompt");
