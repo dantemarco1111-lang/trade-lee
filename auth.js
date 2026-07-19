@@ -389,6 +389,19 @@ async function tlFetchTotalDrillsAnswered() {
   }
 }
 
+// Count only, no rows returned — how many players have ever logged a stats
+// row. Used for the landing page's "join N traders" line; never fabricated.
+async function tlFetchTotalTraderCount() {
+  if (!sbClient) return null;
+  try {
+    const { count, error } = await sbClient.from("stats").select("*", { count: "exact", head: true });
+    if (error) throw error;
+    return count;
+  } catch (e) {
+    return null;
+  }
+}
+
 // Works whether the visitor is signed in or anonymous — attaches user_id when available.
 async function tlJoinWaitlist(email) {
   if (!sbClient) throw new Error("offline");

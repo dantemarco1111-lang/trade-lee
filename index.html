@@ -72,13 +72,15 @@
        value prop, CTA and the demo card are the whole above-the-fold pitch */
     .hero { min-height: calc(100vh - 69px); display: flex; align-items: center; justify-content: center; }
   }
+  /* one intentional ridge along the right edge, fading toward the hero copy
+     and dissolving under the hero — not scattered ghost candles */
   #heroCanvas {
     position: absolute;
     top: 0; left: 0; width: 100%; height: 100%;
-    opacity: 0.22;
+    opacity: 0.05;
     pointer-events: none;
-    -webkit-mask-image: linear-gradient(90deg, transparent, black 12%, black 88%, transparent);
-    mask-image: linear-gradient(90deg, transparent, black 12%, black 88%, transparent);
+    -webkit-mask-image: linear-gradient(to top right, transparent 10%, transparent 42%, black 75%, black 100%);
+    mask-image: linear-gradient(to top right, transparent 10%, transparent 42%, black 75%, black 100%);
   }
   .hero-inner { position: relative; z-index: 2; }
   @media (min-width: 960px) {
@@ -204,6 +206,12 @@
     .section { padding: 75px 0; }
     .section-tight { padding-top: 24px; }
   }
+  /* section rhythm: alternate the flat bg with a barely-there elevated wash
+     so the page reads as distinct zones, not one continuous void */
+  .section-elevated {
+    background: linear-gradient(180deg, rgba(255,255,255,0.018), transparent 60%), rgba(255,255,255,0.012);
+    border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);
+  }
   .section-title {
     font-family: var(--font-display); font-weight: 700; letter-spacing: -0.4px;
     font-size: 1.5rem; text-align: center; margin: 0 0 30px;
@@ -261,19 +269,36 @@
     .ticker-tape-track { animation: none; }
   }
 
-  /* ---------- social proof ---------- */
+  /* ---------- social proof: real, honest, terminal-styled ---------- */
   .proof {
     text-align: center;
     padding: 34px 20px;
     border-radius: var(--radius-lg);
     background: linear-gradient(135deg, rgba(34,197,94,0.06), rgba(197,146,234,0.05));
   }
-  .proof .proof-lead { color: var(--text-dim); font-size: 0.95rem; margin-bottom: 10px; }
-  .proof .proof-stat {
-    font-family: var(--font-mono); font-variant-numeric: tabular-nums;
-    font-size: clamp(1.8rem, 5vw, 2.6rem); font-weight: 700; color: var(--gold);
+  .proof .proof-lead {
+    color: var(--text-dim); font-size: 0.95rem; margin-bottom: 22px;
+    font-family: var(--font-mono);
   }
-  .proof .proof-stat-label { color: var(--text-dim); font-size: 0.85rem; margin-top: 4px; }
+  .proof .proof-lead b { color: var(--text-data); font-weight: 700; }
+  .proof-stats {
+    display: flex; flex-wrap: wrap; justify-content: center; gap: 14px;
+    max-width: 620px; margin: 0 auto;
+  }
+  .proof-stat-chip {
+    background: rgba(5,7,12,0.35); border: 1px solid var(--border);
+    border-radius: 10px; padding: 16px 10px;
+    flex: 1 1 180px; max-width: 200px;
+  }
+  .proof-stat-chip .psc-value {
+    font-family: var(--font-mono); font-variant-numeric: tabular-nums;
+    font-size: clamp(1.3rem, 4vw, 1.7rem); font-weight: 700; color: var(--gold);
+  }
+  .proof-stat-chip.psc-loading .psc-value { color: var(--text-dim); }
+  .proof-stat-chip .psc-label {
+    color: var(--text-dim); font-size: 0.76rem; margin-top: 4px;
+    font-family: var(--font-mono); letter-spacing: 0.2px;
+  }
 
   /* ---------- FAQ (SEO foundation) ---------- */
   .faq-card { padding: 8px 22px; }
@@ -373,8 +398,8 @@
   <div class="ticker-tape-track" id="tickerTapeTrack"></div>
 </div>
 
-<div class="wrap">
-  <section class="section section-tight">
+<section class="section section-tight section-elevated">
+  <div class="wrap">
     <div class="section-title">How it works</div>
     <div class="how-grid">
       <div class="card how-card">
@@ -450,13 +475,27 @@
         <p>New drill every day at market open. Come back daily.</p>
       </div>
     </div>
-  </section>
+  </div>
+</section>
 
+<div class="wrap">
   <section class="section">
     <div class="proof card">
-      <div class="proof-lead">Join traders training their eye daily</div>
-      <div class="proof-stat">73%</div>
-      <div class="proof-stat-label">got yesterday's drill wrong</div>
+      <div class="proof-lead" id="proofLead">Join traders training their eye daily</div>
+      <div class="proof-stats">
+        <div class="proof-stat-chip psc-loading" id="proofChipDrills">
+          <div class="psc-value">—</div>
+          <div class="psc-label">DRILLS ANSWERED ALL-TIME</div>
+        </div>
+        <div class="proof-stat-chip psc-loading" id="proofChipTrap">
+          <div class="psc-value">—</div>
+          <div class="psc-label">TRAPPED YESTERDAY</div>
+        </div>
+        <div class="proof-stat-chip psc-loading" id="proofChipStreak">
+          <div class="psc-value">—</div>
+          <div class="psc-label">TOP STREAK RUNNING</div>
+        </div>
+      </div>
     </div>
   </section>
 
@@ -602,6 +641,84 @@
   document.addEventListener("click", () => {
     document.querySelectorAll(".nav-dropdown.open").forEach(o => o.classList.remove("open"));
   });
+})();
+</script>
+<script>
+/* Social proof band — every number here comes straight from Supabase.
+   Each chip fails independently and hides itself rather than ever showing
+   a placeholder/fake number; if all three are unreachable the whole grid
+   is removed and the lead line falls back to static, honest copy. */
+(function () {
+  async function loadProof() {
+    if (typeof sbClient === "undefined" || !sbClient) return;
+
+    let anySucceeded = false;
+
+    if (typeof tlFetchTotalTraderCount === "function") {
+      try {
+        const n = await tlFetchTotalTraderCount();
+        if (n !== null && n !== undefined) {
+          const lead = document.getElementById("proofLead");
+          if (lead) lead.innerHTML = `Join <b>${n.toLocaleString()}</b> ${n === 1 ? "trader" : "traders"} training daily`;
+        }
+      } catch (e) {}
+    }
+
+    if (typeof tlFetchTotalDrillsAnswered === "function") {
+      try {
+        const total = await tlFetchTotalDrillsAnswered();
+        const chip = document.getElementById("proofChipDrills");
+        if (total !== null && total !== undefined && chip) {
+          chip.querySelector(".psc-value").textContent = total.toLocaleString();
+          chip.classList.remove("psc-loading");
+          anySucceeded = true;
+        } else if (chip) chip.remove();
+      } catch (e) {
+        const chip = document.getElementById("proofChipDrills");
+        if (chip) chip.remove();
+      }
+    }
+
+    if (typeof tlFetchDailyPercentile === "function") {
+      try {
+        const yesterdayEt = new Intl.DateTimeFormat("en-CA", {
+          timeZone: "America/New_York", year: "numeric", month: "2-digit", day: "2-digit",
+        }).format(new Date(Date.now() - 86400000));
+        const pct = await tlFetchDailyPercentile(yesterdayEt);
+        const chip = document.getElementById("proofChipTrap");
+        if (pct !== null && pct !== undefined && chip) {
+          chip.querySelector(".psc-value").textContent = `${Math.max(0, 100 - pct)}%`;
+          chip.classList.remove("psc-loading");
+          anySucceeded = true;
+        } else if (chip) chip.remove();
+      } catch (e) {
+        const chip = document.getElementById("proofChipTrap");
+        if (chip) chip.remove();
+      }
+    }
+
+    if (typeof tlFetchTopDailyStreak === "function") {
+      try {
+        const top = await tlFetchTopDailyStreak();
+        const chip = document.getElementById("proofChipStreak");
+        if (top && top.streak && chip) {
+          chip.querySelector(".psc-value").textContent = `${top.streak}d`;
+          chip.classList.remove("psc-loading");
+          anySucceeded = true;
+        } else if (chip) chip.remove();
+      } catch (e) {
+        const chip = document.getElementById("proofChipStreak");
+        if (chip) chip.remove();
+      }
+    }
+
+    if (!anySucceeded) {
+      const grid = document.querySelector(".proof-stats");
+      if (grid) grid.remove();
+    }
+  }
+  if (document.readyState === "complete") loadProof();
+  else window.addEventListener("load", loadProof);
 })();
 </script>
 <script>
