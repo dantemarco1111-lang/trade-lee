@@ -4,9 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Trade Lee — can you read the tape?</title>
-<meta name="description" content="Real charts. Real market data. 10 seconds to make the call — most people get trapped.">
+<meta name="description" content="A free chart reading game for real breakout trading practice — 10 seconds to call it real or fake using actual market data. Most people get trapped.">
 <meta property="og:title" content="Trade Lee — can you read the tape?">
-<meta property="og:description" content="Real charts. Real market data. 10 seconds to make the call — most people get trapped.">
+<meta property="og:description" content="A free chart reading game for real breakout trading practice — 10 seconds to call it real or fake using actual market data.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://trade-lee.vercel.app/">
 <meta property="og:image" content="https://trade-lee.vercel.app/og-image.png">
@@ -14,7 +14,7 @@
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="Trade Lee — can you read the tape?">
-<meta name="twitter:description" content="Real charts. Real market data. 10 seconds to make the call — most people get trapped.">
+<meta name="twitter:description" content="A free chart reading game for real breakout trading practice. Most people get trapped.">
 <meta name="twitter:image" content="https://trade-lee.vercel.app/og-image.png">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230b0e14'/%3E%3Cline x1='11' y1='4' x2='11' y2='28' stroke='%2326a69a' stroke-width='2.2'/%3E%3Crect x='7' y='10' width='8' height='10' rx='1' fill='%2326a69a'/%3E%3Cline x1='23' y1='6' x2='23' y2='25' stroke='%23ef5350' stroke-width='2.2'/%3E%3Crect x='19' y='12' width='8' height='7' rx='1' fill='%23ef5350'/%3E%3C/svg%3E">
 <link rel="manifest" href="/manifest.json">
@@ -25,6 +25,30 @@
 <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@500;700&display=swap">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@500;700&display=swap">
 <link rel="stylesheet" href="/theme.css">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "How do I practice reading charts?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Reps against real data with immediate feedback: see a setup, make a call, watch what actually happened next. Trade Lee's practice mode and daily drill use real historical candles with a decision timer and honest scoring, not a simulation."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Is Trade Lee free?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Yes — the daily drill, practice mode, and the full Academy are free to play."
+      }
+    }
+  ]
+}
+</script>
 <style>
   html, body {
     margin: 0; padding: 0;
@@ -201,6 +225,14 @@
     font-size: clamp(1.8rem, 5vw, 2.6rem); font-weight: 700; color: var(--gold);
   }
   .proof .proof-stat-label { color: var(--text-dim); font-size: 0.85rem; margin-top: 4px; }
+
+  /* ---------- FAQ (SEO foundation) ---------- */
+  .faq-card { padding: 8px 22px; }
+  .faq-item { padding: 16px 0; border-bottom: 1px solid var(--border); }
+  .faq-item:last-child { border-bottom: none; }
+  .faq-item h3 { font-family: var(--font-display); font-size: 1rem; margin: 0 0 8px; }
+  .faq-item p { margin: 0; color: var(--text-dim); font-size: 0.9rem; line-height: 1.6; }
+  .faq-item p a { color: var(--green); text-decoration: underline; }
 </style>
 </head>
 <body>
@@ -352,6 +384,24 @@
       <div class="proof-lead">Join traders training their eye daily</div>
       <div class="proof-stat">73%</div>
       <div class="proof-stat-label">got yesterday's drill wrong</div>
+    </div>
+  </section>
+
+  <section class="section section-tight">
+    <div class="section-title">Frequently Asked</div>
+    <div class="card faq-card">
+      <div class="faq-item">
+        <h3>How do I practice reading charts?</h3>
+        <p>Reps against real data with immediate feedback — see a setup, make a call, watch what actually happened next. That loop is what Trade Lee's <a href="/play/?mode=practice">practice mode</a> and daily drill are built around: real historical candles, a decision timer, and an honest score, not a simulation.</p>
+      </div>
+      <div class="faq-item">
+        <h3>Why do most breakouts fail?</h3>
+        <p>Most breakouts are fakeouts — price pokes past a level on thin participation, finds no real buyers or sellers behind it, and snaps back. The <a href="/academy/">Academy</a>'s Breakouts &amp; Fakeouts unit breaks down exactly what to look for.</p>
+      </div>
+      <div class="faq-item">
+        <h3>Is this free?</h3>
+        <p>Yes — the daily drill, practice mode, and the full Academy are free to play. See what's <a href="/premium/">planned for Pro</a> later.</p>
+      </div>
     </div>
   </section>
 </div>

@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Prop Firm Eval Practice — Trade Lee</title>
+<meta name="description" content="Practice for a prop firm evaluation before you pay for one. Free breakout-reading drills, real risk-management rules, and an honest readiness check — not another paid course.">
+<meta property="og:title" content="Prop Firm Eval Practice — Trade Lee">
+<meta property="og:description" content="Practice for a prop firm evaluation before you pay for one. Free breakout-reading drills, real risk rules, and an honest readiness check.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://trade-lee.vercel.app/prop-firm-practice/">
+<meta property="og:image" content="https://trade-lee.vercel.app/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Prop Firm Eval Practice — Trade Lee">
+<meta name="twitter:description" content="Practice for a prop firm evaluation before you pay for one — free breakout drills and an honest readiness check.">
+<meta name="twitter:image" content="https://trade-lee.vercel.app/og-image.png">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230b0e14'/%3E%3Cline x1='11' y1='4' x2='11' y2='28' stroke='%2326a69a' stroke-width='2.2'/%3E%3Crect x='7' y='10' width='8' height='10' rx='1' fill='%2326a69a'/%3E%3Cline x1='23' y1='6' x2='23' y2='25' stroke='%23ef5350' stroke-width='2.2'/%3E%3Crect x='19' y='12' width='8' height='7' rx='1' fill='%23ef5350'/%3E%3C/svg%3E">
+<link rel="manifest" href="/manifest.json">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta name="theme-color" content="#0b0e14">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@500;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@500;700&display=swap">
+<link rel="stylesheet" href="/theme.css">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "How do prop firm evaluations work?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Most prop firms run a paid evaluation on a simulated account: you trade for a set window and have to hit a profit target while staying inside a max drawdown limit (and sometimes a daily loss limit) without breaking rules like overnight holds or news trading. Pass, and the firm funds a real account and pays you a share of the profits. The evaluation isn't really testing whether you can find good setups — it's testing whether you can survive your own drawdown rules under real pressure, since roughly 86% of attempts fail, usually on a risk violation rather than a bad read."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "What's the difference between an intraday trailing drawdown and an end-of-day drawdown?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "An intraday trailing drawdown moves up with your highest unrealized equity peak during the day, so a big open profit that fades before you close it can still tighten or blow your cushion. An end-of-day (EOD) drawdown only recalculates once, at the close, based on your realized balance — generally a more forgiving structure for newer traders since intraday give-back doesn't count against you the same way. Firms mix both models, so read the specific rules before paying for an eval."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Can I actually practice for a prop firm eval for free?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Yes — the skill an eval actually tests (reading whether a breakout is real or a trap, in seconds, under a timer) is trainable without risking or spending money. Trade Lee's daily drill and practice mode use real historical market data, not simulations, so the reps transfer directly to reading a live chart."
+      }
+    }
+  ]
+}
+</script>
+<style>
+  html, body {
+    margin: 0; padding: 0;
+    color: var(--text);
+    font-family: var(--font-body);
+    overflow-x: hidden;
+    -webkit-tap-highlight-color: transparent;
+    min-height: 100vh;
+  }
+  a { color: inherit; }
+  .wrap { max-width: 1100px; margin: 0 auto; padding: 0 20px; }
+
+  .pfp-checklist { list-style: none; padding: 0; margin: 0; }
+  .pfp-checklist li {
+    display: flex; align-items: flex-start; gap: 10px;
+    padding: 10px 0; border-bottom: 1px solid var(--border);
+    font-size: 0.92rem; line-height: 1.5;
+  }
+  .pfp-checklist li:last-child { border-bottom: none; }
+  .pfp-checklist .pfp-check { color: var(--green); font-weight: 700; flex-shrink: 0; }
+
+  .pfp-faq-item { margin-bottom: 18px; }
+  .pfp-faq-item:last-child { margin-bottom: 0; }
+  .pfp-faq-item h3 { font-family: var(--font-display); font-size: 1rem; margin: 0 0 6px; }
+  .pfp-faq-item p { margin: 0; color: var(--text-dim); font-size: 0.9rem; line-height: 1.6; }
+
+  .pfp-cta-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 16px; }
+  .pfp-cta-row .btn { flex: 1 1 200px; text-align: center; text-decoration: none; }
+
+  .pfp-related { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 10px; }
+  .pfp-related a {
+    font-size: 0.85rem; color: var(--text-dim); text-decoration: underline;
+  }
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="wrap site-header-inner">
+    <a class="nav-wordmark" href="/">📈 Trade Lee</a>
+    <nav class="nav-links-desktop">
+      <div class="nav-dropdown" id="playDropdown">
+        <button class="nav-dropdown-trigger" type="button">Play <span class="caret">▾</span></button>
+        <div class="nav-dropdown-menu">
+          <a href="/play/?mode=daily">The 9:30 Drop</a>
+          <a href="/play/?mode=practice">Practice</a>
+        </div>
+      </div>
+      <div class="nav-dropdown" id="learnDropdown">
+        <button class="nav-dropdown-trigger" type="button">Learn <span class="caret">▾</span></button>
+        <div class="nav-dropdown-menu">
+          <a href="/academy/">Academy</a>
+          <a href="/risk/">Risk</a>
+          <a href="/strategies/">Strategies</a>
+          <a href="/learn/">Lessons</a>
+          <a href="/about/">About</a>
+        </div>
+      </div>
+      <a href="/funded/">Get Funded</a>
+      <a href="/leaderboard/">Leaderboard</a>
+      <a href="/leagues/">Leagues</a>
+      <a href="/premium/">Pro <span class="soon-tag">BETA</span></a>
+    </nav>
+    <button class="hamburger-btn" id="hamburgerBtn" aria-label="Open menu">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</header>
+
+<div class="mobile-menu-overlay" id="mobileMenuOverlay">
+  <button class="mobile-menu-close" id="mobileMenuClose" aria-label="Close menu">✕</button>
+  <div class="mobile-menu-label">Play</div>
+  <a href="/play/?mode=daily">The 9:30 Drop</a>
+  <a href="/play/?mode=practice">Practice</a>
+  <div class="mobile-menu-label">Learn</div>
+  <a href="/academy/">Academy</a>
+  <a href="/risk/">Risk</a>
+  <a href="/strategies/">Strategies</a>
+  <a href="/learn/">Lessons</a>
+  <a href="/about/">About</a>
+  <div class="mobile-menu-label">More</div>
+  <a href="/funded/">Get Funded</a>
+  <a href="/leaderboard/">Leaderboard</a>
+  <a href="/leagues/">Leagues</a>
+  <a href="/premium/">Pro <span class="soon-tag">BETA</span></a>
+</div>
+
+<main class="content-page">
+  <div class="content-hero">
+    <div class="badge">PROP FIRM EVAL PRACTICE</div>
+    <h1>Practice for your evaluation before you pay for one</h1>
+    <p>Prop firm evaluations don't really test whether you can find good setups — they test whether you can survive your own drawdown rules under real pressure. That's a trainable skill, and you don't need to risk an eval fee to start.</p>
+  </div>
+
+  <section class="content-card card">
+    <h2><span class="card-num">1</span>What an Evaluation Actually Tests</h2>
+    <p>Roughly 86% of prop firm evaluations fail — and most of those failures are risk violations, not bad reads on the market. The eval is a discipline test wearing a trading costume. Three things decide it:</p>
+    <ul class="pfp-checklist">
+      <li><span class="pfp-check">✓</span><span><strong>Reading breakouts fast and correctly.</strong> Real move or trap, decided in seconds, not minutes of hesitation.</span></li>
+      <li><span class="pfp-check">✓</span><span><strong>Knowing your specific drawdown rule cold.</strong> Intraday trailing and end-of-day drawdowns behave very differently — sizing a trade without knowing which one you're under is how evals die.</span></li>
+      <li><span class="pfp-check">✓</span><span><strong>Consistency over a stretch of days,</strong> not one lucky session. Evals are usually measured over multiple trading days minimum.</span></li>
+    </ul>
+  </section>
+
+  <section class="content-card card">
+    <h2><span class="card-num">2</span>How to Actually Practice For It</h2>
+    <p>You don't need a funded account, a simulator subscription, or another paid course to build the core skill. You need reps against real market data, with a timer, and honest scoring.</p>
+    <div class="pfp-cta-row">
+      <a class="btn btn-primary" href="/play/?mode=practice">Practice free →</a>
+      <a class="btn btn-ghost" href="/risk/">Learn the risk rules →</a>
+    </div>
+    <p style="margin-top:16px;">Trade Lee's drills are built from real historical candles, not synthetic patterns — see <a href="/about/">how they're generated</a>. The <a href="/academy/">Academy</a> walks the underlying concepts (volume, VWAP, support/resistance) if you want the theory alongside the reps.</p>
+  </section>
+
+  <section class="content-card card">
+    <h2><span class="card-num">3</span>Know Before You Pay</h2>
+    <p>Once your accuracy and reps are real, <a href="/funded/">Get Funded</a> has an honest readiness check — it reads your actual practice stats and tells you straight whether you look ready, plus the drawdown-type differences between firms worth knowing before you pick one.</p>
+  </section>
+
+  <section class="content-card card">
+    <h2><span class="card-num">?</span>Frequently Asked</h2>
+    <div class="pfp-faq-item">
+      <h3>How do prop firm evaluations work?</h3>
+      <p>Most firms run a paid evaluation on a simulated account: trade for a set window, hit a profit target, stay inside a max drawdown limit (and often a daily loss limit) without breaking rules like overnight holds. Pass, and the firm funds a real account and splits the profits with you.</p>
+    </div>
+    <div class="pfp-faq-item">
+      <h3>What's the difference between an intraday trailing drawdown and an end-of-day drawdown?</h3>
+      <p>Intraday trailing moves up with your highest unrealized equity peak during the day, so a big open profit that fades before you close it can still tighten your cushion. End-of-day only recalculates once, at the close — generally more forgiving for newer traders. Read the specific rules before you pay for an eval; see the <a href="/funded/">firm breakdown</a> for which is which.</p>
+    </div>
+    <div class="pfp-faq-item">
+      <h3>Can I actually practice for a prop firm eval for free?</h3>
+      <p>Yes. The core skill — reading whether a breakout is real or a trap, fast, under a timer — is trainable without risking money. <a href="/play/?mode=practice">Practice mode</a> and the daily drill both use real historical market data, not simulations, so the reps transfer.</p>
+    </div>
+  </section>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <div class="footer-wordmark">📈 Trade Lee</div>
+    <div class="footer-tagline">Trade Lee — train your eye. © 2026</div>
+    <div class="footer-links">
+      <a href="#" data-social="tiktok">TikTok</a>
+      <a href="#" data-social="x">X</a>
+      <a href="#" data-social="instagram">Instagram</a>
+      <a href="#" data-social="youtube">YouTube</a>
+    </div>
+    <div class="footer-disclaimer">Educational content, not financial advice. Trading involves substantial risk of loss.</div>
+  </div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/supabase-config.js"></script>
+<script src="/auth.js"></script>
+<script src="/analytics.js"></script>
+<script src="/social-links.js"></script>
+<script>
+(function () {
+  const overlay = document.getElementById("mobileMenuOverlay");
+  document.getElementById("hamburgerBtn").onclick = () => overlay.classList.add("open");
+  document.getElementById("mobileMenuClose").onclick = () => overlay.classList.remove("open");
+  overlay.querySelectorAll("a").forEach(a => a.addEventListener("click", () => overlay.classList.remove("open")));
+
+  document.querySelectorAll(".nav-dropdown").forEach(dd => {
+    const trigger = dd.querySelector(".nav-dropdown-trigger");
+    trigger.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const isOpen = dd.classList.contains("open");
+      document.querySelectorAll(".nav-dropdown.open").forEach(o => o.classList.remove("open"));
+      if (!isOpen) dd.classList.add("open");
+    });
+  });
+  document.addEventListener("click", () => {
+    document.querySelectorAll(".nav-dropdown.open").forEach(o => o.classList.remove("open"));
+  });
+})();
+</script>
+</body>
+</html>

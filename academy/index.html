@@ -25,6 +25,22 @@
 <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@500;700&display=swap">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@500;700&display=swap">
 <link rel="stylesheet" href="/theme.css">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "Why do most breakouts fail?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Most breakouts are fakeouts — price pokes past a level on thin participation, finds no real buyers or sellers behind it, and snaps back before the move can follow through. Volume, VWAP position at the break, and how far price extends before reversing are the tells."
+      }
+    }
+  ]
+}
+</script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="/supabase-config.js"></script>
 <script src="/auth.js"></script>
@@ -205,6 +221,21 @@
     /* lesson list is one group, the quiz CTA below it is a distinct one */
     .quiz-cta-btn { margin-top: 22px; }
   }
+  .lesson-related { margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--border); }
+  .lesson-related-label {
+    font-family: var(--font-mono); font-size: 0.68rem; color: var(--text-dim);
+    text-transform: uppercase; letter-spacing: 0.4px; margin-bottom: 8px;
+  }
+  .lesson-related a {
+    display: inline-block; font-size: 0.85rem; color: var(--green);
+    text-decoration: underline; margin-right: 16px;
+  }
+  /* ---------- FAQ (SEO foundation) ---------- */
+  .faq-card { padding: 22px 24px; }
+  .faq-item { padding: 4px 0; }
+  .faq-item h3 { font-family: var(--font-display); font-size: 0.95rem; margin: 0 0 8px; }
+  .faq-item p { margin: 0; color: var(--text-dim); font-size: 0.88rem; line-height: 1.6; }
+  .faq-item p a { color: var(--green); text-decoration: underline; }
 </style>
 </head>
 <body>
@@ -261,6 +292,16 @@
 </div>
 
 <main class="acad-main" id="academyRoot"></main>
+
+<div class="acad-main">
+  <section class="content-card card faq-card">
+    <h2 style="font-family:var(--font-display);font-size:1.05rem;margin:0 0 12px;">Frequently Asked</h2>
+    <div class="faq-item">
+      <h3>Why do most breakouts fail?</h3>
+      <p>Most breakouts are fakeouts — price pokes past a level on thin participation, finds no real buyers or sellers behind it, and snaps back before the move can follow through. Volume, VWAP position at the break, and how far price extends before reversing are the tells covered in the <a href="/academy/?unit=breakouts&amp;lesson=1">Breakouts &amp; Fakeouts unit</a>.</p>
+    </div>
+  </section>
+</div>
 
 <footer class="site-footer">
   <div class="wrap">
@@ -864,6 +905,31 @@ function renderUnitDetail(unitKey) {
 }
 
 /* ============================= RENDER: LESSON ============================= */
+// Internal links (SEO foundation): every lesson links out to 2 related pages —
+// mostly other parts of the site rather than more academy lessons, so the
+// crawl graph actually spreads instead of looping inside one unit.
+const UNIT_RELATED_LINKS = {
+  foundations: [{ href: "/play/?mode=practice", label: "Try a free practice drill" }, { href: "/academy/?unit=candles&lesson=0", label: "Next: Candles" }],
+  candles: [{ href: "/academy/?unit=volume&lesson=0", label: "Volume" }, { href: "/strategies/", label: "Strategy breakdowns" }],
+  volume: [{ href: "/academy/?unit=vwap_trend&lesson=0", label: "VWAP & Trend" }, { href: "/strategies/", label: "Strategy breakdowns" }],
+  levels: [{ href: "/academy/?unit=breakouts&lesson=0", label: "Breakouts & Fakeouts" }, { href: "/risk/", label: "Risk management" }],
+  breakouts: [{ href: "/prop-firm-practice/", label: "Prop firm eval practice" }, { href: "/academy/?unit=volume&lesson=0", label: "Volume" }],
+  vwap_trend: [{ href: "/strategies/", label: "Strategy breakdowns" }, { href: "/academy/?unit=breakouts&lesson=0", label: "Breakouts & Fakeouts" }],
+  risk: [{ href: "/funded/", label: "Get funded" }, { href: "/prop-firm-practice/", label: "Prop firm eval practice" }],
+  order_types: [{ href: "/strategies/", label: "Strategy breakdowns" }, { href: "/risk/", label: "Risk management" }],
+  sessions: [{ href: "/strategies/", label: "Strategy breakdowns" }, { href: "/academy/?unit=vwap_trend&lesson=0", label: "VWAP & Trend" }],
+  smc: [{ href: "/strategies/", label: "Strategy breakdowns" }, { href: "/about/", label: "About & methodology" }],
+  psychology: [{ href: "/risk/", label: "Risk management" }, { href: "/leagues/", label: "Weekly leagues" }],
+  prop_firm: [{ href: "/funded/", label: "Get funded" }, { href: "/prop-firm-practice/", label: "Prop firm eval practice" }],
+};
+function renderRelatedLinks(unitKey) {
+  const links = UNIT_RELATED_LINKS[unitKey];
+  if (!links || !links.length) return "";
+  return `<div class="lesson-related">
+    <div class="lesson-related-label">Related</div>
+    ${links.map(l => `<a href="${l.href}">${escapeHtml(l.label)} →</a>`).join("")}
+  </div>`;
+}
 function renderLesson(unitKey, idx) {
   const unit = ACADEMY_UNITS.find(u => u.key === unitKey);
   const lesson = unit.lessons[idx];
@@ -879,6 +945,7 @@ function renderLesson(unitKey, idx) {
     <div class="lesson-content">
       <h2>${escapeHtml(lesson.title)}</h2>
       ${renderLessonBody(lesson.body)}
+      ${renderRelatedLinks(unitKey)}
     </div>
     <div class="lesson-nav">
       ${idx > 0 ? `<button class="acad-secondary-btn" id="prevBtn">← Previous</button>` : ""}
