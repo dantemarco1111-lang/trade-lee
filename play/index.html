@@ -1138,34 +1138,68 @@
   /* ---------- desktop two-column game screen (Stage 2) ----------
      Chart stays large on the left; stats/streak/timer/decision buttons and
      the result card form a right rail instead of stacking below the chart
-     or overlaying it. Pure CSS (float + display:contents) — no JS or DOM
-     changes, so every mode (practice/daily/lsw/strategy_pack/speedrun/
-     review/order trainer) gets this for free since they all reuse the same
-     class names. #content uses display:contents so its children become
-     real layout siblings of .topbar/.statsbar in #screenRoot — floats need
-     that flat sibling relationship to sit side by side correctly. */
+     or overlaying it. CSS Grid (was float, Stage 2 v1) + display:contents —
+     no JS or DOM changes, so every mode (practice/daily/lsw/strategy_pack/
+     speedrun/review/order trainer) gets this for free since they all reuse
+     the same class names. #content uses display:contents so its children
+     become real grid items of #screenRoot directly, same trick floats used.
+     Switched off float: floats can never be placed above an EARLIER float
+     in source order regardless of side, so once .chart-card/.legend-row
+     (left) rendered tall, .coach-card (right, later in the DOM) was forced
+     down to clear them even though it's in the other column — grid columns
+     are genuinely independent, so each side stacks purely on its own
+     content height. This is what made the result card push past the fold
+     on short desktop windows even after everything above it was hidden. */
   @media (min-width: 960px) {
     #app, .site-nav { max-width: 1200px; }
     #content { display: contents; }
-    #screenRoot::after { content: ""; display: block; clear: both; }
-    #screenRoot > .topbar { clear: both; }
-    /* 344px rail + 35px gutter (was 28px — +25%, the clearest distinct-group
-       seam on this screen: chart group vs. stats/decision group) */
-    .chart-toolbar, .chart-card, .legend-row,
-    #content > .chart-toolbar, #content > .chart-card, #content > .legend-row {
-      float: left; width: calc(100% - 379px); clear: left;
+    #screenRoot {
+      display: grid;
+      grid-template-columns: calc(100% - 379px) 344px;
+      column-gap: 35px; /* was 28px float gutter — +25%, the clearest distinct-group seam: chart group vs. stats/decision group */
+      align-items: start;
     }
-    .statsbar, .powerup-bar, .timer-bar-wrap, .decision-prompt,
-    .don-card, .buttons-row, .skip-message, .coach-card, .ot-ticket {
-      float: right; width: 344px; clear: right;
-    }
+    #screenRoot > .topbar { grid-column: 1 / -1; grid-row: 1; }
+    #multiplierBadge { grid-column: 1 / -1; grid-row: 1; }
+    /* Explicit grid-row per item, not just grid-column: plain auto-placement
+       (grid-auto-flow: row, the default) advances a single shared cursor
+       through the grid in DOM order — it does NOT give each column its own
+       independent row counter. Without this, a tall column-1 item still
+       forces column-2 items down to a later row, the exact same symptom the
+       float version had, just via a different mechanism. Explicit rows make
+       the two columns genuinely independent regardless of content height. */
+    .chart-toolbar, #content > .chart-toolbar { grid-column: 1; grid-row: 2; }
+    .chart-card, #content > .chart-card { grid-column: 1; grid-row: 3; }
+    .legend-row, #content > .legend-row { grid-column: 1; grid-row: 4; }
+    .statsbar { grid-column: 2; grid-row: 2; }
+    .powerup-bar { grid-column: 2; grid-row: 3; }
+    .timer-bar-wrap { grid-column: 2; grid-row: 4; }
+    .decision-prompt { grid-column: 2; grid-row: 5; }
+    .buttons-row, .don-card, .ot-ticket { grid-column: 2; grid-row: 6; }
+    .skip-message { grid-column: 2; grid-row: 7; }
+    .coach-card { grid-column: 2; grid-row: 8; }
     .chart-card { margin-bottom: 12px; }
     /* statsbar is its own bordered instrument-panel group; the decision
        controls below it (timer/prompt/buttons) are a second, tightly-coupled
        group — give the boundary between them real room on desktop while
        everything inside the decision group stays tight (grouping law). */
-    .statsbar { margin-bottom: 18px; }
-    .coach-card { margin-top: 16px; }
+    .statsbar { margin-bottom: 12px; }
+    /* Right-column vertical rhythm trimmed further on desktop specifically —
+       the goal here is fitting the full decision + full result in one
+       768px-tall window (1366x768/1280x600), which is a tighter constraint
+       than the mobile spacing this component was originally tuned for. */
+    .coach-card { margin-top: 10px; padding: 12px 14px; }
+    .coach-outcome { margin-bottom: 6px; font-size: 1.1rem; }
+    .coach-actions-row { margin: 6px 0 8px; }
+    .coach-pnl { margin-bottom: 6px; }
+    .full-read-toggle { padding: 4px 0; }
+    /* Trim the fixed top-of-screen chrome too — this overhead exists on
+       every drill regardless of content, so it directly determines the
+       floor for the shortest required viewport (1280x600). */
+    .topbar { padding: 0 0 4px; }
+    .bankroll-value { font-size: 1.5rem; }
+    .statsbar { padding: 6px 2px; }
+    .decision-prompt { margin: 4px 0; }
   }
 </style>
 </head>
@@ -3004,9 +3038,11 @@ function recordFullReadToggle(didOpen) {
   saveState();
 }
 function fullReadShouldStartOpen() {
-  if (appState.fullReadDefaultOpen === true) return true;
-  if (appState.fullReadDefaultOpen === false) return false;
-  return window.innerWidth >= 600;
+  // Default closed everywhere (was desktop-only auto-open) — the headline +
+  // one decisive-factor line must fit the decision zone's exact footprint
+  // with zero scroll on short desktop windows (1366x768, 1280x600); an
+  // auto-expanded Full Read panel reliably pushed past the fold there.
+  return appState.fullReadDefaultOpen === true;
 }
 function openFullReadPanel() {
   const panel = document.getElementById("fullReadPanel");
@@ -3323,6 +3359,18 @@ function setClutchBadge(isClutch) {
     badge.classList.add("hidden");
   }
 }
+// Reveal the result card in the exact spot the decision controls occupied —
+// no accumulated height means answer -> explanation is readable with zero
+// scroll on short desktop windows (1366x768, 1280x600). Everything hidden
+// here comes back automatically since loadDrill() calls renderShell(), which
+// rebuilds this DOM fresh (un-hidden) for every new drill.
+function hideDecisionZoneForReveal() {
+  document.getElementById("buttonsRow").classList.add("hidden");
+  const promptEl = document.querySelector(".decision-prompt");
+  if (promptEl) promptEl.classList.add("hidden");
+  const timerEl = document.querySelector(".timer-bar-wrap");
+  if (timerEl) timerEl.classList.add("hidden");
+}
 function showStrategyPackCoachCard(drill, choice, isCorrect, pnl, isClutch) {
   const card = document.getElementById("coachCard");
   const outcomeEl = document.getElementById("coachOutcome");
@@ -3340,7 +3388,7 @@ function showStrategyPackCoachCard(drill, choice, isCorrect, pnl, isClutch) {
   pnlEl.className = "coach-pnl " + (pnl >= 0 ? "pos" : "neg");
 
   card.classList.remove("hidden");
-  document.getElementById("buttonsRow").classList.add("hidden");
+  hideDecisionZoneForReveal();
 }
 function computeLswPnl(drill, choice, isCorrect) {
   if (choice === "wait") return isCorrect ? 20 : -15;
@@ -3370,7 +3418,7 @@ function showLswCoachCard(drill, choice, isCorrect, pnl, isClutch) {
   pnlEl.className = "coach-pnl " + (pnl >= 0 ? "pos" : "neg");
 
   card.classList.remove("hidden");
-  document.getElementById("buttonsRow").classList.add("hidden");
+  hideDecisionZoneForReveal();
 }
 
 function showCoachCard(drill, isCorrect, pnl, isFizzle, isClutch) {
@@ -3413,7 +3461,7 @@ function showCoachCard(drill, isCorrect, pnl, isFizzle, isClutch) {
   // scrollHeight for the auto-open animation, or scrollHeight reads 0.
   card.classList.remove("hidden");
   wireFullReadToggle(fullReadRows);
-  document.getElementById("buttonsRow").classList.add("hidden");
+  hideDecisionZoneForReveal();
 
   const existingSecondChance = document.getElementById("secondChanceBtn");
   if (existingSecondChance) existingSecondChance.remove();
