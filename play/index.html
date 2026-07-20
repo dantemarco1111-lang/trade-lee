@@ -290,6 +290,17 @@
     background: var(--surface-2); border: 1px solid var(--border);
     font-size: 0.66rem; white-space: nowrap;
   }
+  .toolbar-info-btn {
+    background: none; border: none; color: var(--text-dim); font-size: 0.95rem;
+    cursor: pointer; padding: 0 0 0 2px; line-height: 1;
+  }
+  .toolbar-info-btn:hover { color: var(--text); }
+  .setup-card-screen { max-width: 420px; margin: 0 auto; }
+  .setup-card-diagram { margin-bottom: 14px; }
+  .setup-diagram { width: 100%; height: auto; background: var(--surface-2); border: 1px solid var(--border); border-radius: 12px; }
+  .setup-card-text .onboarding-plan-line { font-size: 0.9rem; line-height: 1.5; }
+  .setup-card-overlay-card { max-width: 380px; text-align: left; }
+  .setup-card-overlay-card h3 { margin: 0 0 14px; font-family: var(--font-display); }
 
   .range-zone {
     position: absolute;
@@ -430,6 +441,11 @@
   .strategy-pack-card.pro-locked { opacity: 0.75; }
   .spc-label { font-family: var(--font-display); font-size: 0.95rem; margin-bottom: 3px; display: flex; align-items: center; gap: 8px; }
   .spc-desc { font-size: 0.78rem; color: var(--muted); line-height: 1.35; }
+  .spc-edge {
+    margin-top: 8px; font-family: var(--font-mono); font-variant-numeric: tabular-nums;
+    font-size: 0.72rem; color: var(--text-dim);
+  }
+  .spc-edge.leak { color: var(--red); font-weight: 700; }
   .pro-chip-inline {
     display: inline-block; font-family: var(--font-mono); font-size: 0.55rem; font-weight: 700; letter-spacing: 0.3px;
     color: #1a1200; background: #f5b400; border-radius: 6px; padding: 2px 6px;
@@ -1371,6 +1387,8 @@ function defaultState() {
     orderTrainerStats: { totalOrders: 0, filled: 0, wins: 0 },
     // strategy packs (Phase 3)
     strategyPackStats: { totalAnswered: 0, totalCorrect: 0 },
+    // per-pack breakdown (Stage 5 teaching pass) — { [packKey]: { correct, total } }, local-only
+    strategyPackByKey: {},
     // freemium daily limits (Phase 5) — reset each ET calendar day
     practiceSessionsToday: 0, practiceSessionsDate: null,
     orderTrainerToday: 0, orderTrainerDate: null,
@@ -2219,6 +2237,7 @@ function chartToolbarHtml() {
     <span class="toolbar-sep">•</span>
     <span class="toolbar-timeframe">${escapeHtml(timeframe)}</span>
     ${session ? `<span class="toolbar-session">${escapeHtml(session)}</span>` : ""}
+    ${currentMode === "strategy_pack" ? `<button class="toolbar-info-btn" id="packInfoBtn" type="button" aria-label="Setup info">ⓘ</button>` : ""}
   </div>`;
 }
 function renderShell() {
@@ -2291,6 +2310,8 @@ function renderShell() {
   }
   document.getElementById("donAcceptBtn").onclick = () => resolveDoubleOrNothingOffer(true);
   document.getElementById("donDeclineBtn").onclick = () => resolveDoubleOrNothingOffer(false);
+  const packInfoBtn = document.getElementById("packInfoBtn");
+  if (packInfoBtn) packInfoBtn.onclick = () => showStrategyPackInfoOverlay(currentStrategyPack);
   document.getElementById("nextBtn").onclick = () => {
     clearTimeout(autoAdvanceHandle);
     if (currentMode === "speedrun") advanceOrEndSpeedRun();
@@ -3149,6 +3170,34 @@ function computeDecisiveClues(drill) {
   clues.sort((a, b) => b.strength - a.strength);
   return clues.slice(0, 3);
 }
+// Strategy-pack tells: only for packs with a genuine stored price level the
+// chart already draws (range/zone/swept-level/gap lines) — packs like
+// trend_pullback or market_structure rely on reference lines (EMA9/20, swing
+// pivots) the chart doesn't actually render, so faking markers there would be
+// dishonest rather than just incomplete.
+function computeStrategyPackClues(drill, pack) {
+  const clues = [];
+  switch (pack.key) {
+    case "orb":
+    case "range_trading":
+      if (drill.range_high != null) clues.push({ price: drill.range_high, label: pack.key === "orb" ? "Opening range high" : "Range high" });
+      if (drill.range_low != null) clues.push({ price: drill.range_low, label: pack.key === "orb" ? "Opening range low" : "Range low" });
+      break;
+    case "supply_demand":
+    case "order_blocks":
+      if (drill.zone_high != null) clues.push({ price: drill.zone_high, label: `${drill.zone_kind || "Zone"} high` });
+      if (drill.zone_low != null) clues.push({ price: drill.zone_low, label: `${drill.zone_kind || "Zone"} low` });
+      break;
+    case "liquidity_sweep":
+      if (drill.swept_level != null) clues.push({ price: drill.swept_level, label: "Swept level" });
+      break;
+    case "fair_value_gap":
+      if (drill.gap_top != null) clues.push({ price: drill.gap_top, label: "Gap top" });
+      if (drill.gap_bottom != null) clues.push({ price: drill.gap_bottom, label: "Gap bottom" });
+      break;
+  }
+  return clues.slice(0, 3);
+}
 function clearTellsAnnotations() {
   tellsPriceLines.forEach(l => { try { candleSeries.removePriceLine(l); } catch (e) {} });
   tellsPriceLines = [];
@@ -3165,7 +3214,8 @@ function toggleTellsAnnotations() {
   }
   if (!candleSeries || !currentDrill) return;
   const chartCard = document.getElementById("chartCard");
-  computeDecisiveClues(currentDrill).forEach(clue => {
+  const clues = currentMode === "strategy_pack" ? computeStrategyPackClues(currentDrill, currentStrategyPack) : computeDecisiveClues(currentDrill);
+  clues.forEach(clue => {
     try {
       tellsPriceLines.push(candleSeries.createPriceLine({
         price: clue.price, color: "#5c9eff", lineWidth: 1,
@@ -3382,13 +3432,18 @@ function showStrategyPackCoachCard(drill, choice, isCorrect, pnl, isClutch) {
   const answerLabel = btnMatch ? btnMatch[1] : drill.correct_answer.toUpperCase();
   outcomeEl.textContent = `${answerLabel} WAS CORRECT ${isCorrect ? "✅" : "❌"}`;
   outcomeEl.className = "coach-outcome " + (isCorrect ? "correct" : "wrong");
-  whyEl.innerHTML = renderWhyBullets(coachWhyBullets(drill));
+  clearTellsAnnotations();
+  const hasClues = computeStrategyPackClues(drill, currentStrategyPack).length > 0;
+  whyEl.innerHTML = renderWhyBullets(strategyPackWhyBullets(drill, currentStrategyPack, isCorrect))
+    + (hasClues ? `<div class="coach-actions-row"><button class="text-link-btn" id="showTellsBtn">Show the tells</button></div>` : "");
+  if (hasClues) document.getElementById("showTellsBtn").onclick = toggleTellsAnnotations;
   pnlEl.classList.remove("hidden");
   pnlEl.textContent = (pnl >= 0 ? "+" : "") + formatMoney(pnl);
   pnlEl.className = "coach-pnl " + (pnl >= 0 ? "pos" : "neg");
 
   card.classList.remove("hidden");
   hideDecisionZoneForReveal();
+  recordStrategyPackAnswer(currentStrategyPack.key, isCorrect);
 }
 function computeLswPnl(drill, choice, isCorrect) {
   if (choice === "wait") return isCorrect ? 20 : -15;
@@ -4004,6 +4059,325 @@ const STRATEGY_PACKS = [
 ];
 const ICT_HONESTY_BLURB = "Smart Money Concepts is a discretionary framework, not settled science. These setups map closely onto older classical ideas under new names, and no independent study confirms a standalone edge for any of them — see the About page for the full picture. We teach the vocabulary honestly, not as gospel.";
 
+/* ============================= STRATEGY PACK TEACHING =============================
+   Pre-drill setup cards + strategy-aware WHY bullets, research-verified against
+   DETECTION.md (which itself cites primary sources per pack). Built from each drill's
+   own stored fields (see generate_drills.py's per-pack extra_fields) plus a small
+   client-computed volume ratio — never generic copy-paste across packs. */
+function fmtPx(v) { return typeof v === "number" ? v.toFixed(2) : "—"; }
+function strategyPackVolRatio(drill) {
+  const candles = drill.candles;
+  if (!candles || candles.length < 6 || drill.has_volume === false) return null;
+  const last = candles[candles.length - 1].volume;
+  const priorSlice = candles.slice(-21, -1);
+  if (!priorSlice.length || !last) return null;
+  const avg = priorSlice.reduce((s, c) => s + (c.volume || 0), 0) / priorSlice.length;
+  return avg > 0 ? last / avg : null;
+}
+// Small reusable SVG primitives so each pack gets a genuinely distinct, accurate
+// diagram without hand-authoring dozens of one-off illustrations.
+function svgWrap(inner) {
+  return `<svg viewBox="0 0 200 100" class="setup-diagram" xmlns="http://www.w3.org/2000/svg">${inner}</svg>`;
+}
+function svgCandle(x, wickTop, wickBot, bodyTop, bodyBot, color) {
+  return `<line x1="${x}" y1="${wickTop}" x2="${x}" y2="${wickBot}" stroke="${color}" stroke-width="1"/>
+    <rect x="${x - 3}" y="${bodyTop}" width="6" height="${Math.max(2, bodyBot - bodyTop)}" fill="${color}"/>`;
+}
+const SETUP_SVGS = {
+  orb: svgWrap(`
+    <line x1="10" y1="35" x2="90" y2="35" stroke="var(--gold)" stroke-width="1" stroke-dasharray="3,2"/>
+    <line x1="10" y1="60" x2="90" y2="60" stroke="var(--gold)" stroke-width="1" stroke-dasharray="3,2"/>
+    <text x="14" y="28" font-size="9" fill="var(--text-dim)">opening range</text>
+    ${svgCandle(30, 40, 55, 44, 50, "var(--text-dim)")}${svgCandle(45, 38, 57, 42, 52, "var(--text-dim)")}${svgCandle(60, 42, 58, 46, 54, "var(--text-dim)")}
+    ${svgCandle(120, 15, 42, 18, 38, "var(--green)")}
+    <path d="M 120 8 L 115 18 L 125 18 Z" fill="var(--green)"/>
+    <text x="105" y="90" font-size="8.5" fill="var(--green)">close = breakout</text>
+  `),
+  vwap_pullback: svgWrap(`
+    <line x1="10" y1="70" x2="190" y2="35" stroke="var(--text-dim)" stroke-width="1.5"/>
+    <line x1="10" y1="55" x2="190" y2="55" stroke="var(--gold)" stroke-width="1" stroke-dasharray="3,2"/>
+    <text x="150" y="50" font-size="9" fill="var(--gold)">VWAP</text>
+    <circle cx="120" cy="47" r="4" fill="none" stroke="var(--green)" stroke-width="1.5"/>
+    <text x="14" y="20" font-size="9" fill="var(--text-dim)">trend away, then touch</text>
+  `),
+  zone: svgWrap(`
+    <rect x="20" y="55" width="70" height="18" fill="var(--green)" fill-opacity="0.15" stroke="var(--green)" stroke-width="1"/>
+    <text x="24" y="50" font-size="9" fill="var(--text-dim)">zone (base + departure)</text>
+    <path d="M 55 55 L 55 20" stroke="var(--green)" stroke-width="1.5" marker-end="url(#arrow)"/>
+    <path d="M 130 30 L 100 60" stroke="var(--text-dim)" stroke-width="1.5" stroke-dasharray="2,2"/>
+    <text x="132" y="30" font-size="9" fill="var(--text-dim)">retest</text>
+  `),
+  ema_pullback: svgWrap(`
+    <path d="M 10 80 Q 60 30 100 45 T 190 15" fill="none" stroke="var(--green)" stroke-width="1.5"/>
+    <path d="M 10 85 Q 60 40 100 52 T 190 25" fill="none" stroke="var(--text-dim)" stroke-width="1" stroke-dasharray="3,2"/>
+    <text x="150" y="12" font-size="9" fill="var(--green)">EMA9</text>
+    <text x="150" y="35" font-size="9" fill="var(--text-dim)">EMA20</text>
+    <circle cx="100" cy="48" r="4" fill="none" stroke="var(--gold)" stroke-width="1.5"/>
+    <text x="14" y="20" font-size="9" fill="var(--text-dim)">touch EMA9, hold EMA20</text>
+  `),
+  mean_reversion: svgWrap(`
+    <line x1="10" y1="55" x2="190" y2="55" stroke="var(--gold)" stroke-width="1" stroke-dasharray="3,2"/>
+    <text x="160" y="50" font-size="9" fill="var(--gold)">VWAP</text>
+    ${svgCandle(120, 15, 30, 17, 27, "var(--red)")}
+    <line x1="120" y1="55" x2="120" y2="30" stroke="var(--text-dim)" stroke-width="1" stroke-dasharray="2,2"/>
+    <text x="122" y="42" font-size="9" fill="var(--text-dim)">2x+ ATR</text>
+    <path d="M 130 25 Q 160 25 165 55" fill="none" stroke="var(--red)" stroke-width="1.5" stroke-dasharray="2,2"/>
+  `),
+  range_trading: svgWrap(`
+    <line x1="10" y1="25" x2="190" y2="25" stroke="var(--gold)" stroke-width="1" stroke-dasharray="3,2"/>
+    <line x1="10" y1="70" x2="190" y2="70" stroke="var(--gold)" stroke-width="1" stroke-dasharray="3,2"/>
+    <path d="M 20 45 Q 50 25 80 45 Q 110 70 140 45 Q 165 30 180 45" fill="none" stroke="var(--text-dim)" stroke-width="1.5"/>
+    <text x="14" y="18" font-size="9" fill="var(--text-dim)">range high</text>
+    <text x="14" y="85" font-size="9" fill="var(--text-dim)">range low</text>
+  `),
+  liquidity_sweep: svgWrap(`
+    <line x1="10" y1="30" x2="190" y2="30" stroke="var(--gold)" stroke-width="1" stroke-dasharray="3,2"/>
+    <text x="14" y="24" font-size="9" fill="var(--text-dim)">prior swing level</text>
+    ${svgCandle(110, 12, 60, 40, 58, "var(--red)")}
+    <path d="M 110 12 L 106 20 L 114 20 Z" fill="var(--red)" fill-opacity="0.5"/>
+    <text x="122" y="18" font-size="9" fill="var(--red)">wick pierces</text>
+    <text x="90" y="85" font-size="9" fill="var(--green)">closes back inside</text>
+  `),
+  fair_value_gap: svgWrap(`
+    ${svgCandle(50, 35, 55, 38, 50, "var(--text-dim)")}
+    ${svgCandle(90, 20, 65, 24, 60, "var(--green)")}
+    ${svgCandle(130, 15, 40, 18, 36, "var(--text-dim)")}
+    <rect x="35" y="36" width="110" height="9" fill="var(--gold)" fill-opacity="0.2" stroke="var(--gold)" stroke-width="1" stroke-dasharray="2,2"/>
+    <text x="60" y="30" font-size="9" fill="var(--gold)">the gap</text>
+    <text x="20" y="90" font-size="8" fill="var(--text-dim)">candle 1 high &lt; candle 3 low</text>
+  `),
+  market_structure: svgWrap(`
+    <path d="M 15 75 L 50 35 L 75 55 L 110 15 L 135 40 L 175 20" fill="none" stroke="var(--text-dim)" stroke-width="1.5"/>
+    <circle cx="50" cy="35" r="3" fill="var(--text-dim)"/>
+    <circle cx="110" cy="15" r="3" fill="var(--green)"/>
+    <line x1="110" y1="15" x2="175" y2="15" stroke="var(--green)" stroke-width="1" stroke-dasharray="2,2"/>
+    <text x="118" y="10" font-size="8" fill="var(--green)">close above = BOS</text>
+    <text x="30" y="90" font-size="9" fill="var(--text-dim)">swing highs/lows</text>
+  `),
+  smt: svgWrap(`
+    <path d="M 10 70 Q 60 20 100 25 T 190 60" fill="none" stroke="var(--green)" stroke-width="1.5"/>
+    <path d="M 10 75 Q 60 45 100 55 T 190 30" fill="none" stroke="#5c9eff" stroke-width="1.5"/>
+    <circle cx="100" cy="25" r="3" fill="var(--green)"/>
+    <circle cx="100" cy="55" r="3" fill="#5c9eff"/>
+    <text x="140" y="18" font-size="9" fill="var(--green)">new high</text>
+    <text x="140" y="70" font-size="9" fill="#5c9eff">fails to</text>
+  `),
+  kill_zones: svgWrap(`
+    <line x1="10" y1="55" x2="190" y2="55" stroke="var(--border-strong)" stroke-width="1.5"/>
+    <rect x="30" y="45" width="35" height="20" fill="var(--gold)" fill-opacity="0.2" stroke="var(--gold)"/>
+    <text x="30" y="40" font-size="8" fill="var(--gold)">London 2-5am ET</text>
+    <rect x="110" y="45" width="35" height="20" fill="var(--green)" fill-opacity="0.2" stroke="var(--green)"/>
+    <text x="108" y="40" font-size="8" fill="var(--green)">NY 7-10am ET</text>
+  `),
+};
+const STRATEGY_PACK_TEACHING = {
+  orb: {
+    what: "The first 15 minutes of the session set a range. A later candle CLOSING beyond that range is the breakout call.",
+    conditions: [
+      "The opening range is the high/low of the first three 5-minute bars of the 'open' session.",
+      "A break only counts on a close beyond the range — a wick alone that closes back inside doesn't count.",
+    ],
+    invalidates: "Price closes back inside the range before ever confirming 1x the range's height beyond the break — that's a failed break.",
+    svg: SETUP_SVGS.orb,
+  },
+  vwap_pullback: {
+    what: "Price trends clearly to one side of VWAP, then pulls back to touch it — the bet is the trend continues from there.",
+    conditions: [
+      "Price sits meaningfully on one side of VWAP for several bars first — an established lean, not noise.",
+      "The pullback closes within 0.15% of the VWAP line itself.",
+    ],
+    invalidates: "A close through VWAP on the opposite side by a comparable distance — the trend lost its edge here.",
+    svg: SETUP_SVGS.vwap_pullback,
+  },
+  supply_demand: {
+    what: "A tight base of candles gets followed by a sharp directional move — that base becomes a zone. Price later returns to retest it.",
+    conditions: [
+      "The base is tight relative to recent volatility — a real pause, not just a slow drift.",
+      "The departure candle is strong (roughly 1.5x the recent average range) — real conviction leaving the zone.",
+    ],
+    invalidates: "A candle closes through the zone's far edge on the retest — the level didn't hold.",
+    svg: SETUP_SVGS.zone,
+  },
+  trend_pullback: {
+    what: "EMA9 and EMA20 are aligned in a clean trend. Price pulls back to touch EMA9 without ever closing below EMA20.",
+    conditions: [
+      "EMA9 above EMA20 and both rising for an uptrend (mirror image for a downtrend).",
+      "Price touches EMA9 but the close stays on the trend side of EMA20.",
+    ],
+    invalidates: "A close below EMA20 (or above, in a downtrend) — the trend-failure signal.",
+    svg: SETUP_SVGS.ema_pullback,
+  },
+  mean_reversion: {
+    what: "Price stretches unusually far from VWAP — the bet is that the elastic snaps back.",
+    conditions: [
+      "Distance from VWAP reaches 2x or more the 14-bar ATR — genuinely extended, not a normal wiggle.",
+    ],
+    invalidates: "Price extends even further, to 3x+ ATR, before ever reverting — the stretch just kept going.",
+    svg: SETUP_SVGS.mean_reversion,
+  },
+  range_trading: {
+    what: "Price has been contained in a tight band and is now testing one of its boundaries again.",
+    conditions: [
+      "The range sits in the calmest 30% of recent volatility, with both boundaries already touched twice.",
+      "Price approaches within 0.2% of the boundary being tested.",
+    ],
+    invalidates: "A candle closes beyond the boundary — the range is breaking, not holding.",
+    svg: SETUP_SVGS.range_trading,
+  },
+  liquidity_sweep: {
+    what: "A prior swing high or low gets pierced by a wick — but the candle CLOSES back on the original side. That's the whole difference from a real breakout.",
+    conditions: [
+      "The level is a genuine local swing point (a 5-bar pivot), not an arbitrary price.",
+      "The piercing candle's close lands back on the original side of the level.",
+    ],
+    invalidates: "A later candle in the window closes through the level for real — then it was never a sweep, it was a breakout.",
+    svg: SETUP_SVGS.liquidity_sweep,
+  },
+  fair_value_gap: {
+    what: "Three consecutive candles leave a gap — candle 1's high sits below candle 3's low (or the mirror image). That empty space is the gap.",
+    conditions: [
+      "Needs all three candles in sequence, with a genuine price gap between candle 1 and candle 3.",
+      "\"Fill\" here means any wick trading back into the gap box — not necessarily a full close through it.",
+    ],
+    invalidates: null,
+    svg: SETUP_SVGS.fair_value_gap,
+  },
+  order_blocks: {
+    what: "The last opposing-color candle right before a sharp move — that single candle's range becomes the zone for a later retest.",
+    conditions: [
+      "The move away is a real displacement — roughly 1.5x the recent average range.",
+      "Anchored to ONE candle, not a multi-bar base — that's what separates it from Supply & Demand.",
+    ],
+    invalidates: "A candle closes through the block on the retest — the level failed.",
+    svg: SETUP_SVGS.zone,
+  },
+  market_structure: {
+    what: "Tracking alternating swing highs and lows. A close beyond the last one tells you whether the trend is continuing or reversing.",
+    conditions: [
+      "In an uptrend, a close above the last swing high = Break of Structure (continuation).",
+      "A close below the last swing low against the trend = Change of Character (possible reversal starting).",
+    ],
+    invalidates: null,
+    svg: SETUP_SVGS.market_structure,
+  },
+  smt_divergence: {
+    what: `Comparing QQQ against ${SMT_COMPARE_SYMBOL} at the same moment. If one makes a new swing extreme and the other fails to, that's a divergence.`,
+    conditions: [
+      "Both instruments are at a matched swing point in time.",
+      "One prints a genuine new high/low while the other falls short of its own prior swing.",
+    ],
+    invalidates: "The leading instrument pushes on to a real new extreme instead of reversing — the divergence just failed.",
+    svg: SETUP_SVGS.smt,
+  },
+  kill_zones: {
+    what: "A pure timestamp check — is this candle's real ET time inside the London or New York Kill Zone?",
+    conditions: [
+      "London Kill Zone = 2:00–5:00 AM ET.",
+      "New York Kill Zone = 7:00–10:00 AM ET.",
+    ],
+    invalidates: null,
+    svg: SETUP_SVGS.kill_zones,
+  },
+};
+function strategyPackWhyBullets(drill, pack, isCorrect) {
+  const key = pack.key;
+  const volRatio = strategyPackVolRatio(drill);
+  const volNote = volRatio && volRatio >= 1.4 ? ` — ${volRatio.toFixed(1)}x average volume behind it` : "";
+  const ans = drill.correct_answer;
+  switch (key) {
+    case "orb": {
+      const dir = drill.direction === "long" ? "high" : "low";
+      const lines = [`Opening range: ${fmtPx(drill.range_low)}–${fmtPx(drill.range_high)} (first 15 min)`,
+        `Closed beyond the range ${dir}${volNote} — that's the breakout call`];
+      lines.push(ans === "hold" ? "Extended cleanly beyond the range — real follow-through" : "Closed back inside the range — reversal, not follow-through");
+      return lines;
+    }
+    case "vwap_pullback": {
+      const dir = drill.direction === "long" ? "up" : "down";
+      return [`Trending ${dir} away from VWAP, then pulled back to within 0.15% of the line`,
+        ans === "hold" ? "Held the pullback and continued the original trend" : "Broke through VWAP the other way — the trend failed here"];
+    }
+    case "supply_demand": {
+      const kind = drill.zone_kind || "supply/demand";
+      return [`Retesting a ${kind} zone (${fmtPx(drill.zone_low)}–${fmtPx(drill.zone_high)}) left behind by a sharp move${volNote}`,
+        ans === "hold" ? "Reversed away from the zone again — the level held" : "Closed through the zone's far edge — the level gave way"];
+    }
+    case "trend_pullback": {
+      const dir = drill.direction === "long" ? "up" : "down";
+      return [`EMA9/20 in a clean ${dir}trend, pulled back to EMA9 without losing EMA20`,
+        ans === "hold" ? "Made a new extreme beyond the pre-pullback high/low — trend continued" : "Closed through EMA20 — the trend failed here"];
+    }
+    case "mean_reversion": {
+      const dir = drill.fade_direction === "long" ? "below" : "above";
+      return [`Price stretched to 2x+ ATR ${dir} VWAP — extended`,
+        ans === "hold" ? "Reverted back toward VWAP — the stretch snapped back" : "Extended even further (3x+ ATR) before ever reverting — no reversion here"];
+    }
+    case "range_trading": {
+      const side = drill.boundary_side || "boundary";
+      return [`Testing the range ${side} (${fmtPx(drill.range_low)}–${fmtPx(drill.range_high)})`,
+        ans === "hold" ? "Bounced back toward the opposite side — the range held" : "Closed beyond the boundary — the range is breaking"];
+    }
+    case "liquidity_sweep": {
+      return [`Wicked through the prior swing level at ${fmtPx(drill.swept_level)} intrabar${volNote}`,
+        ans === "sweep" ? "Closed back on the original side — stops got run, then reversed" : "A later candle closed through for real — this wasn't a sweep, it kept going"];
+    }
+    case "fair_value_gap": {
+      const kind = drill.kind === "bullish" ? "Bullish" : "Bearish";
+      return [`${kind} 3-candle gap: ${fmtPx(drill.gap_bottom)}–${fmtPx(drill.gap_top)}`,
+        ans === "fill" ? "Price later traded back into the gap" : "Price never came back for it within the window"];
+    }
+    case "order_blocks": {
+      const kind = drill.zone_kind || "order block";
+      return [`Retesting the last ${kind} order block (${fmtPx(drill.zone_low)}–${fmtPx(drill.zone_high)}) before the move${volNote}`,
+        ans === "hold" ? "Reversed away again — the block held" : "Closed through it — the block failed"];
+    }
+    case "market_structure": {
+      const trend = drill.trend === "up" ? "Uptrend" : "Downtrend";
+      return [`${trend} context — the break happened right at the last swing level`,
+        ans === "bos" ? "Closed beyond the last swing high/low — continuation, a genuine Break of Structure" : "Closed against the trend past the last swing — first evidence of a Change of Character"];
+    }
+    case "smt_divergence": {
+      const type = drill.smt_type === "bearish" ? "Bearish" : "Bullish";
+      return [`${type} divergence: QQQ vs ${drill.compare_symbol || SMT_COMPARE_SYMBOL} at a swing point`,
+        ans === "confirmed" ? "The leading instrument reversed back through its prior swing — divergence confirmed" : "Pushed on to a genuine new extreme instead — the divergence failed"];
+    }
+    case "kill_zones": {
+      const label = { london: "London", new_york: "New York", neither: "neither Kill Zone" }[ans] || ans;
+      return [`Candle timestamp checked against the London (2-5am ET) and New York (7-10am ET) windows`,
+        `This one falls in ${label}`];
+    }
+    default:
+      return coachWhyBullets(drill);
+  }
+}
+// Per-pack accuracy (local-only, separate from the existing all-packs-combined
+// strategyPackStats used by the Records screen + Supabase sync) — feeds the
+// "your leak" edge line on the strategy picker.
+function recordStrategyPackAnswer(packKey, isCorrect) {
+  appState.strategyPackByKey = appState.strategyPackByKey || {};
+  const rec = appState.strategyPackByKey[packKey] || { correct: 0, total: 0 };
+  rec.total++;
+  if (isCorrect) rec.correct++;
+  appState.strategyPackByKey[packKey] = rec;
+  saveState();
+}
+function strategyPackEdgeLine(packKey) {
+  const rec = appState.strategyPackByKey && appState.strategyPackByKey[packKey];
+  if (!rec || rec.total < 3) return null;
+  return Math.round(100 * rec.correct / rec.total);
+}
+function strategyPackWeakestKey() {
+  const byKey = appState.strategyPackByKey || {};
+  let weakest = null;
+  for (const key of Object.keys(byKey)) {
+    const rec = byKey[key];
+    if (rec.total < 3) continue;
+    const acc = rec.correct / rec.total;
+    if (!weakest || acc < weakest.acc) weakest = { key, acc };
+  }
+  return weakest ? weakest.key : null;
+}
+
 /* ============================= FREEMIUM: daily limits + paywall (Phase 5) ============================= */
 function getDailyLimitUsed(counterField, dateField) {
   const today = getEtDateString(0);
@@ -4131,6 +4505,56 @@ async function startStrategyPackSession(packKey) {
     renderStartScreen();
     return;
   }
+  renderStrategyPackSetupCard(pack, pool);
+}
+// Setup card shown once before the first drill of a pack session — stays until
+// the user clicks START DRILLING (no auto-dismiss). Re-viewable mid-session via
+// the ⓘ icon on the chart toolbar (see chartToolbarHtml / renderShell).
+function strategyPackSetupCardHtml(pack) {
+  const t = STRATEGY_PACK_TEACHING[pack.key];
+  if (!t) return "";
+  return `
+    <div class="setup-card-diagram">${t.svg}</div>
+    <div class="onboarding-plan-card setup-card-text">
+      <div class="onboarding-plan-line"><strong>What it is:</strong> ${escapeHtml(t.what)}</div>
+      ${t.conditions.map(c => `<div class="onboarding-plan-line">${escapeHtml(c)}</div>`).join("")}
+      ${t.invalidates ? `<div class="onboarding-plan-line"><strong>Invalidated by:</strong> ${escapeHtml(t.invalidates)}</div>` : ""}
+    </div>
+  `;
+}
+function renderStrategyPackSetupCard(pack, pool) {
+  const root = document.getElementById("screenRoot");
+  root.innerHTML = `
+    <div class="onboarding-summary setup-card-screen">
+      <h2>${escapeHtml(pack.label)}</h2>
+      ${strategyPackSetupCardHtml(pack)}
+      <button class="mode-btn practice-btn" id="setupCardStartBtn">START DRILLING →</button>
+    </div>
+  `;
+  document.getElementById("setupCardStartBtn").onclick = () => beginStrategyPackDrills(pack, pool);
+}
+function showStrategyPackInfoOverlay(pack) {
+  const existing = document.getElementById("packInfoOverlay");
+  if (existing) { existing.remove(); return; }
+  const overlay = document.createElement("div");
+  overlay.className = "auth-modal-overlay show";
+  overlay.id = "packInfoOverlay";
+  overlay.innerHTML = `
+    <div class="auth-modal-card setup-card-overlay-card">
+      <button class="auth-modal-close" id="packInfoCloseBtn" aria-label="Close">✕</button>
+      <h3>${escapeHtml(pack.label)}</h3>
+      ${strategyPackSetupCardHtml(pack)}
+    </div>
+  `;
+  document.body.appendChild(overlay);
+  const close = () => overlay.remove();
+  document.getElementById("packInfoCloseBtn").onclick = close;
+  overlay.addEventListener("click", e => { if (e.target === overlay) close(); });
+}
+function beginStrategyPackDrills(pack, pool) {
+  const root = document.getElementById("screenRoot");
+  root.innerHTML = `<div class="loading">Loading…</div>`;
+  renderGameScreen("strategy_pack");
   sessionIndex = 0; sessionPnl = 0; bankroll = STARTING_BANKROLL;
   streak = 0; bestStreak = 0; multiplier = 1; sessionResults = [];
   secondChanceUsedThisSession = false;
@@ -4187,16 +4611,20 @@ function renderStrategyPickerScreen() {
   const root = document.getElementById("screenRoot");
   const classical = STRATEGY_PACKS.filter(p => p.category === "classical");
   const ict = STRATEGY_PACKS.filter(p => p.category === "ict");
+  const weakestKey = strategyPackWeakestKey();
   const packCard = (p) => {
     const isCoreFree = FREE_STRATEGY_PACK_KEYS.includes(p.key);
     const unlocked = isCoreFree || BETA_FREE;
     const chip = isCoreFree ? "" : BETA_FREE
       ? ` <span class="pro-chip-inline beta-chip" data-beta-chip="1">BETA — free for now</span>`
       : ` <span class="pro-chip-inline">PRO</span>`;
+    const acc = strategyPackEdgeLine(p.key);
+    const edgeHtml = acc == null ? "" : `<div class="spc-edge ${p.key === weakestKey ? "leak" : ""}">${acc}% accuracy${p.key === weakestKey ? " — your leak" : ""}</div>`;
     return `
       <button class="strategy-pack-card ${unlocked ? "" : "pro-locked"}" data-pack="${p.key}" data-free="${unlocked}">
         <div class="spc-label">${escapeHtml(p.label)}${chip}</div>
         <div class="spc-desc">${escapeHtml(p.description)}</div>
+        ${edgeHtml}
       </button>
     `;
   };
