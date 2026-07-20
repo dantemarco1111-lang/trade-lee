@@ -248,7 +248,7 @@
       <div class="nav-dropdown" id="playDropdown">
         <button class="nav-dropdown-trigger" type="button">Play <span class="caret">▾</span></button>
         <div class="nav-dropdown-menu">
-          <a href="/play/?mode=daily">The 9:30 Drop</a>
+          <a href="/play/?mode=daily">Daily Drill</a>
           <a href="/play/?mode=practice">Practice</a>
         </div>
       </div>
@@ -276,7 +276,7 @@
 <div class="mobile-menu-overlay" id="mobileMenuOverlay">
   <button class="mobile-menu-close" id="mobileMenuClose" aria-label="Close menu">✕</button>
   <div class="mobile-menu-label">Play</div>
-  <a href="/play/?mode=daily">The 9:30 Drop</a>
+  <a href="/play/?mode=daily">Daily Drill</a>
   <a href="/play/?mode=practice">Practice</a>
   <div class="mobile-menu-label">Learn</div>
   <a href="/academy/">Academy</a>
@@ -382,33 +382,33 @@ const ACADEMY_UNITS = [
   {
     key: "foundations", icon: "🎯", title: "Foundations",
     desc: "What Trade Lee actually trains, and how to read the screen.",
-    drillLink: { label: "Play The 9:30 Drop", href: "/play/?mode=daily" },
+    drillLink: { label: "Play the Daily Drill", href: "/play/?mode=daily" },
     lessons: [
       { title: "Welcome to Trade Lee", body: [
         "Every drill in this app is built from real historical market data — actual candles from actual trading days, not randomly generated patterns. When you judge a chart, you're judging something that really happened.",
         "The loop is simple: you're shown a chart up to a decision point, you make a call, and the chart plays forward so you see exactly what happened next. Do this enough times across enough real examples, and your eye starts recognizing the patterns before your conscious brain catches up — the same way flashcards build recall.",
-        "Nothing here risks real money. Every bankroll and P&L number you see in Practice, The 9:30 Drop, or any Strategy Pack is simulated — it exists purely to make the scoring feel real while you build the underlying skill." ] },
+        "Nothing here risks real money. Every bankroll and P&L number you see in Practice, the Daily Drill, or any Strategy Pack is simulated — it exists purely to make the scoring feel real while you build the underlying skill." ] },
       { title: "The Anatomy of a Chart", body: [
         "Every chart is candlesticks on a 5-minute timeframe (some drills use 15-minute) — each candle is one chunk of time. The bars underneath are volume: how much traded during that candle.",
         "The purple line running through the candles is VWAP (Volume-Weighted Average Price) — you'll learn exactly what that means in Unit 6, but for now just know it's a running average price line, present on almost every chart in the app.",
         "Tap the gear icon in the top-left of any chart to toggle VWAP, volume, and a volume profile histogram on or off — use whatever combination helps you read the chart, not what looks the busiest." ] },
       { title: "How Scoring Works", body: [
         "Streaks and multipliers reward consistency: string together correct calls in Practice mode and your P&L multiplier climbs. Miss one and it resets — there's no punishment beyond that, just an incentive to stay sharp.",
-        "Ticks are the app's currency, earned by completing sessions and drills across the whole site — The 9:30 Drop, Practice, Speed Run, Strategy Packs, and the Academy all pay out Ticks. Spend them on power-ups from the Powerups page.",
+        "Ticks are the app's currency, earned by completing sessions and drills across the whole site — the Daily Drill, Practice, Speed Run, Strategy Packs, and the Academy all pay out Ticks. Spend them on power-ups from the Powerups page.",
         "There's no wrong way to lose a drill. Getting a call wrong and seeing exactly why is the entire point — that's the rep that actually moves your skill." ] },
     ],
     quiz: [
       { q: "What kind of data powers Trade Lee's drills?", choices: ["Randomly generated candles", "Real historical market data", "Data made up for teaching purposes", "Live streaming data only"], correct: 1, explain: "Every drill is built from real candles pulled from actual trading days — you're training your eye on the real thing." },
       { q: "What does the purple line on most charts represent?", choices: ["The daily high", "A resistance level", "VWAP (Volume-Weighted Average Price)", "The prior day's close"], correct: 2, explain: "VWAP shows up throughout the app — Unit 6 covers exactly what it means and why traders watch it." },
       { q: "Is the bankroll shown in Practice mode real money?", choices: ["Yes, it's connected to a real account", "No — it's simulated, purely for scoring feel", "Only in Speed Run mode", "Only for signed-in users"], correct: 1, explain: "Nothing in Trade Lee risks real money. Every P&L number is simulated to make the scoring feel tangible while you build skill." },
-      { q: "What do you earn by completing drills and sessions?", choices: ["Ticks", "Real cash", "Nothing, it's purely for fun", "Only XP, no other reward"], correct: 0, explain: "Ticks are the app's in-game currency, spendable on power-ups — earned across The 9:30 Drop, Practice, Speed Run, Strategy Packs, and the Academy." },
+      { q: "What do you earn by completing drills and sessions?", choices: ["Ticks", "Real cash", "Nothing, it's purely for fun", "Only XP, no other reward"], correct: 0, explain: "Ticks are the app's in-game currency, spendable on power-ups — earned across the Daily Drill, Practice, Speed Run, Strategy Packs, and the Academy." },
       { q: "What's the fastest way to actually get better at spotting patterns?", choices: ["Reading about patterns without practicing", "Repetition across many real examples", "Memorizing one perfect example", "Watching other people play"], correct: 1, explain: "Pattern recognition is a rep-based skill — the more real examples you judge and then see resolved, the faster your eye calibrates." },
     ],
   },
   {
     key: "candles", icon: "🕯️", title: "Candles",
     desc: "Reading a single candlestick at a glance.",
-    drillLink: { label: "Play The 9:30 Drop", href: "/play/?mode=daily" },
+    drillLink: { label: "Play the Daily Drill", href: "/play/?mode=daily" },
     lessons: [
       { title: "Anatomy of a Candle", body: [
         "Each candlestick shows four prices for one period: open, high, low, and close. The thick part is the \"body\" — it spans from the open price to the close price. The thin lines above and below are \"wicks\" (or \"shadows\") — they show the highest and lowest prices reached, even if price didn't close there.",
@@ -428,7 +428,7 @@ const ACADEMY_UNITS = [
   {
     key: "volume", icon: "📊", title: "Volume",
     desc: "Conviction, not direction — what the bars beneath the chart mean.",
-    drillLink: { label: "Play The 9:30 Drop", href: "/play/?mode=daily" },
+    drillLink: { label: "Play the Daily Drill", href: "/play/?mode=daily" },
     lessons: [
       { title: "What Volume Measures", body: [
         "Volume is simply how many shares (or contracts) traded during a given period — shown as the bars beneath a price chart. On its own, volume doesn't tell you direction. It tells you conviction.",
@@ -448,7 +448,7 @@ const ACADEMY_UNITS = [
   {
     key: "levels", icon: "📐", title: "Support & Resistance",
     desc: "Zones traders remember, and what happens when they break.",
-    drillLink: { label: "Play The 9:30 Drop", href: "/play/?mode=daily" },
+    drillLink: { label: "Play the Daily Drill", href: "/play/?mode=daily" },
     lessons: [
       { title: "Support and Resistance", body: [
         "Support is a price level where a stock has repeatedly stopped falling and bounced back up — think of it as a floor. Resistance is the opposite: a level where price has repeatedly stopped rising and turned back down — a ceiling.",
@@ -468,21 +468,21 @@ const ACADEMY_UNITS = [
   {
     key: "breakouts", icon: "🚀", title: "Breakouts & Fakeouts",
     desc: "The core skill this whole app trains.",
-    drillLink: { label: "Play The 9:30 Drop", href: "/play/?mode=daily" },
+    drillLink: { label: "Play the Daily Drill", href: "/play/?mode=daily" },
     lessons: [
       { title: "What a Breakout Is", body: [
         "A breakout happens when price pushes beyond a level it had been struggling to clear — the top or bottom of a consolidation range, a prior high, or a well-known support/resistance zone. The idea is simple: once price clears an obstacle, it should be free to run further in that direction." ] },
       { title: "Why Most Breakouts Fail", body: [
         "In reality, most breakouts fail. Price pokes through the level, traders pile in expecting a big move, and then it reverses right back inside the range — leaving late entries stuck. This is called a \"fakeout,\" and it's common enough that skilled traders build entire strategies around fading weak breakouts." ] },
       { title: "Real vs Fake: The Tells", body: [
-        "What separates a real breakout from a fakeout? Usually volume (a real breakout brings a surge of participation) and the CLOSE of the breakout candle (closing solidly beyond the level, not just wicking through it). This exact judgment call — real or fake — is what The 9:30 Drop trains you to make quickly, using the same signals professional traders check." ] },
+        "What separates a real breakout from a fakeout? Usually volume (a real breakout brings a surge of participation) and the CLOSE of the breakout candle (closing solidly beyond the level, not just wicking through it). This exact judgment call — real or fake — is what the Daily Drill trains you to make quickly, using the same signals professional traders check." ] },
     ],
     quiz: [
       { q: "A breakout is:", choices: ["Any red candle", "Price pushing beyond a level it struggled to clear", "A candle with no wick", "A drop in volume"], correct: 1, explain: "A breakout is price clearing an obstacle it had been consolidating against." },
       { q: "What's a \"fakeout\"?", choices: ["A breakout that reverses back inside the range", "A candle with two wicks", "A breakout on huge volume", "Any losing trade"], correct: 0, explain: "A fakeout pokes through a level, then snaps back — leaving late breakout-chasers stuck." },
       { q: "Which two signals most separate a real breakout from a fakeout?", choices: ["Time of day and candle color", "Volume and where the candle closes", "The stock's ticker symbol", "Whether VWAP is visible"], correct: 1, explain: "Strong volume plus a solid close beyond the level are the two classic real-breakout tells." },
       { q: "Are most breakouts real or fake?", choices: ["Most are real", "Most fail (fakeouts)", "It's exactly 50/50 always", "Fakeouts don't really happen"], correct: 1, explain: "Fakeouts are common enough that entire strategies exist to fade weak breakouts." },
-      { q: "What is The 9:30 Drop training you to judge quickly?", choices: ["Stock ticker recognition", "Real breakout vs. fakeout", "VWAP formula memorization", "Candle color counting"], correct: 1, explain: "That real-vs-fake judgment call is the exact skill the whole app is built to train." },
+      { q: "What is the Daily Drill training you to judge quickly?", choices: ["Stock ticker recognition", "Real breakout vs. fakeout", "VWAP formula memorization", "Candle color counting"], correct: 1, explain: "That real-vs-fake judgment call is the exact skill the whole app is built to train." },
     ],
   },
   {
@@ -611,7 +611,7 @@ const ACADEMY_UNITS = [
   {
     key: "psychology", icon: "🧠", title: "Trading Psychology", proOnly: true,
     desc: "The real edge — scored scenarios, not just facts.",
-    drillLink: { label: "Play The 9:30 Drop", href: "/play/?mode=daily" },
+    drillLink: { label: "Play the Daily Drill", href: "/play/?mode=daily" },
     lessons: [
       { title: "Why Psychology Is the Real Edge", body: [
         "You can know every pattern in this app perfectly and still lose money — because trading decisions happen under real emotional pressure that a quiz can't fully replicate. The gap between knowing a rule and following it in the moment is where most trading results are actually decided.",

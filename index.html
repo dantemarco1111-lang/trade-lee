@@ -318,7 +318,7 @@
       <div class="nav-dropdown" id="playDropdown">
         <button class="nav-dropdown-trigger" type="button">Play <span class="caret">▾</span></button>
         <div class="nav-dropdown-menu">
-          <a href="/play/?mode=daily">The 9:30 Drop</a>
+          <a href="/play/?mode=daily">Daily Drill</a>
           <a href="/play/?mode=practice">Practice</a>
         </div>
       </div>
@@ -346,7 +346,7 @@
 <div class="mobile-menu-overlay" id="mobileMenuOverlay">
   <button class="mobile-menu-close" id="mobileMenuClose" aria-label="Close menu">✕</button>
   <div class="mobile-menu-label">Play</div>
-  <a href="/play/?mode=daily">The 9:30 Drop</a>
+  <a href="/play/?mode=daily">Daily Drill</a>
   <a href="/play/?mode=practice">Practice</a>
   <div class="mobile-menu-label">Learn</div>
   <a href="/academy/">Academy</a>
@@ -789,7 +789,7 @@
    requestIdleCallback) so the chart library and drill JSON never delay LCP.
    The drill picked is always the daily index + 1, so it's guaranteed to
    differ from whatever the visitor may have already played as today's
-   official 9:30 Drop — never a dead repeat. */
+   official Daily Drill — never a dead repeat. */
 (function () {
   const CHART_LIB_URL = "https://unpkg.com/lightweight-charts/dist/lightweight-charts.standalone.production.js";
   let chart, candleSeries, volumeSeries, vwapSeries;

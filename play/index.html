@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Fakeout Trading Quiz — Trade Lee</title>
-<meta name="description" content="The 9:30 Drop — a daily fakeout trading quiz built from real charts. Take it or fade it in 10 seconds, using real market data, and train your eye to catch the trap.">
+<meta name="description" content="Daily Drill — a fakeout trading quiz built from real charts. Take it or fade it in 10 seconds, using real market data, and train your eye to catch the trap.">
 <meta property="og:title" content="Fakeout Trading Quiz — Trade Lee">
 <meta property="og:description" content="One chart. Ten seconds. Take it or fade it — train your eye with real market data.">
 <meta property="og:type" content="website">
@@ -1377,7 +1377,7 @@ function defaultState() {
     // retention Stage 1: clutch calls + double-or-nothing
     clutchCalls: 0,
     doubleOrNothingStats: { wins: 0, losses: 0 },
-    // retention Stage 2: The 9:30 Drop
+    // retention Stage 2: Daily Drill (daily event branding)
     lastRevealShownDate: null,
     // retention Stage 3: Trader Rating
     traderRating: RATING_START,
@@ -1547,7 +1547,7 @@ function getNextEtMidnightMs() {
   const offsetMinutes = getEtOffsetMinutes(new Date(candidate));
   return candidate - offsetMinutes * 60000;
 }
-// "The 9:30 Drop" unlock gate — the daily drill opens at 9:30 AM ET, not ET midnight.
+// Daily Drill unlock gate — it opens at 9:30 AM ET, not ET midnight.
 function get930UnlockMsForEtDate(etDateStr) {
   const [y, m, d] = etDateStr.split("-").map(Number);
   const candidate = Date.UTC(y, m - 1, d, 9, 30, 0);
@@ -2180,7 +2180,7 @@ function renderGameScreen(mode) {
         <div class="stat-chip"><span class="stat-value" id="drillCounter">1/${STRATEGY_PACK_DRILLS_PER_SESSION}</span><span class="stat-label">Drill</span></div>
       </div>`;
   } else {
-    const label = mode === "daily" ? "The 9:30 Drop" : "Quick Tutorial";
+    const label = mode === "daily" ? "Daily Drill" : "Quick Tutorial";
     const sub = mode === "daily" ? getEtDateHuman() : "Learn the basics";
     headerHtml = `
       <div class="topbar">
@@ -2207,7 +2207,7 @@ function chartToolbarHtml() {
     const opts = SESSION_OPTIONS[appState.practiceMarket || "stocks"] || [];
     const match = appState.practiceSession ? opts.find(o => o[0] === appState.practiceSession) : null;
     session = match ? match[1] : "Any Session";
-  } else if (currentMode === "daily") { timeframe = "5m"; session = "9:30 Drop"; }
+  } else if (currentMode === "daily") { timeframe = "5m"; session = "Daily Drill"; }
   else if (currentMode === "longshortwait") { session = "Long / Short / Wait"; }
   else if (currentMode === "strategy_pack") { session = currentStrategyPack.label; }
   else if (currentMode === "speedrun") { session = "Speed Run"; }
@@ -4614,7 +4614,7 @@ function renderDailyResultScreen(drill, isCorrect, isFizzle, isClutch, milestone
   const root = document.getElementById("screenRoot");
   root.innerHTML = `
     <div class="topbar">
-      <div class="bankroll"><div class="bankroll-label">The 9:30 Drop</div><div class="bankroll-value" style="font-size:1.25rem;">${getEtDateHuman()}</div></div>
+      <div class="bankroll"><div class="bankroll-label">Daily Drill</div><div class="bankroll-value" style="font-size:1.25rem;">${getEtDateHuman()}</div></div>
     </div>
     <div class="daily-result">
       ${isClutch ? `<div class="clutch-badge pop">CLUTCH ✅</div>` : ""}
@@ -4631,7 +4631,7 @@ function renderDailyResultScreen(drill, isCorrect, isFizzle, isClutch, milestone
       <div class="daily-distribution" id="dailyDistribution"><div class="skeleton-line" style="width:80%;margin:0 auto;"></div></div>
       <div id="dailySigninPrompt"></div>
       <div id="nextActionNudge"></div>
-      <div class="daily-countdown">Next Drop in <span id="countdownText">--:--:--</span></div>
+      <div class="daily-countdown">Next Daily Drill in <span id="countdownText">--:--:--</span></div>
       <button class="share-btn" id="shareBtnDaily">SHARE</button>
       <button class="trade-again-btn" id="dailyBackBtn">BACK TO START</button>
     </div>
@@ -4719,7 +4719,7 @@ function showStreakMilestone(milestoneHit) {
   overlay.innerHTML = `
     <div class="milestone-card">
       <div class="milestone-flame">🔥</div>
-      <div class="milestone-title">${milestoneHit.days} straight Drops ✅</div>
+      <div class="milestone-title">${milestoneHit.days} straight Daily Drills ✅</div>
       <div class="milestone-bonus">+${milestoneHit.bonus} Ticks</div>
       <button class="share-btn" id="milestoneShareBtn">SHARE</button>
       <button class="mode-btn practice-btn" id="milestoneDismissBtn">NICE →</button>
@@ -5327,7 +5327,7 @@ function renderStartScreen() {
       ${appState.onboardingProfile ? `<div class="daily-goal-chip">${escapeHtml(TIME_GOAL_LABEL[appState.onboardingProfile.time] || "1 drill a day")}</div>` : ""}
 
       <button class="mode-btn daily-btn ${alreadyPlayedDaily ? "done" : dropUnlocked ? "" : "locked"}" id="dailyBtn" ${(!dropUnlocked && !alreadyPlayedDaily) ? "disabled" : ""}>
-        ${alreadyPlayedDaily ? "THE 9:30 DROP ✓ DONE — VIEW RESULT" : dropUnlocked ? "THE 9:30 DROP" : `Next Drop in <span id="dropCountdownText">--h --m</span>`}
+        ${alreadyPlayedDaily ? "DAILY DRILL ✓ DONE — VIEW RESULT" : dropUnlocked ? "DAILY DRILL" : `Next Daily Drill in <span id="dropCountdownText">--h --m</span>`}
       </button>
 
       <div class="customize-panel">
@@ -5486,7 +5486,7 @@ function generateShareCanvas(mode, data) {
     ctx.fillText("🔥", 540, 480);
     ctx.font = "900 76px Arial, sans-serif";
     ctx.fillStyle = "#e6e9ef";
-    ctx.fillText(`${data.days} straight Drops ✅`, 540, 620);
+    ctx.fillText(`${data.days} straight Daily Drills ✅`, 540, 620);
     ctx.font = "700 44px Arial, sans-serif";
     ctx.fillStyle = "#22c55e";
     ctx.fillText(`+${data.bonus} Ticks`, 540, 700);
@@ -5785,7 +5785,7 @@ async function renderYesterdaysReveal() {
   root.innerHTML = `
     <div class="reveal-screen">
       <div class="reveal-card">
-        <div class="reveal-badge">YESTERDAY'S DROP</div>
+        <div class="reveal-badge">YESTERDAY'S DAILY</div>
         <p class="reveal-text" id="revealText">Loading…</p>
         <button class="mode-btn practice-btn" id="revealContinueBtn">CONTINUE →</button>
       </div>
@@ -5799,7 +5799,7 @@ async function renderYesterdaysReveal() {
   ]);
 
   const parts = [];
-  parts.push(pct === null ? "No data yet for yesterday's Drop." : `${(100 - pct).toFixed(1)}% of traders got trapped.`);
+  parts.push(pct === null ? "No data yet for yesterday's Daily Drill." : `${(100 - pct).toFixed(1)}% of traders got trapped.`);
   if (playedYesterday) parts.push(`You ${appState.lastDailyResult === "win" ? "got it ✅" : "got trapped ❌"}.`);
   parts.push(topStreak ? `Longest active streak: ${escapeHtml(topStreak.name)} (${topStreak.streak} days).` : "Be the first name on the board.");
 
