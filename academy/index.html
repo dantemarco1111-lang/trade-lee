@@ -370,10 +370,14 @@ function escapeHtml(str) {
   return String(str).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 }
 
-// No real Pro subscription exists yet (waitlist only) — BETA_FREE unlocks
-// every proOnly unit for the open beta. Flip this single line back to false
-// to restore normal Pro gating once payments actually exist.
+// Real Pro subscriptions exist (Stripe). BETA_FREE unlocks every proOnly
+// unit for the open beta regardless of subscription status; once it's
+// false, tlHasProAccess() falls through to the user's actual subscription
+// (auth.js's tlIsPro()).
 const BETA_FREE = true;
+function tlHasProAccess() {
+  return BETA_FREE || (typeof tlIsPro === "function" && tlIsPro());
+}
 
 /* ============================= UNIT DATA ============================= */
 const ICT_NOTE = "Smart Money Concepts is a discretionary framework, not settled science. It overlaps classical technical analysis under new names, and no independent study confirms a standalone edge for any of it — we teach the vocabulary honestly, not as gospel.";
@@ -665,9 +669,9 @@ function isUnitUnlocked(i) {
   return state.academyProgress.unitsCompleted.includes(ACADEMY_UNITS[i - 1].key);
 }
 // proOnly units are Pro-gated for everyone regardless of sequential progress
-// — except BETA_FREE unlocks them all for the open beta.
+// — except during beta or for an actual Pro subscriber.
 function isProLocked(i) {
-  if (BETA_FREE) return false;
+  if (tlHasProAccess()) return false;
   return !!ACADEMY_UNITS[i].proOnly;
 }
 function unitLessonsRead(unitKey) {

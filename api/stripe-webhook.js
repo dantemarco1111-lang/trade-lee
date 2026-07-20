@@ -1,21 +1,9 @@
 const Stripe = require("stripe");
 const { createClient } = require("@supabase/supabase-js");
+const { upsertFromSubscription } = require("./_lib/subscription-sync");
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
-
-const PRICE_PLAN = {
-  "price_1Tv6utFv1BZUHWupMt5C2MYp": "monthly",
-  "price_1Tv6uyFv1BZUHWupRteSIzo6": "annual",
-};
-
-// Stripe needs the exact raw request bytes to verify the signature — any
-// JSON re-parse/re-serialize (even reordering keys) breaks HMAC verification.
-// Disabling Vercel's automatic body parsing is required so we can buffer the
-// untouched bytes ourselves before handing them to stripe.webhooks.constructEvent.
-module.exports.config = {
-  api: { bodyParser: false },
-};
 
 function buffer(readable) {
   return new Promise((resolve, reject) => {
@@ -26,26 +14,7 @@ function buffer(readable) {
   });
 }
 
-async function upsertFromSubscription(subscription) {
-  const userId = subscription.metadata && subscription.metadata.supabase_user_id;
-  if (!userId) {
-    console.error("stripe-webhook: subscription missing supabase_user_id metadata", subscription.id);
-    return;
-  }
-  const priceId = subscription.items.data[0] && subscription.items.data[0].price && subscription.items.data[0].price.id;
-  await supabase.from("subscriptions").upsert({
-    user_id: userId,
-    stripe_customer_id: subscription.customer,
-    stripe_subscription_id: subscription.id,
-    status: subscription.status,
-    plan: PRICE_PLAN[priceId] || null,
-    current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
-    cancel_at_period_end: !!subscription.cancel_at_period_end,
-    updated_at: new Date().toISOString(),
-  });
-}
-
-module.exports = async (req, res) => {
+async function handler(req, res) {
   if (req.method !== "POST") {
     res.status(405).end("Method not allowed");
     return;
@@ -73,13 +42,13 @@ module.exports = async (req, res) => {
           if (!subscription.metadata || !subscription.metadata.supabase_user_id) {
             subscription.metadata = { ...(subscription.metadata || {}), supabase_user_id: session.client_reference_id };
           }
-          await upsertFromSubscription(subscription);
+          await upsertFromSubscription(supabase, subscription);
         }
         break;
       }
       case "customer.subscription.updated":
       case "customer.subscription.deleted": {
-        await upsertFromSubscription(event.data.object);
+        await upsertFromSubscription(supabase, event.data.object);
         break;
       }
       default:
@@ -90,4 +59,16 @@ module.exports = async (req, res) => {
     console.error("stripe-webhook: handler error:", err);
     res.status(500).json({ error: "Webhook handler failed" });
   }
+}
+
+// Stripe needs the exact raw request bytes to verify the signature — any
+// JSON re-parse/re-serialize (even reordering keys) breaks HMAC verification.
+// Disabling Vercel's automatic body parsing is required so we can buffer the
+// untouched bytes ourselves before handing them to stripe.webhooks.constructEvent.
+// MUST be attached after `handler` is assigned to module.exports, not before —
+// reassigning module.exports (as opposed to mutating it in place) replaces the
+// object entirely, silently dropping any properties set on it beforehand.
+module.exports = handler;
+module.exports.config = {
+  api: { bodyParser: false },
 };

@@ -433,6 +433,26 @@ async function pollForProStatus(maxAttempts, intervalMs) {
   return false;
 }
 
+// Reliability fallback: don't just wait on the webhook to land in Supabase —
+// ask Stripe directly (the source of truth) for this exact session and have
+// the server sync it right now. This is what makes unlock instant even if
+// the webhook is slow or never arrives at all.
+async function verifyCheckoutSessionDirectly(sessionId) {
+  try {
+    const res = await fetch("/api/verify-checkout-session", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ sessionId, userId: tlSession.user.id }),
+    });
+    const data = await res.json();
+    if (res.ok && data.status && ACTIVE_SUB_STATUSES.includes(data.status)) {
+      showProActiveState(data);
+      return true;
+    }
+  } catch (e) {}
+  return false;
+}
+
 async function startCheckout(plan) {
   const btn = document.getElementById("subscribeBtn");
   const errEl = document.getElementById("subscribeError");
@@ -509,6 +529,7 @@ async function startCheckout(plan) {
   // string so a refresh doesn't re-show a stale success/cancel state.
   const params = new URLSearchParams(window.location.search);
   const checkoutState = params.get("checkout");
+  const checkoutSessionId = params.get("session_id");
   if (checkoutState === "success" || checkoutState === "cancel") {
     document.getElementById(checkoutState === "success" ? "checkoutSuccessBanner" : "checkoutCancelBanner").classList.remove("hidden");
     if (checkoutState === "success" && typeof tlTrack === "function") tlTrack("pro_checkout_success");
@@ -522,10 +543,12 @@ async function startCheckout(plan) {
   const existingSub = await loadSubscriptionStatus();
   if (existingSub && ACTIVE_SUB_STATUSES.includes(existingSub.status)) {
     showProActiveState(existingSub);
-  } else if (checkoutState === "success") {
-    // Just paid — the webhook may take a moment to land in Supabase. Poll
-    // briefly rather than making them refresh the page themselves.
-    pollForProStatus(6, 1500);
+  } else if (checkoutState === "success" && tlIsSignedIn()) {
+    // Just paid. Ask Stripe directly first (instant, doesn't depend on the
+    // webhook having landed yet) — only fall back to polling Supabase if
+    // that somehow doesn't resolve it (e.g. session_id missing from the URL).
+    const verified = checkoutSessionId ? await verifyCheckoutSessionDirectly(checkoutSessionId) : false;
+    if (!verified) pollForProStatus(6, 1500);
   }
 
   // Subscribe intent survives the magic-link sign-in round trip: if they

@@ -1274,12 +1274,15 @@ const LSW_DECISION_SECONDS = 15;
 const STRATEGY_PACK_DRILLS_PER_SESSION = 10;
 const STRATEGY_PACK_DECISION_SECONDS = 15;
 
-// ---- freemium limits (Phase 5) — no real Pro subscription exists yet
-// (waitlist only), so these apply to everyone until Pro actually launches.
-// BETA_FREE flips every one of them off at once for the open beta — flip
-// this single line back to false to restore normal Pro gating once payments
-// actually exist. All the underlying limit constants/logic stay intact below.
+// ---- freemium limits (Phase 5) — real Pro subscriptions exist (Stripe).
+// BETA_FREE flips every limit off at once for the open beta regardless of
+// subscription status; once it's false, tlHasProAccess() falls through to
+// the user's actual subscription (auth.js's tlIsPro()). All the underlying
+// limit constants/logic stay intact below either way.
 const BETA_FREE = true;
+function tlHasProAccess() {
+  return BETA_FREE || (typeof tlIsPro === "function" && tlIsPro());
+}
 const FREE_PRACTICE_SESSIONS_PER_DAY = 3;
 const FREE_ORDER_TRAINER_ROUNDS_PER_DAY = 3;
 const FREE_MISS_REVIEW_LIMIT = 20;
@@ -4421,6 +4424,7 @@ function getDailyLimitRemaining(counterField, dateField, limit) {
 }
 function dailyLimitNoteText() {
   if (BETA_FREE) return "Unlimited during beta";
+  if (tlHasProAccess()) return "Unlimited with Pro";
   const style = appState.drillStyle || "classic";
   if (style === "ordertrainer") {
     const left = getDailyLimitRemaining("orderTrainerToday", "orderTrainerDate", FREE_ORDER_TRAINER_ROUNDS_PER_DAY);
@@ -4432,7 +4436,7 @@ function dailyLimitNoteText() {
 // Checks AND consumes one credit atomically. Returns false (and shows the
 // paywall) if the day's free credits are already spent.
 function checkDailyLimitOrPaywall(counterField, dateField, limit, title, bullets) {
-  if (BETA_FREE) return true; // no daily limits during the open beta
+  if (tlHasProAccess()) return true; // no daily limits during beta or for Pro subscribers
   const today = getEtDateString(0);
   if (appState[dateField] !== today) { appState[dateField] = today; appState[counterField] = 0; }
   if (appState[counterField] >= limit) {
@@ -4646,8 +4650,8 @@ function renderStrategyPickerScreen() {
   const weakestKey = strategyPackWeakestKey();
   const packCard = (p) => {
     const isCoreFree = FREE_STRATEGY_PACK_KEYS.includes(p.key);
-    const unlocked = isCoreFree || BETA_FREE;
-    const chip = isCoreFree ? "" : BETA_FREE
+    const unlocked = isCoreFree || tlHasProAccess();
+    const chip = unlocked ? "" : BETA_FREE
       ? ` <span class="pro-chip-inline beta-chip" data-beta-chip="1">BETA — free for now</span>`
       : ` <span class="pro-chip-inline">PRO</span>`;
     const acc = strategyPackEdgeLine(p.key);
@@ -5016,8 +5020,8 @@ async function startMissReview() {
   if (content) content.innerHTML = `<div class="loading">Loading your misses…</div>`;
 
   // Free tier normally reviews only the most recent FREE_MISS_REVIEW_LIMIT
-  // misses (full history is a Pro benefit) — BETA_FREE lifts that cap.
-  const reviewable = BETA_FREE ? appState.missedDrills : appState.missedDrills.slice(-FREE_MISS_REVIEW_LIMIT);
+  // misses (full history is a Pro benefit) — beta or a real Pro sub lifts that cap.
+  const reviewable = tlHasProAccess() ? appState.missedDrills : appState.missedDrills.slice(-FREE_MISS_REVIEW_LIMIT);
   const byPack = {};
   reviewable.forEach(m => {
     const key = (m.market || "stocks") + "|" + (m.timeframe || "5m");
@@ -5842,7 +5846,7 @@ function renderStartScreen() {
       <button class="mode-btn speedrun-btn" id="speedRunBtn">SPEED RUN — 5 DRILLS, 5s EACH</button>
       <button class="text-link-btn" id="strategyPacksBtn" style="padding:4px 0;">Strategy Packs (ORB, VWAP, ICT/SMC & more)</button>
       <a class="text-link-btn" href="/academy/" style="padding:4px 0;display:block;">Academy — lessons, quizzes &amp; a learning path</a>
-      ${appState.missedDrills.length ? `<button class="text-link-btn" id="missReviewBtn">Review your misses (${BETA_FREE ? appState.missedDrills.length : Math.min(appState.missedDrills.length, FREE_MISS_REVIEW_LIMIT) + (appState.missedDrills.length > FREE_MISS_REVIEW_LIMIT ? ` of ${appState.missedDrills.length}` : "")})</button>` : ""}
+      ${appState.missedDrills.length ? `<button class="text-link-btn" id="missReviewBtn">Review your misses (${tlHasProAccess() ? appState.missedDrills.length : Math.min(appState.missedDrills.length, FREE_MISS_REVIEW_LIMIT) + (appState.missedDrills.length > FREE_MISS_REVIEW_LIMIT ? ` of ${appState.missedDrills.length}` : "")})</button>` : ""}
 
       <div class="start-stats-row">
         <div class="mini-stat"><div class="v">${accuracy.toFixed(1)}%</div><div class="l">Accuracy</div></div>
