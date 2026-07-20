@@ -2,4 +2,4 @@ User-agent: *
 Allow: /
 Disallow: /stats-internal/
 
-Sitemap: https://trade-lee.vercel.app/sitemap.xml
+Sitemap: https://tradelee.xyz/sitemap.xml

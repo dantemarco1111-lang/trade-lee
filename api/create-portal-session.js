@@ -4,7 +4,7 @@ const { createClient } = require("@supabase/supabase-js");
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
 
-const SITE_URL = process.env.SITE_URL || "https://trade-lee.vercel.app";
+const SITE_URL = process.env.SITE_URL || "https://tradelee.xyz";
 
 module.exports = async (req, res) => {
   if (req.method !== "POST") {

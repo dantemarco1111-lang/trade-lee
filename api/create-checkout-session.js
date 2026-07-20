@@ -10,7 +10,7 @@ const ALLOWED_PRICES = {
   annual: "price_1Tv6uyFv1BZUHWupRteSIzo6",
 };
 
-const SITE_URL = process.env.SITE_URL || "https://trade-lee.vercel.app";
+const SITE_URL = process.env.SITE_URL || "https://tradelee.xyz";
 
 module.exports = async (req, res) => {
   if (req.method !== "POST") {

@@ -51,7 +51,7 @@ These require dashboard access I don't have (service role key, Stripe secret key
 
 1. Run `supabase/stage-revenue2-subscriptions-schema.sql` in the Supabase SQL Editor.
 2. In Vercel → Project → Settings → Environment Variables, add: `STRIPE_SECRET_KEY` (from the Stripe dashboard's API keys page — test/sandbox key for now), `SUPABASE_URL` (`https://fzzpxoryolgzemdggkse.supabase.co`), `SUPABASE_SERVICE_ROLE_KEY` (Supabase → Settings → API → `service_role` key — never put this in a committed file), and `STRIPE_WEBHOOK_SECRET` (from step 3 below).
-3. In the Stripe dashboard → Developers → Webhooks → Add endpoint, pointed at `https://trade-lee.vercel.app/api/stripe-webhook`, subscribed to `checkout.session.completed`, `customer.subscription.updated`, `customer.subscription.deleted`. Copy its signing secret into `STRIPE_WEBHOOK_SECRET` above.
+3. In the Stripe dashboard → Developers → Webhooks → Add endpoint, pointed at `https://tradelee.xyz/api/stripe-webhook`, subscribed to `checkout.session.completed`, `customer.subscription.updated`, `customer.subscription.deleted`. Copy its signing secret into `STRIPE_WEBHOOK_SECRET` above.
 4. Redeploy (push any small commit, or use Vercel's redeploy button) so the new env vars take effect.
 5. **Going live:** everything above is sandbox/test mode. When ready to accept real payments, switch the Stripe dashboard to live mode, create the same Product/Prices there (test and live mode don't share objects), update the price IDs in `api/create-checkout-session.js` and `api/stripe-webhook.js`, swap `STRIPE_SECRET_KEY`/`STRIPE_WEBHOOK_SECRET` for their live-mode equivalents, and re-create the webhook endpoint in live mode.
 
