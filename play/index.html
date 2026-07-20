@@ -4247,6 +4247,25 @@ function startNewSpeedRun(fixedDeck) {
   sessionDeck = fixedDeck || buildSessionDeck().slice(0, SPEEDRUN_DRILLS);
   loadDrill(sessionDeck[sessionIndex]);
 }
+// Rules card shown before every fresh Speed Run — stays on screen until the
+// user clicks START RUN (no auto-dismiss timer). Re-running via "Again" skips
+// this since the user just saw the rules; challenge-deck resumes skip it too
+// since that flow has its own context-setting screen already.
+function renderSpeedRunIntro() {
+  const root = document.getElementById("screenRoot");
+  root.innerHTML = `
+    <div class="onboarding-summary">
+      <h2>Speed Run</h2>
+      <div class="onboarding-plan-card">
+        <div class="onboarding-plan-line">${SPEEDRUN_DRILLS} drills, <strong>${SPEEDRUN_SECONDS} seconds</strong> each</div>
+        <div class="onboarding-plan-line">No power-ups during a run</div>
+        <div class="onboarding-plan-line">Best time only counts if you go <strong>${SPEEDRUN_DRILLS}/${SPEEDRUN_DRILLS}</strong> correct</div>
+      </div>
+      <button class="mode-btn practice-btn" id="speedRunStartBtn">START RUN →</button>
+    </div>
+  `;
+  document.getElementById("speedRunStartBtn").onclick = () => startNewSpeedRun();
+}
 function advanceOrEndSpeedRun() {
   clearTimeout(autoAdvanceHandle);
   sessionIndex++;
@@ -4881,7 +4900,7 @@ function pickNextActionNudge() {
     return { text: "🔥 Protect your streak — get a freeze", href: "/powerups/" };
   }
   if (appState.totalDrillsAnswered >= 10 && accuracy > 0.70) {
-    return { text: "You're above 70% — try Speed Run", onClick: () => startNewSpeedRun() };
+    return { text: "You're above 70% — try Speed Run", onClick: renderSpeedRunIntro };
   }
   if ((appState.practiceSessionsCompleted || 0) >= 3 && appState.practiceMarket !== "forex") {
     return {
@@ -5378,7 +5397,7 @@ function renderStartScreen() {
   document.getElementById("strategyPacksBtn").onclick = renderStrategyPickerScreen;
   const missBtn = document.getElementById("missReviewBtn");
   if (missBtn) missBtn.onclick = startMissReview;
-  document.getElementById("speedRunBtn").onclick = () => startNewSpeedRun();
+  document.getElementById("speedRunBtn").onclick = renderSpeedRunIntro;
   initCustomizePanel();
 
   if (!dropUnlocked && !alreadyPlayedDaily) startDropCountdown();
