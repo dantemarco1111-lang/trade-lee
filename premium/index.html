@@ -3,18 +3,18 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Trade Lee Pro — free during beta</title>
-<meta name="description" content="Every Pro feature is free while Trade Lee is in beta: unlimited practice, all Strategy Packs, full Academy access, 2x Ticks at launch. Join the waitlist for founding pricing.">
-<meta property="og:title" content="Trade Lee Pro — free during beta">
-<meta property="og:description" content="Every Pro feature is free while Trade Lee is in beta. Join the waitlist for founding pricing.">
+<title>Trade Lee Pro — $9/mo founding pricing</title>
+<meta name="description" content="Every Pro feature is free while Trade Lee is in beta. Subscribe now to lock in $9/mo founding pricing for as long as you stay subscribed — or join the free waitlist instead.">
+<meta property="og:title" content="Trade Lee Pro — $9/mo founding pricing">
+<meta property="og:description" content="Every Pro feature is free during beta. Subscribe now to lock in founding pricing before it goes away.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://trade-lee.vercel.app/premium/">
 <meta property="og:image" content="https://trade-lee.vercel.app/og-image.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Trade Lee Pro — free during beta">
-<meta name="twitter:description" content="Every Pro feature is free while Trade Lee is in beta. Join the waitlist for founding pricing.">
+<meta name="twitter:title" content="Trade Lee Pro — $9/mo founding pricing">
+<meta name="twitter:description" content="Every Pro feature is free during beta. Subscribe now to lock in founding pricing before it goes away.">
 <meta name="twitter:image" content="https://trade-lee.vercel.app/og-image.png">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230b0e14'/%3E%3Cline x1='11' y1='4' x2='11' y2='28' stroke='%2326a69a' stroke-width='2.2'/%3E%3Crect x='7' y='10' width='8' height='10' rx='1' fill='%2326a69a'/%3E%3Cline x1='23' y1='6' x2='23' y2='25' stroke='%23ef5350' stroke-width='2.2'/%3E%3Crect x='19' y='12' width='8' height='7' rx='1' fill='%23ef5350'/%3E%3C/svg%3E">
 <link rel="manifest" href="/manifest.json">
@@ -138,6 +138,76 @@
     font-size: 0.82rem;
     margin-top: 18px;
   }
+
+  /* ---- Checkout success/cancel banners ---- */
+  .checkout-banner {
+    display: flex; align-items: flex-start; gap: 12px;
+    border-radius: 12px; padding: 16px 18px; margin: 0 0 18px;
+    animation: checkoutBannerIn var(--duration-standard, 250ms) var(--ease, ease) both;
+  }
+  @keyframes checkoutBannerIn { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: translateY(0); } }
+  .checkout-success { background: rgba(34, 197, 94, 0.1); border: 1px solid rgba(34, 197, 94, 0.35); }
+  .checkout-cancel { background: var(--surface-2); border: 1px solid var(--border); }
+  .checkout-banner-icon {
+    display: flex; align-items: center; justify-content: center;
+    width: 28px; height: 28px; border-radius: 50%; flex-shrink: 0;
+    font-weight: 700; font-size: 0.9rem;
+  }
+  .checkout-success .checkout-banner-icon { background: rgba(34, 197, 94, 0.18); color: var(--green); }
+  .checkout-cancel .checkout-banner-icon { background: var(--surface-3, var(--surface-2)); color: var(--text-dim); }
+  .checkout-banner-title { font-weight: 700; font-size: 0.98rem; margin-bottom: 3px; }
+  .checkout-banner-sub { color: var(--text-dim); font-size: 0.88rem; line-height: 1.5; }
+
+  /* ---- Pricing toggle ---- */
+  .pricing-toggle {
+    display: flex; gap: 6px; background: var(--surface-2); border: 1px solid var(--border);
+    border-radius: 999px; padding: 4px; margin: 0 auto 18px; max-width: 320px;
+  }
+  .pricing-toggle-opt {
+    flex: 1; border: none; background: transparent; color: var(--text-dim);
+    font-family: var(--font-body); font-size: 0.85rem; font-weight: 600;
+    padding: 9px 10px; border-radius: 999px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+    transition: background var(--duration-micro, 150ms) var(--ease, ease), color var(--duration-micro, 150ms) var(--ease, ease);
+  }
+  .pricing-toggle-opt.active { background: var(--card); color: var(--text); box-shadow: var(--shadow-sm, 0 1px 3px rgba(0,0,0,0.3)); }
+  .pricing-save-tag {
+    font-size: 0.68rem; font-weight: 700; color: var(--green);
+    background: rgba(34, 197, 94, 0.14); border-radius: 999px; padding: 2px 7px;
+  }
+  .pricing-amount { text-align: center; margin-bottom: 2px; }
+  .pricing-amount .pro-price { font-size: 2.1rem; }
+  .pricing-note { text-align: center; color: var(--text-dim); font-size: 0.82rem; margin-bottom: 22px; }
+
+  .pro-subscribe-btn { width: 100%; font-size: 1rem; padding: 15px; position: relative; }
+  .pro-subscribe-error {
+    color: var(--red); font-size: 0.85rem; text-align: center; margin-top: 10px; line-height: 1.4;
+  }
+
+  .pro-divider {
+    display: flex; align-items: center; gap: 12px; margin: 26px 0 18px;
+    color: var(--text-dim); font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.5px;
+  }
+  .pro-divider::before, .pro-divider::after { content: ""; flex: 1; height: 1px; background: var(--border); }
+
+  /* ---- Active Pro state ---- */
+  .pro-active-card { text-align: center; }
+  .pro-active-badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: rgba(34, 197, 94, 0.14); color: var(--green);
+    font-family: var(--font-mono); font-weight: 700; font-size: 0.85rem;
+    border-radius: 999px; padding: 7px 16px; margin-bottom: 16px;
+  }
+  .pro-active-detail p { color: var(--text); font-size: 0.98rem; line-height: 1.6; margin: 0 0 6px; }
+  .pro-active-cancel-note {
+    color: var(--gold); font-size: 0.85rem; background: rgba(245, 180, 0, 0.08);
+    border: 1px solid rgba(245, 180, 0, 0.25); border-radius: 10px; padding: 10px 14px;
+    margin: 12px 0 20px; line-height: 1.5;
+  }
+  .pro-active-card .btn { margin-top: 8px; }
+  .pro-portal-error { color: var(--red); font-size: 0.85rem; margin-top: 10px; }
+
+  .pro-subscribe-btn[disabled], .pro-active-card .btn[disabled] { opacity: 0.7; cursor: default; }
 </style>
 </head>
 <body>
@@ -193,15 +263,44 @@
 </div>
 
 <main class="content-page">
-  <div class="pro-launch-banner">Trade Lee is in open beta — everything below is unlocked for everyone right now.</div>
+  <div class="pro-launch-banner">Trade Lee is in open beta — every feature below is already unlocked for everyone, free.</div>
+
+  <div class="checkout-banner checkout-success hidden" id="checkoutSuccessBanner">
+    <span class="checkout-banner-icon">✓</span>
+    <div>
+      <div class="checkout-banner-title">You're Pro — welcome to the founding list.</div>
+      <div class="checkout-banner-sub">Your founding price is locked in for as long as you stay subscribed. A receipt is on its way to your inbox. Syncing your account now…</div>
+    </div>
+  </div>
+  <div class="checkout-banner checkout-cancel hidden" id="checkoutCancelBanner">
+    <span class="checkout-banner-icon">•</span>
+    <div>
+      <div class="checkout-banner-title">No charge made.</div>
+      <div class="checkout-banner-sub">Checkout was canceled — everything's still free during beta, no rush.</div>
+    </div>
+  </div>
 
   <div class="content-hero">
     <div class="badge pro-badge">FREE DURING BETA</div>
-    <h1>Free during beta</h1>
-    <p>Every Pro feature below is unlocked for everyone while Trade Lee is in beta. Pro launches later at <span class="pro-price">$9<span class="pro-price-period">/mo</span></span> — join the waitlist now to lock founding pricing before it does.</p>
+    <h1>Lock in founding pricing</h1>
+    <p>Subscribing doesn't unlock anything extra right now — every feature below is already free during beta. What it does is lock in <span class="pro-price">$9<span class="pro-price-period">/mo</span></span> (or less annually) for as long as you stay subscribed, before founding pricing goes away. Not ready to commit money? The free waitlist below works too.</p>
   </div>
 
-  <section class="content-card card pro-card">
+  <section class="content-card card pro-card pro-active-card hidden" id="proActiveCard">
+    <div class="pro-active-badge">✓ YOU'RE PRO</div>
+    <div class="pro-active-detail" id="proActiveDetail"></div>
+    <button class="btn btn-ghost" type="button" id="managePortalBtn">Manage subscription</button>
+    <div class="pro-portal-error hidden" id="portalError"></div>
+  </section>
+
+  <section class="content-card card pro-card" id="subscribeCard">
+    <div class="pricing-toggle" id="pricingToggle" role="tablist">
+      <button type="button" class="pricing-toggle-opt active" data-plan="monthly" role="tab" aria-selected="true">Monthly</button>
+      <button type="button" class="pricing-toggle-opt" data-plan="annual" role="tab" aria-selected="false">Annual <span class="pricing-save-tag">Save 17%</span></button>
+    </div>
+    <div class="pricing-amount" id="pricingAmount"><span class="pro-price">$9<span class="pro-price-period">/mo</span></span></div>
+    <div class="pricing-note" id="pricingNote">Billed monthly. Cancel anytime.</div>
+
     <ul class="pro-features">
       <li><span class="pro-check">✓</span> Unlimited practice sessions — no daily cap</li>
       <li><span class="pro-check">✓</span> Unlimited Order Execution Trainer rounds — no daily cap</li>
@@ -213,10 +312,16 @@
       <li><span class="pro-check">✓</span> Founding-member price, locked in for as long as you stay subscribed</li>
     </ul>
 
+    <button class="btn btn-gold pro-subscribe-btn" type="button" id="subscribeBtn">Subscribe — lock founding price</button>
+    <div class="pro-subscribe-error hidden" id="subscribeError"></div>
+    <p class="legal-consent-line">By subscribing you agree to the <a href="/terms/">Terms</a> &amp; <a href="/privacy/">Privacy Policy</a>. Payment processed securely by Stripe — card details never touch our servers.</p>
+
+    <div class="pro-divider"><span>or</span></div>
+
     <div class="waitlist-count hidden" id="waitlistCount"></div>
     <form class="waitlist-form" id="waitlistForm">
       <input type="email" id="waitlistEmail" placeholder="you@email.com" autocomplete="email" required>
-      <button type="submit" class="btn btn-gold" id="waitlistBtn">Join the Pro waitlist</button>
+      <button type="submit" class="btn btn-ghost" id="waitlistBtn">Just join the free waitlist</button>
     </form>
     <div class="waitlist-msg hidden" id="waitlistMsg"></div>
     <div class="pro-fineprint">No payment required to join the waitlist. We'll email you when Pro launches.</div>
@@ -264,12 +369,171 @@
   });
 })();
 
+const PRICING = {
+  monthly: { plan: "monthly", amount: "$9", period: "/mo", note: "Billed monthly. Cancel anytime." },
+  annual: { plan: "annual", amount: "$90", period: "/yr", note: "Billed annually ($7.50/mo equivalent). Cancel anytime." },
+};
+const ACTIVE_SUB_STATUSES = ["active", "trialing"];
+const PENDING_CHECKOUT_KEY = "tl_pending_checkout_plan";
+let currentPricingPlan = "monthly";
+
+function renderPricing(plan) {
+  currentPricingPlan = plan;
+  const p = PRICING[plan];
+  document.getElementById("pricingAmount").innerHTML = `<span class="pro-price">${p.amount}<span class="pro-price-period">${p.period}</span></span>`;
+  document.getElementById("pricingNote").textContent = p.note;
+  document.querySelectorAll(".pricing-toggle-opt").forEach((btn) => {
+    const active = btn.dataset.plan === plan;
+    btn.classList.toggle("active", active);
+    btn.setAttribute("aria-selected", active ? "true" : "false");
+  });
+}
+
+async function loadSubscriptionStatus() {
+  if (typeof tlIsSignedIn !== "function" || !tlIsSignedIn() || typeof sbClient === "undefined" || !sbClient) return null;
+  try {
+    const { data, error } = await sbClient
+      .from("subscriptions")
+      .select("status, plan, current_period_end, cancel_at_period_end")
+      .eq("user_id", tlSession.user.id)
+      .maybeSingle();
+    if (error || !data) return null;
+    return data;
+  } catch (e) {
+    return null;
+  }
+}
+
+function showProActiveState(sub) {
+  document.getElementById("subscribeCard").classList.add("hidden");
+  const card = document.getElementById("proActiveCard");
+  card.classList.remove("hidden");
+  const planLabel = sub.plan === "annual" ? "Annual" : "Monthly";
+  const renewDate = sub.current_period_end
+    ? new Date(sub.current_period_end).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })
+    : null;
+  const cancelNote = sub.cancel_at_period_end
+    ? `<div class="pro-active-cancel-note">Cancels at the end of the current period${renewDate ? ` (${renewDate})` : ""} — you'll keep Pro access until then.</div>`
+    : "";
+  document.getElementById("proActiveDetail").innerHTML = `
+    <p>${planLabel} plan${renewDate && !sub.cancel_at_period_end ? `, renews ${renewDate}` : ""}. Your founding price is locked in for as long as you stay subscribed.</p>
+    ${cancelNote}
+  `;
+}
+
+async function pollForProStatus(maxAttempts, intervalMs) {
+  for (let i = 0; i < maxAttempts; i++) {
+    const sub = await loadSubscriptionStatus();
+    if (sub && ACTIVE_SUB_STATUSES.includes(sub.status)) {
+      showProActiveState(sub);
+      return true;
+    }
+    await new Promise((r) => setTimeout(r, intervalMs));
+  }
+  return false;
+}
+
+async function startCheckout(plan) {
+  const btn = document.getElementById("subscribeBtn");
+  const errEl = document.getElementById("subscribeError");
+  errEl.classList.add("hidden");
+  btn.disabled = true;
+  const originalText = btn.textContent;
+  btn.textContent = "Redirecting to checkout…";
+  try {
+    const res = await fetch("/api/create-checkout-session", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ plan, userId: tlSession.user.id, email: tlSession.user.email }),
+    });
+    const data = await res.json();
+    if (!res.ok || !data.url) throw new Error(data.error || "Could not start checkout");
+    localStorage.removeItem(PENDING_CHECKOUT_KEY);
+    window.location.href = data.url;
+  } catch (err) {
+    btn.disabled = false;
+    btn.textContent = originalText;
+    errEl.textContent = err.message || "Something went wrong — please try again.";
+    errEl.classList.remove("hidden");
+  }
+}
+
 (async function () {
   if (typeof tlInitSession === "function") {
     await tlInitSession();
     if (tlIsSignedIn() && tlSession.user.email) {
       document.getElementById("waitlistEmail").value = tlSession.user.email;
     }
+  }
+
+  renderPricing("monthly");
+  document.getElementById("pricingToggle").addEventListener("click", (e) => {
+    const btn = e.target.closest(".pricing-toggle-opt");
+    if (btn) renderPricing(btn.dataset.plan);
+  });
+
+  document.getElementById("subscribeBtn").addEventListener("click", () => {
+    if (!tlIsSignedIn()) {
+      localStorage.setItem(PENDING_CHECKOUT_KEY, currentPricingPlan);
+      if (typeof tlOpenAuthModal === "function") tlOpenAuthModal();
+      return;
+    }
+    startCheckout(currentPricingPlan);
+  });
+
+  document.getElementById("managePortalBtn").addEventListener("click", async () => {
+    const btn = document.getElementById("managePortalBtn");
+    const errEl = document.getElementById("portalError");
+    errEl.classList.add("hidden");
+    btn.disabled = true;
+    const originalText = btn.textContent;
+    btn.textContent = "Opening…";
+    try {
+      const res = await fetch("/api/create-portal-session", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: tlSession.user.id }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.url) throw new Error(data.error || "Could not open billing portal");
+      window.location.href = data.url;
+    } catch (err) {
+      btn.disabled = false;
+      btn.textContent = originalText;
+      errEl.textContent = err.message || "Something went wrong — please try again.";
+      errEl.classList.remove("hidden");
+    }
+  });
+
+  // Checkout return handling — show the right banner, then scrub the query
+  // string so a refresh doesn't re-show a stale success/cancel state.
+  const params = new URLSearchParams(window.location.search);
+  const checkoutState = params.get("checkout");
+  if (checkoutState === "success" || checkoutState === "cancel") {
+    document.getElementById(checkoutState === "success" ? "checkoutSuccessBanner" : "checkoutCancelBanner").classList.remove("hidden");
+    if (checkoutState === "success" && typeof tlTrack === "function") tlTrack("pro_checkout_success");
+    params.delete("checkout");
+    params.delete("session_id");
+    const qs = params.toString();
+    window.history.replaceState({}, "", window.location.pathname + (qs ? `?${qs}` : ""));
+  }
+
+  // Live subscription status — if already Pro, swap in that state immediately.
+  const existingSub = await loadSubscriptionStatus();
+  if (existingSub && ACTIVE_SUB_STATUSES.includes(existingSub.status)) {
+    showProActiveState(existingSub);
+  } else if (checkoutState === "success") {
+    // Just paid — the webhook may take a moment to land in Supabase. Poll
+    // briefly rather than making them refresh the page themselves.
+    pollForProStatus(6, 1500);
+  }
+
+  // Subscribe intent survives the magic-link sign-in round trip: if they
+  // clicked Subscribe before signing in, resume checkout automatically now.
+  const pendingPlan = localStorage.getItem(PENDING_CHECKOUT_KEY);
+  if (pendingPlan && tlIsSignedIn() && !(existingSub && ACTIVE_SUB_STATUSES.includes(existingSub.status))) {
+    renderPricing(pendingPlan === "annual" ? "annual" : "monthly");
+    startCheckout(currentPricingPlan);
   }
 
   // Live waitlist count (Revenue Infra Stage 4) — graceful no-op if the RPC
