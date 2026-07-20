@@ -11,12 +11,28 @@
  */
 
 let sbClient = null;
+window.tlLastAuthError = null; // visible in DevTools console for debugging — auth errors are never silently swallowed
 try {
   if (window.supabase && typeof SUPABASE_URL !== "undefined" && SUPABASE_URL) {
-    sbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    sbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+      auth: {
+        persistSession: true,
+        autoRefreshToken: true,
+        detectSessionInUrl: true,
+        // "implicit" (not "pkce") deliberately: PKCE requires completing the
+        // flow in the exact same browser that requested it, via a locally
+        // stored code_verifier. A magic-link email is inherently opened from
+        // a different context (mail app / different browser) more often than
+        // not, which would silently fail under PKCE. Implicit puts the token
+        // directly in the URL, so it works regardless of which browser opens it.
+        flowType: "implicit",
+      },
+    });
   }
 } catch (e) {
   sbClient = null;
+  window.tlLastAuthError = e;
+  console.error("Trade Lee: Supabase client init failed:", e);
 }
 
 let tlSession = null;
@@ -28,10 +44,40 @@ function tlOnAuthChange(cb) {
   tlAuthChangeCallbacks.push(cb);
 }
 
+// Defensive backstop for the magic-link callback: the Supabase client auto-detects
+// ?code=... (PKCE) or #access_token=... (implicit) in the URL on init, but if that
+// silently fails (e.g. code_verifier missing because the link was opened in a
+// different browser/app than the one that requested it), surface it instead of
+// leaving the user in a confusing "looked signed in, now isn't" state.
+const tlAuthCallbackParams = new URLSearchParams(window.location.search);
+const tlHasAuthCallback = tlAuthCallbackParams.has("code") || /access_token=/.test(window.location.hash);
+
+let tlUrlAlreadyCleaned = false;
 if (sbClient) {
-  sbClient.auth.onAuthStateChange((event, session) => {
+  sbClient.auth.onAuthStateChange(async (event, session) => {
     tlSession = session;
     if (!session) tlProfile = null;
+    // Once the callback's code/tokens are consumed (success or failure), strip
+    // them from the URL so a refresh never re-processes a stale/expired link.
+    // By the time this fires, the Supabase client has already read whatever it
+    // needed from the URL, so it's safe to just reset to a clean path.
+    const wasFreshCallback = tlHasAuthCallback && !tlUrlAlreadyCleaned;
+    if (wasFreshCallback) {
+      tlUrlAlreadyCleaned = true;
+      window.history.replaceState({}, "", window.location.origin + window.location.pathname);
+    }
+    // A magic link always completes via a full page reload, so any in-progress
+    // "check your email" modal state is gone — pick the flow back up here
+    // instead of leaving a freshly-signed-in user to figure out on their own
+    // that they still need to claim a display name.
+    if (wasFreshCallback && event === "SIGNED_IN" && session) {
+      const profile = await tlFetchMyProfile();
+      if (!profile && typeof tlOpenAuthModal === "function") {
+        tlEnsureModalMounted();
+        tlRenderAuthModalStep("claim-name");
+        document.getElementById("authModalOverlay").classList.add("show");
+      }
+    }
     tlAuthChangeCallbacks.forEach(cb => { try { cb(event, session); } catch (e) {} });
   });
 }
@@ -42,9 +88,17 @@ async function tlInitSession() {
     const { data, error } = await sbClient.auth.getSession();
     if (error) throw error;
     tlSession = data.session;
+    if (!tlSession && tlHasAuthCallback) {
+      // We arrived with callback params but ended up with no session — the
+      // exchange genuinely failed (expired/reused link, or wrong browser context).
+      window.tlLastAuthError = new Error("Magic link callback present but no session was established — link may be expired, already used, or opened in a different browser than the one that requested it.");
+      console.error("Trade Lee auth:", window.tlLastAuthError.message);
+    }
     if (tlSession) tlProfile = await tlFetchMyProfile();
     return tlSession;
   } catch (e) {
+    window.tlLastAuthError = e;
+    console.error("Trade Lee auth: tlInitSession failed:", e);
     return null;
   }
 }
