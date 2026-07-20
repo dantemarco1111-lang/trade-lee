@@ -593,7 +593,7 @@ function tlRenderAuthModalStep(step, ctx) {
         await tlSendMagicLink(input.value);
         tlRenderAuthModalStep("sent", { email: input.value.trim() });
       } catch (e) {
-        errEl.textContent = e.message || "Something went wrong.";
+        errEl.textContent = (e.message && e.message !== "{}") ? e.message : "Something went wrong on our end — please try again in a moment.";
         errEl.classList.remove("hidden");
         btn.disabled = false;
         btn.textContent = "Send magic link";
@@ -625,7 +625,7 @@ function tlRenderAuthModalStep(step, ctx) {
         tlRenderAuthModalStep("welcome", { name: tlProfile.display_name });
         if (ctx.onClaimed) ctx.onClaimed(tlProfile.display_name);
       } catch (e) {
-        errEl.textContent = e.message || "Something went wrong.";
+        errEl.textContent = (e.message && e.message !== "{}") ? e.message : "Something went wrong on our end — please try again in a moment.";
         errEl.classList.remove("hidden");
         btn.disabled = false;
         btn.textContent = "Save name";
