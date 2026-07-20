@@ -2436,13 +2436,39 @@ function renderVolumeProfile(drill) {
 // Progressively fans candles/volume/vwap in left-to-right over ~400ms when a drill
 // loads, instead of snapping the whole chart in at once. Falls back to an instant
 // setData for the final step so the chart always ends up fully correct.
-function revealChartEntrance(candleData, volumeData, vwapData, totalMs) {
+// onComplete fires once the FULL dataset is set and the price scale has had
+// a chance to settle to it — anything that positions a price-line overlay
+// (e.g. the Order Trainer's draggable entry/stop/target lines) via
+// candleSeries.priceToCoordinate() must wait for this, not a fixed timer or
+// a couple of requestAnimationFrame ticks. Calling priceToCoordinate() while
+// only the first 1-2 of ~60 candles are visible reads the chart's transient,
+// not-yet-expanded auto-scale, producing a Y-coordinate that's correct for
+// that instant but wrong once the scale expands to the full range moments
+// later — the line then sits frozen at that stale pixel position forever,
+// since nothing re-positions it after the reveal finishes. This was the
+// root cause of the Order Trainer's entry-line-vs-chart mismatch bug.
+function fireOnceSettled(onComplete) {
+  // Primary path: double-rAF, so we resolve after the chart library's own
+  // rAF-scheduled scale update AND a subsequent browser paint. Safety-net:
+  // a plain setTimeout, since requestAnimationFrame is fully suspended (not
+  // just throttled) in backgrounded/hidden tabs and would otherwise never
+  // fire until the tab regains focus. Whichever fires first wins; a guard
+  // flag keeps onComplete from running twice.
+  if (!onComplete) return;
+  let fired = false;
+  const fire = () => { if (fired) return; fired = true; onComplete(); };
+  requestAnimationFrame(() => requestAnimationFrame(fire));
+  setTimeout(fire, 150);
+}
+
+function revealChartEntrance(candleData, volumeData, vwapData, totalMs, onComplete) {
   totalMs = totalMs || 400;
   const n = candleData.length;
   if (n <= 1) {
     candleSeries.setData(candleData);
     volumeSeries.setData(volumeData);
     vwapSeries.setData(vwapData);
+    fireOnceSettled(onComplete);
     return;
   }
   const steps = Math.min(n, 16);
@@ -2456,6 +2482,7 @@ function revealChartEntrance(candleData, volumeData, vwapData, totalMs) {
     vwapSeries.setData(vwapData.slice(0, count));
     chart.timeScale().scrollToRealTime();
     if (step < steps) setTimeout(tick, stepMs);
+    else fireOnceSettled(onComplete);
   }
   tick();
 }
@@ -3837,6 +3864,15 @@ function resetOtLinesToDefault() {
   if (otDirection === "long") { otStopPrice = lastClose - offset; otTargetPrice = lastClose + offset * 1.5; }
   else { otStopPrice = lastClose + offset; otTargetPrice = lastClose - offset * 1.5; }
   positionOtLines();
+  // Dev-time sanity check for the exact bug class this function was rewritten
+  // to fix: the quoted entry (a data value) silently drifting from what the
+  // chart actually renders (e.g. if a future edit re-introduces positioning
+  // lines before the reveal animation's price scale has settled).
+  const lastVisibleClose = otDrill.candles[otDrill.candles.length - 1].close;
+  const driftPct = lastVisibleClose > 0 ? Math.abs(otEntryPrice - lastVisibleClose) / lastVisibleClose : 0;
+  if (driftPct >= 0.02) {
+    console.error(`Order Trainer: quoted entry (${otEntryPrice}) drifted ${(driftPct * 100).toFixed(1)}% from the last visible close (${lastVisibleClose}) — entry line will look wrong on the chart.`);
+  }
 }
 function positionOtLines() {
   if (!candleSeries) return;
@@ -3878,11 +3914,7 @@ async function startOrderTrainerRound() {
   const chartSettings = appState.chartSettings || { showVwap: true, showVolume: true };
   vwapSeries.applyOptions({ visible: chartSettings.showVwap !== false });
   applyVolumePaneVisibility(chartSettings.showVolume !== false);
-  revealChartEntrance(candleData, volumeData, vwapData);
-
-  requestAnimationFrame(() => requestAnimationFrame(() => {
-    resetOtLinesToDefault();
-  }));
+  revealChartEntrance(candleData, volumeData, vwapData, 400, resetOtLinesToDefault);
 }
 function validateOtOrder() {
   if (otEntryPrice === null || otStopPrice === null || otTargetPrice === null) return "Set all three lines first.";
