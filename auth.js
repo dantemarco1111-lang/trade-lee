@@ -10,6 +10,19 @@
  * so a backend hiccup can never break the game.
  */
 
+// Local, self-contained escaping — several pages that load auth.js (the
+// marketing pages) don't define their own escapeHtml, and the auth modal
+// needs to safely render user-controlled text (emails, display names) on
+// every page it's mounted on, not just the ones that happen to have one.
+// A page's own escapeHtml (if any) loads after this and simply wins for that
+// page's own code — harmless, since both do the same thing.
+if (typeof escapeHtml !== "function") {
+  function escapeHtml(str) {
+    return String(str == null ? "" : str).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  }
+}
+function escapeHtmlAttr(str) { return escapeHtml(str); }
+
 let sbClient = null;
 window.tlLastAuthError = null; // visible in DevTools console for debugging — auth errors are never silently swallowed
 try {
@@ -66,17 +79,22 @@ if (sbClient) {
       tlUrlAlreadyCleaned = true;
       window.history.replaceState({}, "", window.location.origin + window.location.pathname);
     }
-    // A magic link always completes via a full page reload, so any in-progress
-    // "check your email" modal state is gone — pick the flow back up here
-    // instead of leaving a freshly-signed-in user to figure out on their own
-    // that they still need to claim a display name.
-    if (wasFreshCallback && event === "SIGNED_IN" && session) {
-      const profile = await tlFetchMyProfile();
-      if (!profile && typeof tlOpenAuthModal === "function") {
-        tlEnsureModalMounted();
-        tlRenderAuthModalStep("claim-name");
-        document.getElementById("authModalOverlay").classList.add("show");
-      }
+    // Fires for every sign-in path (magic link, password sign-in, password
+    // signup-verification) — not just URL-callback ones. A magic link
+    // completes via a full page reload, so any in-progress "check your
+    // email" modal state is gone; password sign-in keeps the modal open but
+    // its own click handler doesn't advance the step, relying on this same
+    // path. Either way: claim a profile if missing (auto, from signup
+    // metadata, or via the manual step), otherwise just close the modal —
+    // an existing user signing in doesn't need to re-see "welcome".
+    if (event === "SIGNED_IN" && session) {
+      const overlay = document.getElementById("authModalOverlay");
+      const modalIsOpen = overlay && overlay.classList.contains("show");
+      await tlEnsureProfileClaimed((name) => {
+        if (!modalIsOpen) return;
+        if (wasFreshCallback) tlRenderAuthModalStep("welcome", { name });
+        else tlCloseAuthModal();
+      });
     }
     tlAuthChangeCallbacks.forEach(cb => { try { cb(event, session); } catch (e) {} });
   });
@@ -94,7 +112,12 @@ async function tlInitSession() {
       window.tlLastAuthError = new Error("Magic link callback present but no session was established — link may be expired, already used, or opened in a different browser than the one that requested it.");
       console.error("Trade Lee auth:", window.tlLastAuthError.message);
     }
-    if (tlSession) tlProfile = await tlFetchMyProfile();
+    if (tlSession) {
+      tlProfile = await tlFetchMyProfile();
+      await tlFetchMySubscription();
+    } else {
+      tlSubscription = null;
+    }
     return tlSession;
   } catch (e) {
     window.tlLastAuthError = e;
@@ -102,6 +125,14 @@ async function tlInitSession() {
     return null;
   }
 }
+// Self-initializing on EVERY page that includes this file — this is the fix
+// for the "signed in, then signed out" report: previously only 4 of ~15
+// pages ever called tlInitSession() at all, so a real, valid session sat
+// unread in localStorage on every other page and those pages just rendered
+// as signed-out. Any page can await window.tlSessionReady if it needs to
+// gate rendering on auth state; pages that don't await it still benefit
+// once it resolves, via tlOnAuthChange / tlInitNavAccountChip below.
+window.tlSessionReady = tlInitSession();
 
 function tlIsSignedIn() {
   return !!tlSession;
@@ -123,6 +154,33 @@ async function tlFetchMyProfile() {
   }
 }
 
+// Pro-gating source of truth, shared by every page that needs to know whether
+// to enforce free-tier limits. Mirrors Stripe's own "still has access" view of
+// a subscription: "active" and "trialing" both count, "past_due" etc. don't.
+// A canceled-but-not-yet-expired sub (cancel_at_period_end) stays "active"
+// until Stripe actually ends it, so access correctly persists through the
+// grace period without any special-casing here.
+const TL_ACTIVE_SUB_STATUSES = ["active", "trialing"];
+let tlSubscription = null; // { status, plan, current_period_end, cancel_at_period_end } | null
+async function tlFetchMySubscription() {
+  if (!sbClient || !tlSession) { tlSubscription = null; return null; }
+  try {
+    const { data, error } = await sbClient
+      .from("subscriptions")
+      .select("status, plan, current_period_end, cancel_at_period_end")
+      .eq("user_id", tlSession.user.id)
+      .maybeSingle();
+    if (error) throw error;
+    tlSubscription = data;
+    return data;
+  } catch (e) {
+    return null;
+  }
+}
+function tlIsPro() {
+  return !!(tlSubscription && TL_ACTIVE_SUB_STATUSES.includes(tlSubscription.status));
+}
+
 // Rate-limited client-side: at most one magic-link request per 30s.
 async function tlSendMagicLink(email) {
   if (!sbClient) throw new Error("offline");
@@ -138,6 +196,70 @@ async function tlSendMagicLink(email) {
   const { error } = await sbClient.auth.signInWithOtp({ email: clean, options: { emailRedirectTo: redirectTo } });
   if (error) throw error;
   tlLastMagicLinkSentAt = now;
+}
+
+function tlValidateEmail(email) {
+  const clean = (email || "").trim();
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(clean)) throw new Error("Enter a valid email address.");
+  return clean;
+}
+function tlValidatePassword(pw) {
+  if (!pw || pw.length < 8) throw new Error("Password needs at least 8 characters.");
+  return pw;
+}
+// Primary auth path (Stage: password accounts). Stores the chosen display
+// name as auth user_metadata at signup time so it can be auto-claimed the
+// moment the session exists (post-email-verification) without asking twice —
+// see the SIGNED_IN handling in tlInitNavAccountChip's callers.
+async function tlSignUpWithPassword(email, password, displayName) {
+  if (!sbClient) throw new Error("offline");
+  const clean = tlValidateEmail(email);
+  tlValidatePassword(password);
+  const cleanName = tlSanitizeDisplayName(displayName);
+  const { data, error } = await sbClient.auth.signUp({
+    email: clean,
+    password,
+    options: {
+      emailRedirectTo: window.location.origin + window.location.pathname,
+      data: cleanName ? { display_name: cleanName } : undefined,
+    },
+  });
+  if (error) throw error;
+  // If email confirmations are OFF in the Supabase project, signUp() returns
+  // an active session immediately — treat that as already-signed-in rather
+  // than showing a "check your email" screen that would never resolve.
+  return { needsVerification: !data.session, session: data.session };
+}
+async function tlSignInWithPassword(email, password) {
+  if (!sbClient) throw new Error("offline");
+  const clean = tlValidateEmail(email);
+  if (!password) throw new Error("Enter your password.");
+  const { data, error } = await sbClient.auth.signInWithPassword({ email: clean, password });
+  if (error) {
+    if (/invalid login credentials/i.test(error.message || "")) throw new Error("Wrong email or password.");
+    if (/email not confirmed/i.test(error.message || "")) throw new Error("Verify your email first — check your inbox for the confirmation link.");
+    throw error;
+  }
+  return data.session;
+}
+// redirectTo MUST be an allowlisted URL in Supabase Auth -> URL Configuration
+// -> Redirect URLs, or Supabase silently falls back to the project's Site
+// URL instead (a common cause of reset links landing on the wrong page).
+async function tlSendPasswordReset(email) {
+  if (!sbClient) throw new Error("offline");
+  const clean = tlValidateEmail(email);
+  const redirectTo = window.location.origin + "/reset/";
+  const { error } = await sbClient.auth.resetPasswordForEmail(clean, { redirectTo });
+  if (error) throw error;
+}
+// Used both by the /reset/ page (completing a "forgot password" recovery
+// session) and by "Set a password" in the account menu (an already-signed-in
+// magic-link user adding password capability to their existing account).
+async function tlUpdatePassword(newPassword) {
+  if (!sbClient || !tlSession) throw new Error("Not signed in.");
+  tlValidatePassword(newPassword);
+  const { error } = await sbClient.auth.updateUser({ password: newPassword });
+  if (error) throw error;
 }
 
 async function tlSignOut() {
@@ -158,6 +280,95 @@ async function tlClaimDisplayName(name) {
   }
   tlProfile = { id: tlSession.user.id, display_name: clean };
   return clean;
+}
+
+// Shared by every page's SIGNED_IN handling: tries the display name stored
+// at password-signup time (see tlSignUpWithPassword) so a verified user never
+// gets asked for a name they already gave once; falls back to the interactive
+// claim-name modal step (magic-link users, or a taken/missing metadata name).
+async function tlEnsureProfileClaimed(onDone) {
+  const profile = await tlFetchMyProfile();
+  if (profile) { if (onDone) onDone(profile.display_name); return profile; }
+  const metaName = tlSession && tlSession.user && tlSession.user.user_metadata ? tlSession.user.user_metadata.display_name : null;
+  if (metaName) {
+    try {
+      const claimed = await tlClaimDisplayName(metaName);
+      if (onDone) onDone(claimed);
+      return tlProfile;
+    } catch (e) { /* taken or invalid — fall through to the manual prompt */ }
+  }
+  tlEnsureModalMounted();
+  tlRenderAuthModalStep("claim-name", { onClaimed: onDone });
+  document.getElementById("authModalOverlay").classList.add("show");
+  return null;
+}
+
+// Generic, reusable account-chip wiring for any page that doesn't need
+// play/index.html's fuller local<->cloud stat-merge flow — call once after
+// the page's own DOM is ready, passing the chip element's id. Handles
+// initial render (once window.tlSessionReady resolves) and live updates.
+function tlInitNavAccountChip(chipId) {
+  const render = () => {
+    const el = document.getElementById(chipId);
+    if (!el || !sbClient) return;
+    el.classList.remove("hidden");
+    if (tlIsSignedIn() && tlProfile) {
+      el.textContent = tlProfile.display_name;
+      el.title = "Account menu";
+      el.onclick = () => tlShowAccountMenu(el, render);
+    } else {
+      el.textContent = "Sign in";
+      el.title = "Sign in to your account";
+      el.onclick = () => tlOpenAuthModal();
+    }
+  };
+  if (window.tlSessionReady) window.tlSessionReady.then(render);
+  tlOnAuthChange((event) => {
+    if (event === "SIGNED_IN") tlEnsureProfileClaimed(render);
+    else render();
+  });
+}
+
+// Small dropdown anchored under the account chip — "Set a password", (Pro
+// purchasers get "Manage subscription" once tlProfile.is_pro exists), "Sign
+// out". Shared by every page's chip so this only needs to be built once.
+function tlShowAccountMenu(anchorEl, onChange) {
+  const existing = document.getElementById("tlAccountMenu");
+  if (existing) { existing.remove(); if (existing.dataset.anchorFor === anchorEl.id) return; }
+  const menu = document.createElement("div");
+  menu.className = "tl-account-menu";
+  menu.id = "tlAccountMenu";
+  menu.dataset.anchorFor = anchorEl.id;
+  const items = [];
+  items.push(`<button type="button" class="tl-account-menu-item" id="tlMenuSetPassword">Set / change password</button>`);
+  if (tlProfile && tlProfile.is_pro) {
+    items.push(`<button type="button" class="tl-account-menu-item" id="tlMenuManageSub">Manage subscription</button>`);
+  }
+  items.push(`<button type="button" class="tl-account-menu-item tl-account-menu-signout" id="tlMenuSignOut">Sign out</button>`);
+  menu.innerHTML = items.join("");
+  document.body.appendChild(menu);
+  const rect = anchorEl.getBoundingClientRect();
+  menu.style.top = (rect.bottom + window.scrollY + 6) + "px";
+  menu.style.right = (window.innerWidth - rect.right) + "px";
+
+  document.getElementById("tlMenuSetPassword").onclick = () => { menu.remove(); tlOpenAuthModal("set-password"); };
+  const manageBtn = document.getElementById("tlMenuManageSub");
+  if (manageBtn) manageBtn.onclick = async () => {
+    menu.remove();
+    if (typeof tlOpenBillingPortal === "function") tlOpenBillingPortal();
+  };
+  document.getElementById("tlMenuSignOut").onclick = async () => {
+    menu.remove();
+    await tlSignOut();
+    if (onChange) onChange();
+  };
+  const closeOnOutside = (e) => {
+    if (!menu.contains(e.target) && e.target !== anchorEl) {
+      menu.remove();
+      document.removeEventListener("click", closeOnOutside);
+    }
+  };
+  setTimeout(() => document.addEventListener("click", closeOnOutside), 0);
 }
 
 // Merge local progress into the cloud on first login — always takes the MAX
@@ -550,9 +761,9 @@ function tlEnsureModalMounted() {
   document.getElementById("authModalCloseBtn").onclick = tlCloseAuthModal;
 }
 
-function tlOpenAuthModal() {
+function tlOpenAuthModal(step) {
   tlEnsureModalMounted();
-  tlRenderAuthModalStep("email");
+  tlRenderAuthModalStep(step || "start");
   document.getElementById("authModalOverlay").classList.add("show");
 }
 function tlCloseAuthModal() {
@@ -573,15 +784,145 @@ function tlRenderAuthModalStep(step, ctx) {
     return;
   }
 
-  if (step === "email") {
+  const passwordFieldHtml = (id, placeholder, autocomplete) => `
+    <div class="auth-password-field">
+      <input type="password" id="${id}" placeholder="${placeholder}" autocomplete="${autocomplete}">
+      <button type="button" class="auth-password-toggle" data-for="${id}" aria-label="Show password" tabindex="-1">Show</button>
+    </div>
+  `;
+  const wirePasswordToggle = () => {
+    document.querySelectorAll(".auth-password-toggle").forEach(btn => {
+      btn.onclick = () => {
+        const input = document.getElementById(btn.dataset.for);
+        const showing = input.type === "text";
+        input.type = showing ? "password" : "text";
+        btn.textContent = showing ? "Show" : "Hide";
+        btn.setAttribute("aria-label", showing ? "Show password" : "Hide password");
+      };
+    });
+  };
+  const consentLine = `<p class="legal-consent-line">By continuing you agree to the <a href="/terms/">Terms</a> &amp; <a href="/privacy/">Privacy Policy</a>.</p>`;
+
+  if (step === "start") {
     body.innerHTML = `
-      <h3>Sign in to save your streak</h3>
+      <h3>Sign in</h3>
+      <input type="email" id="authEmailInput" placeholder="you@email.com" autocomplete="email" value="${escapeHtmlAttr(ctx.email || "")}">
+      ${passwordFieldHtml("authPasswordInput", "Password", "current-password")}
+      <div class="auth-modal-error hidden" id="authModalErr"></div>
+      <button class="btn btn-primary" id="authSendBtn">Sign in</button>
+      <div class="auth-modal-links">
+        <button type="button" class="link-btn" id="authForgotLink">Forgot password?</button>
+        <button type="button" class="link-btn" id="authMagicLink">Email me a link instead</button>
+      </div>
+      <p class="auth-modal-switch">New here? <button type="button" class="link-btn" id="authGoSignup">Create an account</button></p>
+      ${consentLine}
+    `;
+    wirePasswordToggle();
+    document.getElementById("authForgotLink").onclick = () => tlRenderAuthModalStep("forgot", { email: document.getElementById("authEmailInput").value });
+    document.getElementById("authMagicLink").onclick = () => tlRenderAuthModalStep("magic-email", { email: document.getElementById("authEmailInput").value });
+    document.getElementById("authGoSignup").onclick = () => tlRenderAuthModalStep("signup", { email: document.getElementById("authEmailInput").value });
+    document.getElementById("authSendBtn").onclick = async () => {
+      const emailInput = document.getElementById("authEmailInput");
+      const pwInput = document.getElementById("authPasswordInput");
+      const btn = document.getElementById("authSendBtn");
+      const errEl = document.getElementById("authModalErr");
+      errEl.classList.add("hidden");
+      btn.disabled = true;
+      btn.textContent = "Signing in…";
+      try {
+        await tlSignInWithPassword(emailInput.value, pwInput.value);
+        // onAuthStateChange (SIGNED_IN) drives claim-name/welcome from here.
+      } catch (e) {
+        errEl.textContent = (e.message && e.message !== "{}") ? e.message : "Something went wrong on our end — please try again in a moment.";
+        errEl.classList.remove("hidden");
+        btn.disabled = false;
+        btn.textContent = "Sign in";
+      }
+    };
+  } else if (step === "signup") {
+    body.innerHTML = `
+      <h3>Create your account</h3>
+      <input type="email" id="authEmailInput" placeholder="you@email.com" autocomplete="email" value="${escapeHtmlAttr(ctx.email || "")}">
+      <input type="text" id="authNameInput" placeholder="display name (leaderboard)" maxlength="20" autocomplete="nickname">
+      ${passwordFieldHtml("authPasswordInput", "Password (8+ characters)", "new-password")}
+      <div class="auth-modal-error hidden" id="authModalErr"></div>
+      <button class="btn btn-primary" id="authSendBtn">Create account</button>
+      <p class="auth-modal-switch">Already have an account? <button type="button" class="link-btn" id="authGoStart">Sign in</button></p>
+      ${consentLine}
+    `;
+    wirePasswordToggle();
+    document.getElementById("authGoStart").onclick = () => tlRenderAuthModalStep("start", { email: document.getElementById("authEmailInput").value });
+    document.getElementById("authSendBtn").onclick = async () => {
+      const emailInput = document.getElementById("authEmailInput");
+      const nameInput = document.getElementById("authNameInput");
+      const pwInput = document.getElementById("authPasswordInput");
+      const btn = document.getElementById("authSendBtn");
+      const errEl = document.getElementById("authModalErr");
+      errEl.classList.add("hidden");
+      btn.disabled = true;
+      btn.textContent = "Creating…";
+      try {
+        const result = await tlSignUpWithPassword(emailInput.value, pwInput.value, nameInput.value);
+        if (result.needsVerification) {
+          tlRenderAuthModalStep("verify-sent", { email: emailInput.value.trim() });
+        } // else onAuthStateChange (SIGNED_IN) takes over — email confirmations are off on this project.
+      } catch (e) {
+        errEl.textContent = (e.message && e.message !== "{}") ? e.message : "Something went wrong on our end — please try again in a moment.";
+        errEl.classList.remove("hidden");
+        btn.disabled = false;
+        btn.textContent = "Create account";
+      }
+    };
+  } else if (step === "verify-sent") {
+    body.innerHTML = `
+      <h3>Check your email</h3>
+      <p class="auth-modal-success">Sent a confirmation link to ${escapeHtmlAttr(ctx.email)}.</p>
+      <p>Click it on this device to verify your account and finish signing in. You can close this window.</p>
+    `;
+  } else if (step === "forgot") {
+    body.innerHTML = `
+      <h3>Reset your password</h3>
+      <p>We'll email you a link to set a new one.</p>
+      <input type="email" id="authEmailInput" placeholder="you@email.com" autocomplete="email" value="${escapeHtmlAttr(ctx.email || "")}">
+      <div class="auth-modal-error hidden" id="authModalErr"></div>
+      <button class="btn btn-primary" id="authSendBtn">Send reset link</button>
+      <p class="auth-modal-switch"><button type="button" class="link-btn" id="authGoStart">← Back to sign in</button></p>
+    `;
+    document.getElementById("authGoStart").onclick = () => tlRenderAuthModalStep("start", { email: document.getElementById("authEmailInput").value });
+    document.getElementById("authSendBtn").onclick = async () => {
+      const input = document.getElementById("authEmailInput");
+      const btn = document.getElementById("authSendBtn");
+      const errEl = document.getElementById("authModalErr");
+      errEl.classList.add("hidden");
+      btn.disabled = true;
+      btn.textContent = "Sending…";
+      try {
+        await tlSendPasswordReset(input.value);
+        tlRenderAuthModalStep("forgot-sent", { email: input.value.trim() });
+      } catch (e) {
+        errEl.textContent = (e.message && e.message !== "{}") ? e.message : "Something went wrong on our end — please try again in a moment.";
+        errEl.classList.remove("hidden");
+        btn.disabled = false;
+        btn.textContent = "Send reset link";
+      }
+    };
+  } else if (step === "forgot-sent") {
+    body.innerHTML = `
+      <h3>Check your email</h3>
+      <p class="auth-modal-success">Sent a password reset link to ${escapeHtmlAttr(ctx.email)}.</p>
+      <p>Click it on this device to set a new password. You can close this window.</p>
+    `;
+  } else if (step === "magic-email") {
+    body.innerHTML = `
+      <h3>Email me a link</h3>
       <p>We'll email you a one-time link — no password needed.</p>
-      <input type="email" id="authEmailInput" placeholder="you@email.com" autocomplete="email">
+      <input type="email" id="authEmailInput" placeholder="you@email.com" autocomplete="email" value="${escapeHtmlAttr(ctx.email || "")}">
       <div class="auth-modal-error hidden" id="authModalErr"></div>
       <button class="btn btn-primary" id="authSendBtn">Send magic link</button>
-      <p class="legal-consent-line">By continuing you agree to the <a href="/terms/">Terms</a> &amp; <a href="/privacy/">Privacy Policy</a>.</p>
+      <p class="auth-modal-switch"><button type="button" class="link-btn" id="authGoStart">← Back to sign in</button></p>
+      ${consentLine}
     `;
+    document.getElementById("authGoStart").onclick = () => tlRenderAuthModalStep("start", { email: document.getElementById("authEmailInput").value });
     document.getElementById("authSendBtn").onclick = async () => {
       const input = document.getElementById("authEmailInput");
       const btn = document.getElementById("authSendBtn");
@@ -602,9 +943,40 @@ function tlRenderAuthModalStep(step, ctx) {
   } else if (step === "sent") {
     body.innerHTML = `
       <h3>Check your email</h3>
-      <p class="auth-modal-success">Sent a sign-in link to ${ctx.email}.</p>
+      <p class="auth-modal-success">Sent a sign-in link to ${escapeHtmlAttr(ctx.email)}.</p>
       <p>Click it on this device to finish signing in. You can close this window.</p>
     `;
+  } else if (step === "set-password") {
+    body.innerHTML = `
+      <h3>Set a password</h3>
+      <p>Add a password so you can sign in without waiting on an email link next time.</p>
+      ${passwordFieldHtml("authPasswordInput", "New password (8+ characters)", "new-password")}
+      <div class="auth-modal-error hidden" id="authModalErr"></div>
+      <button class="btn btn-primary" id="authSendBtn">Save password</button>
+    `;
+    wirePasswordToggle();
+    document.getElementById("authSendBtn").onclick = async () => {
+      const pwInput = document.getElementById("authPasswordInput");
+      const btn = document.getElementById("authSendBtn");
+      const errEl = document.getElementById("authModalErr");
+      errEl.classList.add("hidden");
+      btn.disabled = true;
+      btn.textContent = "Saving…";
+      try {
+        await tlUpdatePassword(pwInput.value);
+        body.innerHTML = `
+          <h3>Password set</h3>
+          <p class="auth-modal-success">You can now sign in with your email and password any time.</p>
+          <button class="btn btn-primary" id="authDoneBtn">Nice</button>
+        `;
+        document.getElementById("authDoneBtn").onclick = tlCloseAuthModal;
+      } catch (e) {
+        errEl.textContent = (e.message && e.message !== "{}") ? e.message : "Something went wrong on our end — please try again in a moment.";
+        errEl.classList.remove("hidden");
+        btn.disabled = false;
+        btn.textContent = "Save password";
+      }
+    };
   } else if (step === "claim-name") {
     body.innerHTML = `
       <h3>Pick a display name</h3>

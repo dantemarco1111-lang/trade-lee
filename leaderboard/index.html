@@ -249,7 +249,8 @@ renderRecords();
 function renderAccountArea() {
   const el = document.getElementById("accountArea");
   if (tlIsSignedIn() && tlProfile) {
-    el.innerHTML = `<div class="account-chip">Signed in as <strong>${escapeHtml(tlProfile.display_name)}</strong> <button class="link-btn" id="signOutBtn">Sign out</button></div>`;
+    el.innerHTML = `<div class="account-chip">Signed in as <strong>${escapeHtml(tlProfile.display_name)}</strong> <button class="link-btn" id="setPwBtn">Set password</button> <button class="link-btn" id="signOutBtn">Sign out</button></div>`;
+    document.getElementById("setPwBtn").onclick = () => tlOpenAuthModal("set-password");
     document.getElementById("signOutBtn").onclick = async () => { await tlSignOut(); renderAccountArea(); renderLeaderboardSigninPrompt(); loadGlobalLeaderboard(); };
   } else {
     el.innerHTML = `<button class="btn btn-ghost" id="lbSignInBtn" style="padding:10px 18px;font-size:0.85rem;">Sign in to save your streak</button>`;

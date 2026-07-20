@@ -651,6 +651,38 @@ body {
 .auth-modal-success { color: var(--green); font-size: 0.95rem; font-weight: 600; }
 .auth-modal-card .btn { width: 100%; }
 .auth-modal-card .btn:disabled { opacity: 0.5; cursor: default; }
+.auth-password-field { position: relative; margin-bottom: 12px; }
+.auth-password-field input { padding-right: 56px; margin-bottom: 0; }
+.auth-password-toggle {
+  position: absolute; right: 6px; top: 50%; transform: translateY(-50%);
+  background: none; border: none; color: var(--text-dim); font-size: 0.78rem;
+  font-family: var(--font-body); font-weight: 600; cursor: pointer; padding: 6px 8px;
+}
+.auth-password-toggle:hover { color: var(--text); }
+.auth-modal-links {
+  display: flex; justify-content: space-between; gap: 10px; margin: 12px 0 4px;
+  font-size: 0.82rem; flex-wrap: wrap;
+}
+.auth-modal-links .link-btn, .auth-modal-switch .link-btn {
+  background: none; border: none; color: var(--text-dim); text-decoration: underline;
+  text-underline-offset: 2px; font-family: var(--font-body); font-size: inherit; cursor: pointer; padding: 0;
+}
+.auth-modal-links .link-btn:hover, .auth-modal-switch .link-btn:hover { color: var(--text); }
+.auth-modal-switch { text-align: center; font-size: 0.85rem; color: var(--text-dim); margin: 14px 0 0; }
+.tl-account-menu {
+  position: absolute; z-index: 500; min-width: 200px;
+  background: var(--card); border: 1px solid var(--border-strong); border-radius: 12px;
+  padding: 6px; box-shadow: var(--shadow-md, 0 8px 24px rgba(0,0,0,0.4));
+  display: flex; flex-direction: column; gap: 2px;
+  animation: coachIn var(--duration-micro, 150ms) var(--ease, ease);
+}
+.tl-account-menu-item {
+  background: none; border: none; color: var(--text); text-align: left;
+  font-family: var(--font-body); font-size: 0.88rem; padding: 10px 12px;
+  border-radius: 8px; cursor: pointer; white-space: nowrap;
+}
+.tl-account-menu-item:hover { background: var(--surface-2); }
+.tl-account-menu-signout { color: var(--red); }
 .signin-prompt {
   background: var(--surface-2); border: 1px solid var(--border); border-radius: 12px;
   padding: 14px 16px; text-align: center; font-size: 0.88rem; color: var(--text-dim);

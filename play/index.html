@@ -5808,6 +5808,7 @@ function renderStartScreen() {
       </div>
       ${streakAtRisk ? `<div class="streak-risk-line">Your ${appState.dailyPlayStreak}-day streak ends in <span id="streakRiskCountdown">--h --m</span>.</div>` : ""}
       ${appState.onboardingProfile ? `<div class="daily-goal-chip">${escapeHtml(TIME_GOAL_LABEL[appState.onboardingProfile.time] || "1 drill a day")}</div>` : ""}
+      <div id="startSigninPrompt"></div>
 
       <button class="mode-btn daily-btn ${alreadyPlayedDaily ? "done" : dropUnlocked ? "" : "locked"}" id="dailyBtn" ${(!dropUnlocked && !alreadyPlayedDaily) ? "disabled" : ""}>
         ${alreadyPlayedDaily ? "DAILY DRILL ✓ DONE — VIEW RESULT" : dropUnlocked ? "DAILY DRILL" : `Next Daily Drill in <span id="dropCountdownText">--h --m</span>`}
@@ -5863,6 +5864,7 @@ function renderStartScreen() {
   if (missBtn) missBtn.onclick = startMissReview;
   document.getElementById("speedRunBtn").onclick = renderSpeedRunIntro;
   initCustomizePanel();
+  renderSigninPromptInto("startSigninPrompt");
 
   if (!dropUnlocked && !alreadyPlayedDaily) startDropCountdown();
   if (streakAtRisk) startStreakRiskCountdown();
@@ -6089,8 +6091,8 @@ function renderNavAccountChip() {
   el.classList.remove("hidden");
   if (tlIsSignedIn() && tlProfile) {
     el.textContent = tlProfile.display_name;
-    el.title = "Signed in — tap to sign out";
-    el.onclick = async () => { await tlSignOut(); renderNavAccountChip(); };
+    el.title = "Account menu";
+    el.onclick = () => tlShowAccountMenu(el, renderNavAccountChip);
   } else {
     el.textContent = "Sign in";
     el.title = "Save your streak & join the leaderboard";
@@ -6147,19 +6149,22 @@ async function initAccountSync() {
               updateNavStreak();
             }
             renderNavAccountChip();
-            renderDailySigninPrompt();
-            renderEodSigninPrompt();
+            renderSigninPromptInto("startSigninPrompt");
+            renderSigninPromptInto("dailySigninPrompt");
+            renderSigninPromptInto("eodSigninPrompt");
           },
         });
       } else {
         renderNavAccountChip();
-        renderDailySigninPrompt();
-        renderEodSigninPrompt();
+        renderSigninPromptInto("startSigninPrompt");
+        renderSigninPromptInto("dailySigninPrompt");
+        renderSigninPromptInto("eodSigninPrompt");
       }
     } else if (event === "SIGNED_OUT") {
       renderNavAccountChip();
-      renderDailySigninPrompt();
-      renderEodSigninPrompt();
+      renderSigninPromptInto("startSigninPrompt");
+      renderSigninPromptInto("dailySigninPrompt");
+      renderSigninPromptInto("eodSigninPrompt");
     }
   });
 }

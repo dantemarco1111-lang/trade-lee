@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Reset Password — Trade Lee</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230b0e14'/%3E%3Cline x1='11' y1='4' x2='11' y2='28' stroke='%2326a69a' stroke-width='2.2'/%3E%3Crect x='7' y='10' width='8' height='10' rx='1' fill='%2326a69a'/%3E%3Cline x1='23' y1='6' x2='23' y2='25' stroke='%23ef5350' stroke-width='2.2'/%3E%3Crect x='19' y='12' width='8' height='7' rx='1' fill='%23ef5350'/%3E%3C/svg%3E">
+<link rel="manifest" href="/manifest.json">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta name="theme-color" content="#0b0e14">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@500;700&display=swap">
+<link rel="stylesheet" href="/theme.css">
+<style>
+  html, body { margin: 0; padding: 0; color: var(--text); font-family: var(--font-body); min-height: 100vh; }
+  a { color: inherit; }
+  .reset-wrap {
+    max-width: 400px; margin: 0 auto; padding: 60px 20px; text-align: center;
+  }
+  .reset-wordmark { font-family: var(--font-display); font-weight: 700; font-size: 1.2rem; margin-bottom: 32px; }
+  .reset-card {
+    background: var(--card); border: 1px solid var(--border); border-radius: 16px;
+    padding: 28px 24px; text-align: left;
+  }
+  .reset-card h1 { font-family: var(--font-display); font-size: 1.3rem; margin: 0 0 8px; text-align: center; }
+  .reset-card p { color: var(--text-dim); font-size: 0.9rem; text-align: center; margin: 0 0 20px; line-height: 1.5; }
+  .reset-card input {
+    width: 100%; background: var(--surface-2); border: 1px solid var(--border-strong); border-radius: 10px;
+    padding: 12px 14px; color: var(--text); font-family: var(--font-body); font-size: 0.95rem;
+    margin-bottom: 12px; outline: none; box-sizing: border-box;
+  }
+  .reset-password-field { position: relative; margin-bottom: 12px; }
+  .reset-password-field input { padding-right: 56px; margin-bottom: 0; }
+  .reset-password-toggle {
+    position: absolute; right: 6px; top: 50%; transform: translateY(-50%);
+    background: none; border: none; color: var(--text-dim); font-size: 0.78rem;
+    font-family: var(--font-body); font-weight: 600; cursor: pointer; padding: 6px 8px;
+  }
+  .reset-error { color: var(--red); font-size: 0.82rem; margin: -4px 0 12px; }
+  .reset-success { color: var(--green); font-size: 0.95rem; font-weight: 600; text-align: center; }
+  .reset-card .btn { width: 100%; }
+  .reset-card .btn:disabled { opacity: 0.5; cursor: default; }
+  .reset-back { display: block; text-align: center; margin-top: 20px; font-size: 0.85rem; color: var(--text-dim); text-decoration: underline; }
+</style>
+</head>
+<body>
+
+<div class="reset-wrap">
+  <a href="/" class="reset-wordmark">📈 Trade Lee</a>
+  <div class="reset-card" id="resetCard">
+    <div class="skeleton-line" style="width:60%;margin:0 auto 14px;"></div>
+    <div class="skeleton-line" style="width:100%;"></div>
+  </div>
+  <a href="/" class="reset-back">← Back to Trade Lee</a>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/supabase-config.js"></script>
+<script src="/auth.js"></script>
+<script>
+(async function () {
+  const card = document.getElementById("resetCard");
+
+  function renderForm() {
+    card.innerHTML = `
+      <h1>Set a new password</h1>
+      <p>Choose a new password for your account.</p>
+      <div class="reset-password-field">
+        <input type="password" id="newPasswordInput" placeholder="New password (8+ characters)" autocomplete="new-password">
+        <button type="button" class="reset-password-toggle" id="resetToggle" aria-label="Show password">Show</button>
+      </div>
+      <div class="reset-error hidden" id="resetErr"></div>
+      <button class="btn btn-primary" id="resetSaveBtn">Save new password</button>
+    `;
+    document.getElementById("resetToggle").onclick = () => {
+      const input = document.getElementById("newPasswordInput");
+      const btn = document.getElementById("resetToggle");
+      const showing = input.type === "text";
+      input.type = showing ? "password" : "text";
+      btn.textContent = showing ? "Show" : "Hide";
+    };
+    document.getElementById("resetSaveBtn").onclick = async () => {
+      const input = document.getElementById("newPasswordInput");
+      const btn = document.getElementById("resetSaveBtn");
+      const errEl = document.getElementById("resetErr");
+      errEl.classList.add("hidden");
+      btn.disabled = true;
+      btn.textContent = "Saving…";
+      try {
+        await tlUpdatePassword(input.value);
+        card.innerHTML = `
+          <h1>Password updated</h1>
+          <p class="reset-success">You're all set — head back to Trade Lee and sign in with your new password.</p>
+        `;
+      } catch (e) {
+        errEl.textContent = (e.message && e.message !== "{}") ? e.message : "Something went wrong on our end — please try again in a moment.";
+        errEl.classList.remove("hidden");
+        btn.disabled = false;
+        btn.textContent = "Save new password";
+      }
+    };
+  }
+
+  function renderInvalid() {
+    card.innerHTML = `
+      <h1>Link expired</h1>
+      <p>This password reset link is invalid or has expired. Request a new one from the sign-in menu on Trade Lee.</p>
+    `;
+  }
+
+  // A recovery link fires a PASSWORD_RECOVERY event (not SIGNED_IN) once
+  // Supabase parses the URL hash; tlSession is set either way. If neither
+  // that event nor an existing session shows up within a few seconds, the
+  // link was invalid/expired/already used.
+  let resolved = false;
+  tlOnAuthChange((event) => {
+    if (resolved) return;
+    if (event === "PASSWORD_RECOVERY" || (event === "SIGNED_IN" && tlSession)) {
+      resolved = true;
+      renderForm();
+    }
+  });
+  await window.tlSessionReady;
+  if (!resolved && tlSession) {
+    resolved = true;
+    renderForm();
+  }
+  setTimeout(() => { if (!resolved) { resolved = true; renderInvalid(); } }, 4000);
+})();
+</script>
+</body>
+</html>
