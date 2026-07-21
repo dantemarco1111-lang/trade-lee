@@ -64,6 +64,6 @@ module.exports = async (req, res) => {
     res.status(200).json({ url: session.url });
   } catch (err) {
     console.error("create-checkout-session error:", err);
-    res.status(500).json({ error: "Could not start checkout" });
+    res.status(500).json({ error: "Could not start checkout", _debug: { message: err.message, type: err.type, code: err.code, param: err.param } });
   }
 };
