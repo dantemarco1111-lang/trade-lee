@@ -305,14 +305,14 @@
   .range-zone {
     position: absolute;
     left: 6px; right: 6px;
-    background: rgba(245, 180, 0, 0.08);
-    border-top: 1px dashed rgba(245, 180, 0, 0.5);
-    border-bottom: 1px dashed rgba(245, 180, 0, 0.5);
+    background: rgba(245, 180, 0, 0.045);
+    border-top: 1px dashed rgba(245, 180, 0, 0.6);
+    border-bottom: 1px dashed rgba(245, 180, 0, 0.6);
     pointer-events: none;
     transition: background 0.15s ease;
     z-index: 15;
   }
-  .range-zone.pulse { background: rgba(245, 180, 0, 0.28); }
+  .range-zone.pulse { background: rgba(245, 180, 0, 0.2); }
 
   .forming-marker {
     position: absolute;
@@ -2024,19 +2024,26 @@ function initChart(container) {
     width: container.clientWidth,
     height: container.clientHeight,
     layout: { background: { type: "solid", color: "#141922" }, textColor: "#ffffff" },
-    grid: { vertLines: { color: "#171c26" }, horzLines: { color: "#171c26" } },
+    // Gridlines dropped to the barely-visible tier so the price action, not
+    // the chrome, is what the eye lands on.
+    grid: { vertLines: { color: "#12161d" }, horzLines: { color: "#12161d" } },
     timeScale: { timeVisible: true, secondsVisible: false, borderColor: "#262b36", rightOffset: 8, barSpacing: 9, rightBarStaysOnScroll: true },
     rightPriceScale: { borderColor: "#262b36" },
     leftPriceScale: { visible: false, borderColor: "#262b36" },
     crosshair: { mode: LightweightCharts.CrosshairMode.Normal },
   });
+  // Richer, more saturated candle bodies with full-opacity wicks — reads like
+  // a real trading terminal (TradingView-class greens/reds) rather than the
+  // muted default teal/salmon.
   candleSeries = addSeriesCompat(chart, "Candlestick", {
-    upColor: "#26a69a", downColor: "#ef5350", borderVisible: false,
-    wickUpColor: "#26a69a", wickDownColor: "#ef5350",
+    upColor: "#2ee383", downColor: "#f05252", borderVisible: false,
+    wickUpColor: "#2ee383", wickDownColor: "#f05252",
   }, 0);
   candleSeries.priceScale().applyOptions({ scaleMargins: { top: 0.06, bottom: 0.06 } });
   volumeSeries = addSeriesCompat(chart, "Histogram", { priceFormat: { type: "volume" } }, 1);
-  vwapSeries = addSeriesCompat(chart, "Line", { color: "#c792ea", lineWidth: 2, priceLineVisible: false, lastValueVisible: false }, 0);
+  // VWAP kept deliberately quiet — thin and semi-transparent so it reads as a
+  // reference line under the candles, never competing with them.
+  vwapSeries = addSeriesCompat(chart, "Line", { color: "rgba(199,146,234,0.55)", lineWidth: 1, priceLineVisible: false, lastValueVisible: false }, 0);
   try {
     const panes = chart.panes();
     panes[1].setHeight(Math.round(container.clientHeight * 0.32));
@@ -2515,7 +2522,7 @@ function loadDrill(drill, opts) {
   initChart(container);
 
   const candleData = drill.candles.map(c => ({ time: toEasternChartTime(c.time), open: c.open, high: c.high, low: c.low, close: c.close }));
-  const volumeData = drill.candles.map(c => ({ time: toEasternChartTime(c.time), value: c.volume, color: c.close >= c.open ? "rgba(38,166,154,0.7)" : "rgba(239,83,80,0.7)" }));
+  const volumeData = drill.candles.map(c => ({ time: toEasternChartTime(c.time), value: c.volume, color: c.close >= c.open ? "rgba(46,227,131,0.5)" : "rgba(240,82,82,0.5)" }));
   const vwapData = drill.vwap.slice(0, drill.candles.length).map(v => ({ time: toEasternChartTime(v.time), value: v.value }));
   revealChartEntrance(candleData, volumeData, vwapData);
 
@@ -2681,7 +2688,7 @@ function startPlayout(drill, choice) {
     const c = playoutCandles[i];
     const vwapIdx = drill.candles.length + i;
     candleSeries.update({ time: toEasternChartTime(c.time), open: c.open, high: c.high, low: c.low, close: c.close });
-    volumeSeries.update({ time: toEasternChartTime(c.time), value: c.volume, color: c.close >= c.open ? "rgba(38,166,154,0.7)" : "rgba(239,83,80,0.7)" });
+    volumeSeries.update({ time: toEasternChartTime(c.time), value: c.volume, color: c.close >= c.open ? "rgba(46,227,131,0.5)" : "rgba(240,82,82,0.5)" });
     if (vwapIdx < drill.vwap.length) vwapSeries.update({ time: toEasternChartTime(drill.vwap[vwapIdx].time), value: drill.vwap[vwapIdx].value });
     playTick();
 
@@ -3916,7 +3923,7 @@ async function startOrderTrainerRound() {
   const container = document.getElementById("chartContainer");
   initChart(container);
   const candleData = otDrill.candles.map(c => ({ time: toEasternChartTime(c.time), open: c.open, high: c.high, low: c.low, close: c.close }));
-  const volumeData = otDrill.candles.map(c => ({ time: toEasternChartTime(c.time), value: c.volume, color: c.close >= c.open ? "rgba(38,166,154,0.7)" : "rgba(239,83,80,0.7)" }));
+  const volumeData = otDrill.candles.map(c => ({ time: toEasternChartTime(c.time), value: c.volume, color: c.close >= c.open ? "rgba(46,227,131,0.5)" : "rgba(240,82,82,0.5)" }));
   const vwapData = otDrill.vwap.slice(0, otDrill.candles.length).map(v => ({ time: toEasternChartTime(v.time), value: v.value }));
   const chartSettings = appState.chartSettings || { showVwap: true, showVolume: true };
   vwapSeries.applyOptions({ visible: chartSettings.showVwap !== false });
@@ -4001,7 +4008,7 @@ function placeOrder() {
     const c = playoutCandles[i];
     const vwapIdx = otDrill.candles.length + i;
     candleSeries.update({ time: toEasternChartTime(c.time), open: c.open, high: c.high, low: c.low, close: c.close });
-    volumeSeries.update({ time: toEasternChartTime(c.time), value: c.volume, color: c.close >= c.open ? "rgba(38,166,154,0.7)" : "rgba(239,83,80,0.7)" });
+    volumeSeries.update({ time: toEasternChartTime(c.time), value: c.volume, color: c.close >= c.open ? "rgba(46,227,131,0.5)" : "rgba(240,82,82,0.5)" });
     if (vwapIdx < otDrill.vwap.length) vwapSeries.update({ time: toEasternChartTime(otDrill.vwap[vwapIdx].time), value: otDrill.vwap[vwapIdx].value });
     playTick();
     chart.timeScale().scrollToRealTime();
@@ -5886,8 +5893,8 @@ function drawMiniChart(ctx, candles, x, y, w, h) {
     const yOpen = y + h - ((c.open - min) / range) * h;
     const yClose = y + h - ((c.close - min) / range) * h;
     const up = c.close >= c.open;
-    ctx.strokeStyle = up ? "#26a69a" : "#ef5350";
-    ctx.fillStyle = up ? "#26a69a" : "#ef5350";
+    ctx.strokeStyle = up ? "#2ee383" : "#f05252";
+    ctx.fillStyle = up ? "#2ee383" : "#f05252";
     ctx.lineWidth = Math.max(1, candleW * 0.15);
     ctx.beginPath(); ctx.moveTo(cx, yHigh); ctx.lineTo(cx, yLow); ctx.stroke();
     const bodyTop = Math.min(yOpen, yClose);
