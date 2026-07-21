@@ -784,7 +784,6 @@ function renderPath() {
       ${ACADEMY_UNITS.map((u, i) => {
         const seqUnlocked = isUnitUnlocked(i);
         const proLocked = isProLocked(i);
-        const betaUnit = !!u.proOnly && BETA_FREE; // would be Pro-gated, free for now
         const completed = state.academyProgress.unitsCompleted.includes(u.key);
         const isCurrent = seqUnlocked && !proLocked && !completed;
         const read = unitLessonsRead(u.key).length;
@@ -795,7 +794,6 @@ function renderPath() {
         const chip = completed ? `<span class="check">✓</span>`
           : !seqUnlocked ? `<span class="lock">🔒</span>`
           : proLocked ? `<span class="pro-chip">PRO</span>`
-          : betaUnit ? `<span class="pro-chip beta-chip" data-beta-chip="1">BETA</span>`
           : "";
         return `
           <button class="unit-card ${cls}" data-unit="${u.key}" data-idx="${i}" ${clickable ? "" : "disabled"}>
@@ -807,7 +805,7 @@ function renderPath() {
               <div class="unit-num">Unit ${i + 1}</div>
               <div class="unit-title">${escapeHtml(u.title)}</div>
               <div class="unit-desc">${escapeHtml(u.desc)}</div>
-              ${seqUnlocked ? `<div class="unit-progress">${completed ? "Complete ✓" : proLocked ? "Requires Pro" : betaUnit ? "Free during beta" : `${read}/${u.lessons.length} lessons read`}</div>` : ""}
+              ${seqUnlocked ? `<div class="unit-progress">${completed ? "Complete ✓" : proLocked ? "Requires Pro" : `${read}/${u.lessons.length} lessons read`}</div>` : ""}
             </div>
           </button>
         `;
