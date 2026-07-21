@@ -1935,7 +1935,11 @@ function comebackBonusActiveToday() {
 }
 function awardTicks(n) {
   checkComebackBonus();
-  const finalN = comebackBonusActiveToday() ? n * 2 : n;
+  let finalN = comebackBonusActiveToday() ? n * 2 : n;
+  // Pro perk: 2x Ticks on everything — a real, sold feature (premium page +
+  // every paywall sheet promise it), so it must key off the actual
+  // subscription, never the BETA_FREE flag.
+  if (typeof tlIsPro === "function" && tlIsPro()) finalN *= 2;
   appState.ticks = (appState.ticks || 0) + finalN;
   appState.ticksEarnedAllTime = (appState.ticksEarnedAllTime || 0) + finalN;
   saveState();

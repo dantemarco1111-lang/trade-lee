@@ -5,9 +5,13 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
 
 // Server-side allowlist — never trust a price ID sent from the client directly.
+// Env vars take priority so switching to Stripe live mode is pure Vercel
+// config (set STRIPE_PRICE_MONTHLY / STRIPE_PRICE_ANNUAL to the live-mode
+// price IDs alongside the sk_live_ key); the hardcoded fallbacks are the
+// test-mode prices.
 const ALLOWED_PRICES = {
-  monthly: "price_1Tv6utFv1BZUHWupMt5C2MYp",
-  annual: "price_1Tv6uyFv1BZUHWupRteSIzo6",
+  monthly: process.env.STRIPE_PRICE_MONTHLY || "price_1Tv6utFv1BZUHWupMt5C2MYp",
+  annual: process.env.STRIPE_PRICE_ANNUAL || "price_1Tv6uyFv1BZUHWupRteSIzo6",
 };
 
 const SITE_URL = process.env.SITE_URL || "https://tradelee.xyz";

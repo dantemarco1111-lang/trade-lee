@@ -4,9 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Trade Lee Pro — $9/mo founding pricing</title>
-<meta name="description" content="Every Pro feature is free while Trade Lee is in beta. Subscribe now to lock in $9/mo founding pricing for as long as you stay subscribed — or join the free waitlist instead.">
+<meta name="description" content="Trade Lee Pro: unlimited practice, all 12 Strategy Packs, full Academy access, and 2x Ticks — $9/mo founding pricing, locked in for as long as you stay subscribed.">
 <meta property="og:title" content="Trade Lee Pro — $9/mo founding pricing">
-<meta property="og:description" content="Every Pro feature is free during beta. Subscribe now to lock in founding pricing before it goes away.">
+<meta property="og:description" content="Everything unlocks the moment you subscribe. Founding price locked in for as long as you stay subscribed.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://tradelee.xyz/premium/">
 <meta property="og:image" content="https://tradelee.xyz/og-image.png">
@@ -14,7 +14,7 @@
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="Trade Lee Pro — $9/mo founding pricing">
-<meta name="twitter:description" content="Every Pro feature is free during beta. Subscribe now to lock in founding pricing before it goes away.">
+<meta name="twitter:description" content="Everything unlocks the moment you subscribe. Founding price locked in for as long as you stay subscribed.">
 <meta name="twitter:image" content="https://tradelee.xyz/og-image.png">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230b0e14'/%3E%3Cline x1='11' y1='4' x2='11' y2='28' stroke='%2326a69a' stroke-width='2.2'/%3E%3Crect x='7' y='10' width='8' height='10' rx='1' fill='%2326a69a'/%3E%3Cline x1='23' y1='6' x2='23' y2='25' stroke='%23ef5350' stroke-width='2.2'/%3E%3Crect x='19' y='12' width='8' height='7' rx='1' fill='%23ef5350'/%3E%3C/svg%3E">
 <link rel="manifest" href="/manifest.json">
@@ -263,8 +263,6 @@
 </div>
 
 <main class="content-page">
-  <div class="pro-launch-banner">Trade Lee is in open beta — every feature below is already unlocked for everyone, free.</div>
-
   <div class="checkout-banner checkout-success hidden" id="checkoutSuccessBanner">
     <span class="checkout-banner-icon">✓</span>
     <div>
@@ -276,14 +274,14 @@
     <span class="checkout-banner-icon">•</span>
     <div>
       <div class="checkout-banner-title">No charge made.</div>
-      <div class="checkout-banner-sub">Checkout was canceled — everything's still free during beta, no rush.</div>
+      <div class="checkout-banner-sub">Checkout was canceled — nothing was charged. Subscribe whenever you're ready.</div>
     </div>
   </div>
 
   <div class="content-hero">
-    <div class="badge pro-badge">FREE DURING BETA</div>
-    <h1>Lock in founding pricing</h1>
-    <p>Subscribing doesn't unlock anything extra right now — every feature below is already free during beta. What it does is lock in <span class="pro-price">$9<span class="pro-price-period">/mo</span></span> (or less annually) for as long as you stay subscribed, before founding pricing goes away. Not ready to commit money? The free waitlist below works too.</p>
+    <div class="badge pro-badge">FOUNDING PRICING</div>
+    <h1>Trade Lee Pro</h1>
+    <p>Everything below unlocks the moment you subscribe. Founding price locked for as long as you stay subscribed.</p>
   </div>
 
   <section class="content-card card pro-card pro-active-card hidden" id="proActiveCard">
@@ -307,8 +305,7 @@
       <li><span class="pro-check">✓</span> All 12 Strategy Packs, not just Opening Range Breakout</li>
       <li><span class="pro-check">✓</span> Academy Units 8-12 — Order Types, Sessions, Smart Money Concepts, Psychology, Prop Firm Path</li>
       <li><span class="pro-check">✓</span> Full miss-review history, not just your last 20</li>
-      <li><span class="pro-check">✓</span> 2x Ticks earning on every drill you play <span class="soon-tag">AT LAUNCH</span></li>
-      <li><span class="pro-check">✓</span> AI Trade Coach <span class="soon-tag">COMING FIRST TO PRO</span></li>
+      <li><span class="pro-check">✓</span> 2x Ticks earning on every drill you play</li>
       <li><span class="pro-check">✓</span> Founding-member price, locked in for as long as you stay subscribed</li>
     </ul>
 
@@ -316,16 +313,7 @@
     <div class="pro-subscribe-error hidden" id="subscribeError"></div>
     <p class="legal-consent-line">By subscribing you agree to the <a href="/terms/">Terms</a> &amp; <a href="/privacy/">Privacy Policy</a>. Payment processed securely by Stripe — card details never touch our servers.</p>
 
-    <div class="pro-divider"><span>or</span></div>
-
-    <div class="waitlist-count hidden" id="waitlistCount"></div>
-    <form class="waitlist-form" id="waitlistForm">
-      <input type="email" id="waitlistEmail" placeholder="you@email.com" autocomplete="email" required>
-      <button type="submit" class="btn btn-ghost" id="waitlistBtn">Just join the free waitlist</button>
-    </form>
-    <div class="waitlist-msg hidden" id="waitlistMsg"></div>
-    <div class="pro-fineprint">No payment required to join the waitlist. We'll email you when Pro launches.</div>
-    <p class="legal-consent-line">By joining you agree to the <a href="/terms/">Terms</a> &amp; <a href="/privacy/">Privacy Policy</a>.</p>
+    <div class="pro-fineprint">Not ready? The free tier stays free forever — the Daily Drill, 3 practice sessions a day, the Opening Range Breakout pack, and Academy Units 1-7. Pro is there when you want more reps.</div>
   </section>
 </main>
 
@@ -481,9 +469,6 @@ async function startCheckout(plan) {
 (async function () {
   if (typeof tlInitSession === "function") {
     await tlInitSession();
-    if (tlIsSignedIn() && tlSession.user.email) {
-      document.getElementById("waitlistEmail").value = tlSession.user.email;
-    }
   }
 
   renderPricing("monthly");
@@ -559,44 +544,6 @@ async function startCheckout(plan) {
     startCheckout(currentPricingPlan);
   }
 
-  // Live waitlist count (Revenue Infra Stage 4) — graceful no-op if the RPC
-  // isn't reachable or hasn't been deployed yet; never shows a broken state.
-  try {
-    if (typeof sbClient !== "undefined" && sbClient) {
-      const { data, error } = await sbClient.rpc("get_waitlist_count");
-      if (!error && typeof data === "number" && data > 0) {
-        const el = document.getElementById("waitlistCount");
-        el.innerHTML = `🔥 <b>${data.toLocaleString("en-US")}</b> traders on the founding list`;
-        el.classList.remove("hidden");
-      }
-    }
-  } catch (e) {}
-
-  document.getElementById("waitlistForm").addEventListener("submit", async (e) => {
-    e.preventDefault();
-    const emailInput = document.getElementById("waitlistEmail");
-    const btn = document.getElementById("waitlistBtn");
-    const msgEl = document.getElementById("waitlistMsg");
-    msgEl.classList.add("hidden");
-    btn.disabled = true;
-    btn.textContent = "Joining…";
-    try {
-      if (typeof tlJoinWaitlist !== "function") throw new Error("offline");
-      await tlJoinWaitlist(emailInput.value);
-      msgEl.textContent = "You're on the list — we'll email you when Pro launches.";
-      msgEl.className = "waitlist-msg success";
-      emailInput.value = "";
-      btn.textContent = "Joined ✓";
-    } catch (err) {
-      msgEl.textContent = err.message === "offline"
-        ? "Can't reach the waitlist right now — please try again in a moment."
-        : (err.message || "Something went wrong — please try again.");
-      msgEl.className = "waitlist-msg error";
-      btn.disabled = false;
-      btn.textContent = "Join the Pro waitlist";
-    }
-    msgEl.classList.remove("hidden");
-  });
 })();
 </script>
 </body>

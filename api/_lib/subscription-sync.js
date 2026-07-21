@@ -9,6 +9,10 @@ const PRICE_PLAN = {
   "price_1Tv6utFv1BZUHWupMt5C2MYp": "monthly",
   "price_1Tv6uyFv1BZUHWupRteSIzo6": "annual",
 };
+// Live-mode price IDs come from env (see create-checkout-session.js) — map
+// them to the same plan names so the sync works identically in either mode.
+if (process.env.STRIPE_PRICE_MONTHLY) PRICE_PLAN[process.env.STRIPE_PRICE_MONTHLY] = "monthly";
+if (process.env.STRIPE_PRICE_ANNUAL) PRICE_PLAN[process.env.STRIPE_PRICE_ANNUAL] = "annual";
 
 async function upsertFromSubscription(supabase, subscription) {
   const userId = subscription.metadata && subscription.metadata.supabase_user_id;
