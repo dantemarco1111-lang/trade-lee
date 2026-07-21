@@ -30,9 +30,9 @@ async function upsertFromSubscription(supabase, subscription) {
   const { error } = await supabase.from("subscriptions").upsert(row);
   if (error) {
     console.error("subscription-sync: upsert failed", error);
-    return null;
+    return { row: null, error };
   }
-  return row;
+  return { row, error: null };
 }
 
 module.exports = { upsertFromSubscription, PRICE_PLAN };

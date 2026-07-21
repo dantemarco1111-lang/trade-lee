@@ -56,12 +56,13 @@ module.exports = async (req, res) => {
       subscription.metadata = { ...(subscription.metadata || {}), supabase_user_id: userId };
     }
 
-    const row = await upsertFromSubscription(supabase, subscription);
+    const { row, error: syncError } = await upsertFromSubscription(supabase, subscription);
     res.status(200).json({
       status: subscription.status,
       plan: row ? row.plan : null,
       current_period_end: row ? row.current_period_end : null,
       cancel_at_period_end: row ? row.cancel_at_period_end : false,
+      _debugSyncError: syncError ? { message: syncError.message, code: syncError.code, details: syncError.details, hint: syncError.hint } : null,
     });
   } catch (err) {
     console.error("verify-checkout-session error:", err);
