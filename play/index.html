@@ -1046,6 +1046,13 @@
   .daily-result-badge.loss { color: var(--red); }
   .daily-outcome-line { font-size: 1.2rem; font-weight: 800; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.3px; }
   .daily-why { margin-bottom: 18px; padding: 0 6px; text-align: center; }
+  /* Daily recap review chart — study-able replay of the setup + playout. */
+  .daily-review-chart-card { background: var(--surface-2, #141922); border: 1px solid var(--border, #262b36); border-radius: 12px; padding: 10px 10px 6px; margin: 0 0 16px; }
+  .drc-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin-bottom: 8px; padding: 0 2px; }
+  .drc-title { font-family: var(--font-mono, monospace); font-size: 0.82rem; font-weight: 700; letter-spacing: 0.4px; color: var(--text, #fff); }
+  .drc-hint { font-size: 0.72rem; color: var(--text-dim, #8b93a7); text-transform: uppercase; letter-spacing: 0.5px; }
+  .daily-review-chart { width: 100%; height: 260px; border-radius: 8px; overflow: hidden; }
+  @media (max-width: 480px) { .daily-review-chart { height: 210px; } .drc-hint { display: none; } }
   .daily-why .coach-why-list { text-align: left; }
   .daily-streaks { display: flex; gap: 8px; margin-bottom: 16px; }
   .daily-distribution {
@@ -5059,6 +5066,89 @@ function showDailyResultRecap() {
   const drill = allDrills.find(d => d.id === appState.lastDailyDrillId) || getDailyDrill();
   renderDailyResultScreen(drill, appState.lastDailyOutcomeCorrect, appState.lastDailyIsFizzle);
 }
+/* ---- Daily Drill review chart ----
+   The recap used to be text-only, so once you'd played the Daily the chart
+   itself was gone for the rest of the day — you could read the analysis but
+   never re-examine the actual price action it was describing. This renders a
+   static, study-able version: the setup candles you decided on, PLUS the
+   playout candles revealing how it resolved, with the range boundaries drawn
+   and a marker on the exact bar where your call was locked in. Deliberately
+   standalone (its own chart instance, local vars) so it can never collide
+   with the live game chart's globals. */
+function renderDailyReviewChart(drill) {
+  const el = document.getElementById("dailyReviewChart");
+  if (!el || !drill || !drill.candles || !window.LightweightCharts) return;
+  try {
+    const setup = drill.candles;
+    const playoutAll = drill.playout_candles || [];
+    // Only reveal through the resolution bar — past that the outcome is
+    // already decided and extra bars just add noise to the lesson.
+    const stopIdx = (drill.resolution_bar_index !== null && drill.resolution_bar_index !== undefined)
+      ? Math.min(drill.resolution_bar_index, playoutAll.length - 1)
+      : playoutAll.length - 1;
+    const playout = stopIdx >= 0 ? playoutAll.slice(0, stopIdx + 1) : [];
+    const all = setup.concat(playout);
+
+    const rChart = LightweightCharts.createChart(el, {
+      width: el.clientWidth,
+      height: el.clientHeight || 260,
+      layout: { background: { type: "solid", color: "#141922" }, textColor: "#ffffff", attributionLogo: false },
+      grid: { vertLines: { color: "#12161d" }, horzLines: { color: "#12161d" } },
+      timeScale: { timeVisible: true, secondsVisible: false, borderColor: "#262b36", rightOffset: 4, barSpacing: 6 },
+      rightPriceScale: { borderColor: "#262b36" },
+      leftPriceScale: { visible: false },
+      handleScroll: false,
+      handleScale: false,
+      crosshair: { mode: LightweightCharts.CrosshairMode.Normal },
+    });
+    const rSeries = addSeriesCompat(rChart, "Candlestick", {
+      upColor: "#2ee383", downColor: "#f05252", borderVisible: false,
+      wickUpColor: "#2ee383", wickDownColor: "#f05252",
+    }, 0);
+    rSeries.priceScale().applyOptions({ scaleMargins: { top: 0.12, bottom: 0.12 } });
+    rSeries.setData(all.map(c => ({
+      time: toEasternChartTime(c.time), open: c.open, high: c.high, low: c.low, close: c.close,
+    })));
+
+    // Range boundaries — the levels the whole read was about.
+    [drill.range_high, drill.range_low].forEach(p => {
+      if (p === null || p === undefined) return;
+      rSeries.createPriceLine({
+        price: p, color: "rgba(240,185,11,0.55)", lineWidth: 1,
+        lineStyle: LightweightCharts.LineStyle.Dashed, axisLabelVisible: true,
+      });
+    });
+
+    // Mark the exact bar where the call was locked in, so the "before" and
+    // "after" halves of the chart are unambiguous.
+    const decisionBar = setup[setup.length - 1];
+    if (decisionBar) {
+      const marker = {
+        time: toEasternChartTime(decisionBar.time),
+        position: "aboveBar",
+        color: "#f0b90b",
+        shape: "arrowDown",
+        text: "your call",
+      };
+      try {
+        if (typeof LightweightCharts.createSeriesMarkers === "function") {
+          LightweightCharts.createSeriesMarkers(rSeries, [marker]); // v5
+        } else if (typeof rSeries.setMarkers === "function") {
+          rSeries.setMarkers([marker]); // v4
+        }
+      } catch (e) {}
+    }
+
+    rChart.timeScale().fitContent();
+    const onResize = () => { try { rChart.applyOptions({ width: el.clientWidth }); rChart.timeScale().fitContent(); } catch (e) {} };
+    window.addEventListener("resize", onResize);
+  } catch (e) {
+    // A broken review chart must never take the recap screen down with it.
+    console.error("daily review chart failed:", e);
+    el.style.display = "none";
+  }
+}
+
 function renderDailyResultScreen(drill, isCorrect, isFizzle, isClutch, milestoneHit) {
   currentMode = null;
   setDrillInProgress(false);
@@ -5077,6 +5167,13 @@ function renderDailyResultScreen(drill, isCorrect, isFizzle, isClutch, milestone
       ${isClutch ? `<div class="clutch-badge pop">CLUTCH ✅</div>` : ""}
       <div class="daily-result-badge ${isCorrect ? "win" : "loss"}">${isCorrect ? "WIN ✅" : "LOSS ❌"}</div>
       <div class="daily-outcome-line">${outcomeText}</div>
+      <div class="daily-review-chart-card">
+        <div class="drc-head">
+          <span class="drc-title">${escapeHtml(drill.ticker)} · ${escapeHtml(drill.timeframe || "")}</span>
+          <span class="drc-hint">Your call → what happened next</span>
+        </div>
+        <div class="daily-review-chart" id="dailyReviewChart"></div>
+      </div>
       <div class="daily-why">${renderCoachHeadline(fullReadRows, drill, isFizzle)}${renderFullReadSection(fullReadRows)}
         <div class="coach-actions-row"><a class="text-link-btn" href="${learnPatternUrl(drill, isFizzle)}">Learn this pattern →</a></div>
       </div>
@@ -5096,6 +5193,7 @@ function renderDailyResultScreen(drill, isCorrect, isFizzle, isClutch, milestone
   document.getElementById("dailyBackBtn").onclick = renderStartScreen;
   document.getElementById("shareBtnDaily").onclick = () => generateAndShareCard("daily", { drill, isCorrect });
   wireFullReadToggle(fullReadRows);
+  renderDailyReviewChart(drill);
 
   loadDailyDistribution(getEtDateString(0), isCorrect);
   renderSigninPromptInto("dailySigninPrompt");
