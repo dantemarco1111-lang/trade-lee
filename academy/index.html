@@ -265,7 +265,7 @@
       <a href="/funded/">Get Funded</a>
       <a href="/leaderboard/">Leaderboard</a>
       <a href="/leagues/">Leagues</a>
-      <a href="/premium/">Pro <span class="soon-tag">BETA</span></a>
+      <a href="/premium/">Pro</a>
     </nav>
     <button class="hamburger-btn" id="hamburgerBtn" aria-label="Open menu">
       <span></span><span></span><span></span>
@@ -288,7 +288,7 @@
   <a href="/funded/">Get Funded</a>
   <a href="/leaderboard/">Leaderboard</a>
       <a href="/leagues/">Leagues</a>
-  <a href="/premium/">Pro <span class="soon-tag">BETA</span></a>
+  <a href="/premium/">Pro</a>
 </div>
 
 <main class="acad-main" id="academyRoot"></main>
@@ -374,7 +374,7 @@ function escapeHtml(str) {
 // unit for the open beta regardless of subscription status; once it's
 // false, tlHasProAccess() falls through to the user's actual subscription
 // (auth.js's tlIsPro()).
-const BETA_FREE = true;
+const BETA_FREE = false;
 function tlHasProAccess() {
   return BETA_FREE || (typeof tlIsPro === "function" && tlIsPro());
 }
@@ -747,52 +747,18 @@ function showPaywallSheet(title, body, opts) {
   wrap.innerHTML = `
     <div class="paywall-sheet">
       <div class="paywall-handle"></div>
-      <div class="paywall-badge">${escapeHtml(opts.badge || "PRO — WAITLIST")}</div>
+      <div class="paywall-badge">${escapeHtml(opts.badge || "PRO")}</div>
       <h3>${escapeHtml(title)}</h3>
       ${bodyHtml}
-      <form id="paywallForm" class="paywall-form">
-        <input type="email" id="paywallEmail" placeholder="you@email.com" required>
-        <button type="submit" class="paywall-join-btn">Join waitlist</button>
-      </form>
-      <p class="legal-consent-line">By joining you agree to the <a href="/terms/">Terms</a> &amp; <a href="/privacy/">Privacy Policy</a>.</p>
-      <div class="paywall-msg hidden" id="paywallMsg"></div>
+      <button class="paywall-join-btn" id="paywallGetProBtn">Get Pro — $9/mo →</button>
+      <p class="legal-consent-line">Cancel anytime. <a href="/premium/">See full pricing & annual option →</a></p>
       <button class="paywall-dismiss" id="paywallDismiss">Maybe later</button>
     </div>
   `;
   document.body.appendChild(wrap);
   wrap.addEventListener("click", (e) => { if (e.target === wrap) wrap.remove(); });
   document.getElementById("paywallDismiss").onclick = () => wrap.remove();
-  document.getElementById("paywallForm").addEventListener("submit", async (e) => {
-    e.preventDefault();
-    const emailInput = document.getElementById("paywallEmail");
-    const btn = wrap.querySelector(".paywall-join-btn");
-    const msgEl = document.getElementById("paywallMsg");
-    msgEl.classList.add("hidden");
-    btn.disabled = true;
-    btn.textContent = "Joining…";
-    try {
-      if (typeof tlJoinWaitlist !== "function") throw new Error("offline");
-      await tlJoinWaitlist(emailInput.value);
-      msgEl.textContent = "You're on the list — we'll email you when Pro launches.";
-      msgEl.className = "paywall-msg success";
-      btn.textContent = "Joined ✓";
-    } catch (err) {
-      msgEl.textContent = err.message === "offline"
-        ? "Can't reach the waitlist right now — please try again in a moment."
-        : (err.message || "Something went wrong — please try again.");
-      msgEl.className = "paywall-msg error";
-      btn.disabled = false;
-      btn.textContent = "Join waitlist";
-    }
-    msgEl.classList.remove("hidden");
-  });
-}
-function showBetaInfoSheet() {
-  showPaywallSheet(
-    "Everything's free during beta",
-    "Everything's free while Trade Lee is in beta. Pro launches later — waitlist members lock founding pricing.",
-    { badge: "BETA" }
-  );
+  document.getElementById("paywallGetProBtn").onclick = () => { window.location.href = "/premium/"; };
 }
 // The sheet is appended to <body> so it can overlay any screen, which means
 // it survives a screen change unless explicitly dismissed — call this at the
@@ -855,9 +821,6 @@ function renderPath() {
       else renderUnitDetail(btn.dataset.unit);
     };
   });
-  document.querySelectorAll("[data-beta-chip]").forEach(chip => {
-    chip.onclick = (e) => { e.stopPropagation(); showBetaInfoSheet(); };
-  });
 }
 function showAcademyProPaywall(unit) {
   showPaywallSheet(`${unit.title} is a Pro unit`, [
@@ -865,7 +828,7 @@ function showAcademyProPaywall(unit) {
     "All 12 Strategy Packs, not just ORB",
     "Unlimited practice sessions & Order Trainer rounds",
     "2x Ticks on everything you play",
-    "Founding-member price once Pro launches",
+    "Founding-member pricing locked in for as long as you stay subscribed",
   ]);
 }
 

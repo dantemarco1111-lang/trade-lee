@@ -1279,7 +1279,7 @@ const STRATEGY_PACK_DECISION_SECONDS = 15;
 // subscription status; once it's false, tlHasProAccess() falls through to
 // the user's actual subscription (auth.js's tlIsPro()). All the underlying
 // limit constants/logic stay intact below either way.
-const BETA_FREE = true;
+const BETA_FREE = false;
 function tlHasProAccess() {
   return BETA_FREE || (typeof tlIsPro === "function" && tlIsPro());
 }
@@ -4460,52 +4460,18 @@ function showPaywallSheet(title, body, opts) {
   wrap.innerHTML = `
     <div class="paywall-sheet">
       <div class="paywall-handle"></div>
-      <div class="paywall-badge">${escapeHtml(opts.badge || "PRO — WAITLIST")}</div>
+      <div class="paywall-badge">${escapeHtml(opts.badge || "PRO")}</div>
       <h3>${escapeHtml(title)}</h3>
       ${bodyHtml}
-      <form id="paywallForm" class="paywall-form">
-        <input type="email" id="paywallEmail" placeholder="you@email.com" required>
-        <button type="submit" class="paywall-join-btn">Join waitlist</button>
-      </form>
-      <p class="legal-consent-line">By joining you agree to the <a href="/terms/">Terms</a> &amp; <a href="/privacy/">Privacy Policy</a>.</p>
-      <div class="paywall-msg hidden" id="paywallMsg"></div>
+      <button class="paywall-join-btn" id="paywallGetProBtn">Get Pro — $9/mo →</button>
+      <p class="legal-consent-line">Cancel anytime. <a href="/premium/">See full pricing & annual option →</a></p>
       <button class="paywall-dismiss" id="paywallDismiss">Maybe later</button>
     </div>
   `;
   document.body.appendChild(wrap);
   wrap.addEventListener("click", (e) => { if (e.target === wrap) wrap.remove(); });
   document.getElementById("paywallDismiss").onclick = () => wrap.remove();
-  document.getElementById("paywallForm").addEventListener("submit", async (e) => {
-    e.preventDefault();
-    const emailInput = document.getElementById("paywallEmail");
-    const btn = wrap.querySelector(".paywall-join-btn");
-    const msgEl = document.getElementById("paywallMsg");
-    msgEl.classList.add("hidden");
-    btn.disabled = true;
-    btn.textContent = "Joining…";
-    try {
-      if (typeof tlJoinWaitlist !== "function") throw new Error("offline");
-      await tlJoinWaitlist(emailInput.value);
-      msgEl.textContent = "You're on the list — we'll email you when Pro launches.";
-      msgEl.className = "paywall-msg success";
-      btn.textContent = "Joined ✓";
-    } catch (err) {
-      msgEl.textContent = err.message === "offline"
-        ? "Can't reach the waitlist right now — please try again in a moment."
-        : (err.message || "Something went wrong — please try again.");
-      msgEl.className = "paywall-msg error";
-      btn.disabled = false;
-      btn.textContent = "Join waitlist";
-    }
-    msgEl.classList.remove("hidden");
-  });
-}
-function showBetaInfoSheet() {
-  showPaywallSheet(
-    "Everything's free during beta",
-    "Everything's free while Trade Lee is in beta. Pro launches later — waitlist members lock founding pricing.",
-    { badge: "BETA" }
-  );
+  document.getElementById("paywallGetProBtn").onclick = () => { window.location.href = "/premium/"; };
 }
 // The sheet is appended to <body> (so it can overlay any screen), which means
 // it survives a screen change unless explicitly dismissed — call this at the
@@ -4686,9 +4652,6 @@ function renderStrategyPickerScreen() {
       else showStrategyPackProPaywall(btn.dataset.pack);
     };
   });
-  document.querySelectorAll("[data-beta-chip]").forEach(chip => {
-    chip.onclick = (e) => { e.stopPropagation(); showBetaInfoSheet(); };
-  });
   document.getElementById("strategyBackBtn").onclick = renderStartScreen;
 }
 function showStrategyPackProPaywall(packKey) {
@@ -4698,7 +4661,7 @@ function showStrategyPackProPaywall(packKey) {
     "Unlimited practice sessions & Order Trainer rounds",
     "Academy Units 8-12",
     "2x Ticks on everything you play",
-    "Founding-member price once Pro launches",
+    "Founding-member pricing locked in for as long as you stay subscribed",
   ]);
 }
 
@@ -5171,26 +5134,14 @@ function maybeShowWaitlistNudge() {
   } catch (e) { return; }
   if (count !== 0) return;
 
-  const email = tlSession.user.email;
   const el = document.createElement("div");
   el.className = "funded-nudge-card";
   el.innerHTML = `
-    <div class="fn-text">Pro is coming — founding members lock the price. <a href="#" id="waitlistNudgeJoin">Join free →</a></div>
+    <div class="fn-text">Lock in founding pricing on Pro. <a href="/premium/" id="waitlistNudgeJoin">Get Pro — $9/mo →</a></div>
     <button class="fn-close" aria-label="Dismiss">✕</button>
   `;
   document.body.appendChild(el);
   el.querySelector(".fn-close").onclick = () => el.remove();
-  el.querySelector("#waitlistNudgeJoin").onclick = async (e) => {
-    e.preventDefault();
-    const link = e.currentTarget;
-    link.textContent = "Joining…";
-    try {
-      await tlJoinWaitlist(email);
-      el.querySelector(".fn-text").textContent = "You're on the founding list — we'll email you when Pro launches.";
-    } catch (err) {
-      link.textContent = "Join free →";
-    }
-  };
   setTimeout(() => { if (el.parentNode) el.remove(); }, 12000);
 }
 function showStreakMilestone(milestoneHit) {
