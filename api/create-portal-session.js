@@ -46,6 +46,6 @@ module.exports = async (req, res) => {
     res.status(200).json({ url: portalSession.url });
   } catch (err) {
     console.error("create-portal-session error:", err);
-    res.status(500).json({ error: "Could not open billing portal" });
+    res.status(500).json({ error: "Could not open billing portal", _debug: { message: err.message, type: err.type, code: err.code, param: err.param } });
   }
 };
