@@ -329,9 +329,9 @@ function tlInitNavAccountChip(chipId) {
   });
 }
 
-// Small dropdown anchored under the account chip — "Set a password", (Pro
-// purchasers get "Manage subscription" once tlProfile.is_pro exists), "Sign
-// out". Shared by every page's chip so this only needs to be built once.
+// Small dropdown anchored under the account chip — "Profile", "Set a
+// password", (Pro subscribers get "Manage subscription"), "Sign out".
+// Shared by every page's chip so this only needs to be built once.
 function tlShowAccountMenu(anchorEl, onChange) {
   const existing = document.getElementById("tlAccountMenu");
   if (existing) { existing.remove(); if (existing.dataset.anchorFor === anchorEl.id) return; }
@@ -340,8 +340,11 @@ function tlShowAccountMenu(anchorEl, onChange) {
   menu.id = "tlAccountMenu";
   menu.dataset.anchorFor = anchorEl.id;
   const items = [];
+  items.push(`<a class="tl-account-menu-item" href="/profile/" id="tlMenuProfile">Profile</a>`);
   items.push(`<button type="button" class="tl-account-menu-item" id="tlMenuSetPassword">Set / change password</button>`);
-  if (tlProfile && tlProfile.is_pro) {
+  // Key off tlIsPro() (the live subscription), not a tlProfile flag — the
+  // profiles row has no is_pro column; Pro status lives in tlSubscription.
+  if (typeof tlIsPro === "function" && tlIsPro()) {
     items.push(`<button type="button" class="tl-account-menu-item" id="tlMenuManageSub">Manage subscription</button>`);
   }
   items.push(`<button type="button" class="tl-account-menu-item tl-account-menu-signout" id="tlMenuSignOut">Sign out</button>`);
@@ -355,7 +358,7 @@ function tlShowAccountMenu(anchorEl, onChange) {
   const manageBtn = document.getElementById("tlMenuManageSub");
   if (manageBtn) manageBtn.onclick = async () => {
     menu.remove();
-    if (typeof tlOpenBillingPortal === "function") tlOpenBillingPortal();
+    tlOpenBillingPortal();
   };
   document.getElementById("tlMenuSignOut").onclick = async () => {
     menu.remove();
@@ -369,6 +372,26 @@ function tlShowAccountMenu(anchorEl, onChange) {
     }
   };
   setTimeout(() => document.addEventListener("click", closeOnOutside), 0);
+}
+
+// Opens the Stripe Customer Portal for the signed-in user (manage/cancel/
+// update card). Redirects the whole tab, so the return_url (set server-side
+// to /premium/) brings them back. Shared by the account menu and the
+// profile page's "Manage subscription" button.
+async function tlOpenBillingPortal() {
+  if (!tlIsSignedIn()) return;
+  try {
+    const res = await fetch("/api/create-portal-session", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userId: tlSession.user.id }),
+    });
+    const data = await res.json();
+    if (res.ok && data.url) { window.location.href = data.url; return; }
+    alert(data.error || "Couldn't open the billing portal right now — please try again in a moment.");
+  } catch (e) {
+    alert("Couldn't reach the billing portal right now — please try again in a moment.");
+  }
 }
 
 // Merge local progress into the cloud on first login — always takes the MAX

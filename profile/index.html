@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Your Profile — Trade Lee</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230b0e14'/%3E%3Cline x1='11' y1='4' x2='11' y2='28' stroke='%2326a69a' stroke-width='2.2'/%3E%3Crect x='7' y='10' width='8' height='10' rx='1' fill='%2326a69a'/%3E%3Cline x1='23' y1='6' x2='23' y2='25' stroke='%23ef5350' stroke-width='2.2'/%3E%3Crect x='19' y='12' width='8' height='7' rx='1' fill='%23ef5350'/%3E%3C/svg%3E">
+<link rel="manifest" href="/manifest.json">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta name="theme-color" content="#0b0e14">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@500;700&display=swap">
+<link rel="stylesheet" href="/theme.css">
+<style>
+  html, body { margin: 0; padding: 0; color: var(--text); font-family: var(--font-body); overflow-x: hidden; -webkit-tap-highlight-color: transparent; min-height: 100vh; }
+  a { color: inherit; }
+  .wrap { max-width: 900px; margin: 0 auto; padding: 0 20px; }
+
+  .pf-identity { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+  .pf-avatar {
+    width: 64px; height: 64px; border-radius: 16px; flex-shrink: 0;
+    background: linear-gradient(135deg, var(--surface-2), var(--surface-3, #1a1f2b));
+    border: 1px solid var(--border-strong); display: flex; align-items: center; justify-content: center;
+    font-family: var(--font-display); font-weight: 700; font-size: 1.7rem; color: var(--gold);
+  }
+  .pf-id-text { min-width: 0; }
+  .pf-name { font-family: var(--font-display); font-weight: 700; font-size: 1.5rem; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .pf-pro-badge {
+    font-size: 0.62rem; font-weight: 800; letter-spacing: 0.6px; padding: 3px 8px; border-radius: 999px;
+    background: var(--gold); color: #0b0e14;
+  }
+  .pf-sub { color: var(--text-dim); font-size: 0.9rem; margin-top: 4px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .pf-tier { color: var(--gold); font-weight: 600; }
+  .pf-archetype-chip { color: var(--text-data); }
+
+  .pf-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+  @media (min-width: 560px) { .pf-grid { grid-template-columns: repeat(4, 1fr); } }
+  .pf-cell { background: var(--surface-2); border: 1px solid var(--border); border-radius: 12px; padding: 16px 10px; text-align: center; }
+  .pf-cell-val { font-family: var(--font-mono); font-variant-numeric: tabular-nums; font-size: 1.35rem; font-weight: 700; color: var(--text-data); }
+  .pf-cell-val.green { color: var(--green); } .pf-cell-val.red { color: var(--red); } .pf-cell-val.gold { color: var(--gold); }
+  .pf-cell-label { font-size: 0.64rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.4px; margin-top: 6px; }
+
+  .pf-bar-row { display: flex; align-items: center; gap: 10px; margin: 9px 0; font-size: 0.86rem; }
+  .pf-bar-name { flex: 0 0 42%; color: var(--text); }
+  .pf-bar-track { flex: 1; height: 8px; background: var(--surface-2); border-radius: 999px; overflow: hidden; }
+  .pf-bar-fill { height: 100%; background: var(--green); border-radius: 999px; }
+  .pf-bar-fill.leak { background: var(--red); }
+  .pf-bar-val { flex: 0 0 auto; font-family: var(--font-mono); font-size: 0.8rem; color: var(--text-dim); min-width: 62px; text-align: right; }
+
+  .pf-ach-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+  @media (min-width: 560px) { .pf-ach-grid { grid-template-columns: repeat(4, 1fr); } }
+  .pf-ach { border: 1px solid var(--border); border-radius: 12px; padding: 14px 8px; text-align: center; background: var(--surface-2); }
+  .pf-ach.locked { opacity: 0.42; }
+  .pf-ach-icon { font-size: 1.6rem; }
+  .pf-ach-name { font-size: 0.72rem; font-weight: 600; margin-top: 6px; }
+  .pf-ach-desc { font-size: 0.64rem; color: var(--text-dim); margin-top: 2px; }
+
+  .pf-league-card { display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap; }
+  .pf-league-rank { font-family: var(--font-mono); font-size: 2rem; font-weight: 700; color: var(--gold); }
+  .pf-account-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--border); flex-wrap: wrap; }
+  .pf-account-row:last-child { border-bottom: none; }
+  .pf-account-label { color: var(--text-dim); font-size: 0.85rem; }
+  .pf-account-val { font-weight: 600; }
+  .pf-empty { text-align: center; color: var(--text-dim); padding: 20px 10px; }
+  .pf-empty .btn { margin-top: 12px; }
+  .pf-muted { color: var(--text-dim); font-size: 0.85rem; }
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="wrap site-header-inner">
+    <a class="nav-wordmark" href="/">📈 Trade Lee</a>
+    <nav class="nav-links-desktop">
+      <div class="nav-dropdown" id="playDropdown">
+        <button class="nav-dropdown-trigger" type="button">Play <span class="caret">▾</span></button>
+        <div class="nav-dropdown-menu">
+          <a href="/play/?mode=daily">Daily Drill</a>
+          <a href="/play/?mode=practice">Practice</a>
+        </div>
+      </div>
+      <div class="nav-dropdown" id="learnDropdown">
+        <button class="nav-dropdown-trigger" type="button">Learn <span class="caret">▾</span></button>
+        <div class="nav-dropdown-menu">
+          <a href="/academy/">Academy</a>
+          <a href="/risk/">Risk</a>
+          <a href="/strategies/">Strategies</a>
+          <a href="/learn/">Lessons</a>
+          <a href="/about/">About</a>
+        </div>
+      </div>
+      <a href="/funded/">Get Funded</a>
+      <a href="/leaderboard/">Leaderboard</a>
+      <a href="/leagues/">Leagues</a>
+      <a href="/premium/">Pro</a>
+    </nav>
+    <button class="hamburger-btn" id="hamburgerBtn" aria-label="Open menu"><span></span><span></span><span></span></button>
+  </div>
+</header>
+
+<div class="mobile-menu-overlay" id="mobileMenuOverlay">
+  <button class="mobile-menu-close" id="mobileMenuClose" aria-label="Close menu">✕</button>
+  <div class="mobile-menu-label">Play</div>
+  <a href="/play/?mode=daily">Daily Drill</a>
+  <a href="/play/?mode=practice">Practice</a>
+  <div class="mobile-menu-label">Learn</div>
+  <a href="/academy/">Academy</a>
+  <a href="/risk/">Risk</a>
+  <a href="/strategies/">Strategies</a>
+  <a href="/learn/">Lessons</a>
+  <a href="/about/">About</a>
+  <div class="mobile-menu-label">More</div>
+  <a href="/funded/">Get Funded</a>
+  <a href="/leaderboard/">Leaderboard</a>
+  <a href="/leagues/">Leagues</a>
+  <a href="/premium/">Pro</a>
+</div>
+
+<main class="content-page">
+  <div id="profileRoot" class="wrap">
+    <div class="content-card card"><div class="skeleton-line" style="width:50%;margin-bottom:14px;"></div><div class="skeleton-line" style="width:100%;"></div></div>
+  </div>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <div class="footer-wordmark">📈 Trade Lee</div>
+    <div class="footer-tagline">Trade Lee — train your eye. © 2026</div>
+    <div class="footer-legal"><a href="/privacy/">Privacy Policy</a> <a href="/terms/">Terms of Service</a></div>
+    <div class="footer-disclaimer">Educational content, not financial advice. Trading involves substantial risk of loss.</div>
+  </div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/supabase-config.js"></script>
+<script src="/auth.js"></script>
+<script src="/nav-account.js"></script>
+<script>
+(function () {
+  const overlay = document.getElementById("mobileMenuOverlay");
+  document.getElementById("hamburgerBtn").onclick = () => overlay.classList.add("open");
+  document.getElementById("mobileMenuClose").onclick = () => overlay.classList.remove("open");
+  overlay.querySelectorAll("a").forEach(a => a.addEventListener("click", () => overlay.classList.remove("open")));
+  document.querySelectorAll(".nav-dropdown").forEach(dd => {
+    const trigger = dd.querySelector(".nav-dropdown-trigger");
+    trigger.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const isOpen = dd.classList.contains("open");
+      document.querySelectorAll(".nav-dropdown.open").forEach(o => o.classList.remove("open"));
+      if (!isOpen) dd.classList.add("open");
+    });
+  });
+  document.addEventListener("click", () => document.querySelectorAll(".nav-dropdown.open").forEach(o => o.classList.remove("open")));
+})();
+
+// ---- local copies of the game's constants (data only) ----
+const STORAGE_KEY = "tradeLeeState_v1";
+const RATING_START = 1000;
+const RATING_UNRANKED_DRILLS = 20;
+const RATING_BANDS = [
+  { max: 899, name: "Learning the Tape" },
+  { max: 1099, name: "Chart Reader" },
+  { max: 1299, name: "Breakout Hunter" },
+  { max: 1499, name: "Funded Material" },
+  { max: Infinity, name: "Market Sniper" },
+];
+function ratingBandFor(rating) {
+  const idx = RATING_BANDS.findIndex(b => rating <= b.max);
+  return RATING_BANDS[idx === -1 ? RATING_BANDS.length - 1 : idx].name;
+}
+const ARCHETYPES = {
+  sniper: { name: "The Sniper", icon: "🎯" },
+  cowboy: { name: "The Cowboy", icon: "🤠" },
+  skeptic: { name: "The Skeptic", icon: "🧐" },
+  momentum: { name: "The Momentum Rider", icon: "🚀" },
+  grinder: { name: "The Grinder", icon: "⚙️" },
+};
+const PACK_LABELS = {
+  orb: "Opening Range Breakout", vwap_pullback: "VWAP Pullback", supply_demand: "Supply & Demand",
+  trend_pullback: "Trend Pullback", mean_reversion: "Mean Reversion", range_trading: "Range Trading",
+  liquidity_sweep: "Liquidity Sweep", fair_value_gap: "Fair Value Gap", order_blocks: "Order Blocks",
+  market_structure: "Market Structure", smt_divergence: "SMT Divergence", kill_zones: "Kill Zones",
+};
+
+function loadState() {
+  try { return Object.assign({}, JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}")); }
+  catch (e) { return {}; }
+}
+function esc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])); }
+function fmtMs(ms) { if (!ms) return "—"; const s = ms / 1000; return s.toFixed(1) + "s"; }
+function fmtPnl(v) { if (v == null) return "—"; const sign = v > 0 ? "+" : ""; return sign + "$" + Math.round(v).toLocaleString("en-US"); }
+
+const root = document.getElementById("profileRoot");
+
+function renderSignedOut() {
+  root.innerHTML = `
+    <div class="content-hero"><div class="badge">PROFILE</div><h1>Your trader profile</h1>
+      <p>Sign in to see your Trader Rating, stats, achievements, and league placement — all synced across your devices.</p></div>
+    <div class="content-card card">
+      <div class="pf-empty">
+        <p>You're not signed in yet.</p>
+        <button class="btn btn-primary" id="pfSignInBtn">Sign in</button>
+      </div>
+    </div>`;
+  document.getElementById("pfSignInBtn").onclick = () => tlOpenAuthModal();
+}
+
+function renderEmptyState() {
+  const name = (tlProfile && tlProfile.display_name) || "trader";
+  root.innerHTML = `
+    <div class="content-card card">
+      <div class="pf-identity">
+        <div class="pf-avatar">${esc(name.charAt(0).toUpperCase())}</div>
+        <div class="pf-id-text"><div class="pf-name">${esc(name)}</div><div class="pf-sub">New account — no drills logged yet.</div></div>
+      </div>
+    </div>
+    <div class="content-card card">
+      <div class="pf-empty">
+        <p>Your stats, rating, and achievements show up here once you start playing.</p>
+        <a class="btn btn-primary" href="/play/">Play your first drill →</a>
+      </div>
+    </div>
+    ${accountSectionHtml()}`;
+  wireAccountSection();
+}
+
+function statCell(val, label, cls) {
+  return `<div class="pf-cell"><div class="pf-cell-val ${cls || ""}">${val}</div><div class="pf-cell-label">${label}</div></div>`;
+}
+
+function accountSectionHtml() {
+  const email = (typeof tlSession !== "undefined" && tlSession && tlSession.user) ? tlSession.user.email : "—";
+  const isPro = typeof tlIsPro === "function" && tlIsPro();
+  return `
+    <div class="content-card card">
+      <h2><span class="card-num">@</span>Account</h2>
+      <div class="pf-account-row"><span class="pf-account-label">Email</span><span class="pf-account-val">${esc(email)}</span></div>
+      <div class="pf-account-row"><span class="pf-account-label">Plan</span><span class="pf-account-val">${isPro ? '<span class="pf-pro-badge">PRO</span> Founding member' : "Free"}</span></div>
+      <div class="pf-account-row"><span class="pf-account-label">Password</span><button class="btn btn-ghost" id="pfSetPw" style="padding:8px 16px;font-size:0.82rem;">Set / change password</button></div>
+      ${isPro ? `<div class="pf-account-row"><span class="pf-account-label">Subscription</span><button class="btn btn-ghost" id="pfManageSub" style="padding:8px 16px;font-size:0.82rem;">Manage subscription</button></div>`
+              : `<div class="pf-account-row"><span class="pf-account-label">Upgrade</span><a class="btn btn-gold" href="/premium/" style="padding:8px 16px;font-size:0.82rem;">Get Pro — $9/mo</a></div>`}
+      <div class="pf-account-row"><span class="pf-account-label">Session</span><button class="btn btn-ghost" id="pfSignOut" style="padding:8px 16px;font-size:0.82rem;">Sign out</button></div>
+    </div>`;
+}
+function wireAccountSection() {
+  const sp = document.getElementById("pfSetPw"); if (sp) sp.onclick = () => tlOpenAuthModal("set-password");
+  const ms = document.getElementById("pfManageSub"); if (ms) ms.onclick = () => tlOpenBillingPortal();
+  const so = document.getElementById("pfSignOut"); if (so) so.onclick = async () => { await tlSignOut(); location.reload(); };
+}
+
+async function renderProfile() {
+  const s = loadState();
+  const name = (tlProfile && tlProfile.display_name) || "trader";
+  const totalDrills = s.totalDrillsAnswered || 0;
+  if (totalDrills === 0) { renderEmptyState(); return; }
+
+  const isPro = typeof tlIsPro === "function" && tlIsPro();
+  const rating = Math.round(s.traderRating || RATING_START);
+  const ranked = (s.ratedDrillsCount || 0) >= RATING_UNRANKED_DRILLS;
+  const band = ratingBandFor(rating);
+  const acc = totalDrills ? (100 * (s.totalCorrect || 0) / totalDrills) : 0;
+  const arch = s.archetype && ARCHETYPES[s.archetype] ? ARCHETYPES[s.archetype] : null;
+
+  // per-pack accuracy bars (only packs actually attempted)
+  const byKey = s.strategyPackByKey || {};
+  const packRows = Object.keys(byKey)
+    .filter(k => byKey[k] && byKey[k].total > 0)
+    .map(k => ({ key: k, label: PACK_LABELS[k] || k, acc: 100 * byKey[k].correct / byKey[k].total, total: byKey[k].total }))
+    .sort((a, b) => b.acc - a.acc);
+  const worstAcc = packRows.length ? Math.min(...packRows.map(r => r.acc)) : null;
+
+  // per-mode breakdown
+  const modes = [];
+  if (s.totalDrillsAnswered) modes.push({ label: "Take / Fade drills", acc: acc, total: totalDrills });
+  if (s.lswStats && s.lswStats.totalAnswered) modes.push({ label: "Long / Short / Wait", acc: 100 * s.lswStats.totalCorrect / s.lswStats.totalAnswered, total: s.lswStats.totalAnswered });
+  if (s.orderTrainerStats && s.orderTrainerStats.filled) modes.push({ label: "Order Trainer (win rate)", acc: 100 * s.orderTrainerStats.wins / s.orderTrainerStats.filled, total: s.orderTrainerStats.filled });
+  if (s.strategyPackStats && s.strategyPackStats.totalAnswered) modes.push({ label: "Strategy Packs", acc: 100 * s.strategyPackStats.totalCorrect / s.strategyPackStats.totalAnswered, total: s.strategyPackStats.totalAnswered });
+
+  // achievements — derived honestly from real milestones
+  const ach = [
+    { icon: "🎬", name: "First Call", desc: "Answer 1 drill", got: totalDrills >= 1 },
+    { icon: "💯", name: "Century", desc: "100 drills", got: totalDrills >= 100 },
+    { icon: "📊", name: "Ranked", desc: "20 rated drills", got: ranked },
+    { icon: "🎯", name: "Sharpshooter", desc: "70%+ over 20", got: totalDrills >= 20 && acc >= 70 },
+    { icon: "🔥", name: "On Fire", desc: "7-day streak", got: (s.bestStreakEver || 0) >= 7 || (s.dailyPlayStreak || 0) >= 7 },
+    { icon: "⚡", name: "Clutch", desc: "1 clutch call", got: (s.clutchCalls || 0) >= 1 },
+    { icon: "🧭", name: "Explorer", desc: "3+ packs tried", got: packRows.length >= 3 },
+    { icon: "🏆", name: "Funded Material", desc: "Reach 1300 rating", got: ranked && rating >= 1300 },
+  ];
+
+  root.innerHTML = `
+    <div class="content-card card">
+      <div class="pf-identity">
+        <div class="pf-avatar">${esc(name.charAt(0).toUpperCase())}</div>
+        <div class="pf-id-text">
+          <div class="pf-name">${esc(name)} ${isPro ? '<span class="pf-pro-badge">PRO</span>' : ""}</div>
+          <div class="pf-sub">
+            <span class="pf-tier">${ranked ? esc(band) : "Unranked"}</span>
+            ${arch ? `<span class="pf-archetype-chip">· ${arch.icon} ${esc(arch.name)}</span>` : ""}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="content-card card">
+      <h2><span class="card-num">#</span>Stats</h2>
+      <div class="pf-grid">
+        ${statCell(ranked ? rating : "—", ranked ? "Trader Rating" : `Unranked (${s.ratedDrillsCount || 0}/${RATING_UNRANKED_DRILLS})`, "gold")}
+        ${statCell(acc.toFixed(1) + "%", "Accuracy", acc >= 60 ? "green" : "")}
+        ${statCell(totalDrills.toLocaleString("en-US"), "Total Drills")}
+        ${statCell(s.bestStreakEver || 0, "Best Streak")}
+        ${statCell(s.dailyPlayStreak || 0, "Day Streak")}
+        ${statCell(fmtPnl(s.bestSessionPnl), "Best Session P&L", (s.bestSessionPnl || 0) >= 0 ? "green" : "red")}
+        ${statCell(fmtMs(s.speedRunBestTimeMs), "Best Speed Run")}
+        ${statCell(s.clutchCalls || 0, "Clutch Calls")}
+      </div>
+      <div class="pf-grid" style="margin-top:12px;">
+        ${statCell("⚡ " + (s.ticks || 0).toLocaleString("en-US"), "Ticks Balance", "gold")}
+        ${statCell((s.ticksEarnedAllTime || 0).toLocaleString("en-US"), "Ticks Earned (all-time)")}
+        ${statCell(s.speedRunBestAccuracy ? s.speedRunBestAccuracy + "%" : "—", "Speed Run Accuracy")}
+        ${statCell((s.missedDrills || []).length, "Misses to Review")}
+      </div>
+    </div>
+
+    ${modes.length ? `<div class="content-card card">
+      <h2><span class="card-num">%</span>Accuracy by mode</h2>
+      ${modes.map(m => `<div class="pf-bar-row"><div class="pf-bar-name">${esc(m.label)}</div><div class="pf-bar-track"><div class="pf-bar-fill" style="width:${Math.max(3, Math.min(100, m.acc)).toFixed(0)}%"></div></div><div class="pf-bar-val">${m.acc.toFixed(0)}% · ${m.total}</div></div>`).join("")}
+    </div>` : ""}
+
+    ${packRows.length ? `<div class="content-card card">
+      <h2><span class="card-num">▤</span>Accuracy by strategy pack</h2>
+      ${packRows.map(r => `<div class="pf-bar-row"><div class="pf-bar-name">${esc(r.label)}</div><div class="pf-bar-track"><div class="pf-bar-fill ${r.acc === worstAcc && packRows.length > 1 ? "leak" : ""}" style="width:${Math.max(3, Math.min(100, r.acc)).toFixed(0)}%"></div></div><div class="pf-bar-val">${r.acc.toFixed(0)}% · ${r.total}</div></div>`).join("")}
+      ${packRows.length > 1 && worstAcc != null ? `<p class="pf-muted" style="margin-top:10px;">Your leak is in red — drill it to lift your edge.</p>` : ""}
+    </div>` : ""}
+
+    <div class="content-card card">
+      <h2><span class="card-num">★</span>Achievements</h2>
+      <div class="pf-ach-grid">
+        ${ach.map(a => `<div class="pf-ach ${a.got ? "" : "locked"}"><div class="pf-ach-icon">${a.icon}</div><div class="pf-ach-name">${esc(a.name)}</div><div class="pf-ach-desc">${esc(a.desc)}</div></div>`).join("")}
+      </div>
+    </div>
+
+    <div class="content-card card" id="pfLeagueCard">
+      <h2><span class="card-num">⚔</span>League</h2>
+      <div class="pf-muted">Loading your league placement…</div>
+    </div>
+
+    ${accountSectionHtml()}`;
+
+  wireAccountSection();
+  loadLeagueCard();
+}
+
+async function loadLeagueCard() {
+  const card = document.getElementById("pfLeagueCard");
+  if (!card) return;
+  try {
+    if (typeof tlEnsureLeagueMembership === "function") await tlEnsureLeagueMembership();
+    const membership = typeof tlFetchMyCurrentLeagueMembership === "function" ? await tlFetchMyCurrentLeagueMembership() : null;
+    if (!membership) {
+      card.innerHTML = `<h2><span class="card-num">⚔</span>League</h2><p class="pf-muted">Play a drill this week to join a league group and start climbing.</p>`;
+      return;
+    }
+    const group = typeof tlFetchLeagueGroup === "function" ? await tlFetchLeagueGroup(membership.league_id) : null;
+    let rank = "—", size = "—";
+    if (group && group.length) {
+      size = group.length;
+      const idx = group.findIndex(r => r.user_id === tlSession.user.id);
+      rank = idx >= 0 ? idx + 1 : "—";
+    }
+    const tierNames = { 1: "Bronze", 2: "Silver", 3: "Gold", 4: "Platinum", 5: "Diamond" };
+    const tier = tierNames[membership.tier] || `Tier ${membership.tier || 1}`;
+    card.innerHTML = `
+      <h2><span class="card-num">⚔</span>League</h2>
+      <div class="pf-league-card">
+        <div>
+          <div style="font-weight:700;font-size:1.05rem;">${esc(tier)} League</div>
+          <div class="pf-muted">${size} traders in your group · ⚡ ${membership.weekly_ticks || 0} Ticks this week</div>
+        </div>
+        <div style="text-align:center;"><div class="pf-league-rank">#${rank}</div><div class="pf-cell-label">Your rank</div></div>
+      </div>
+      <a class="text-link-btn" href="/leagues/" style="display:inline-block;margin-top:12px;">View full league board →</a>`;
+  } catch (e) {
+    card.innerHTML = `<h2><span class="card-num">⚔</span>League</h2><p class="pf-muted">Couldn't load your league right now — <a href="/leagues/" style="text-decoration:underline;">open the leagues page</a>.</p>`;
+  }
+}
+
+(async function () {
+  if (window.tlSessionReady) { try { await window.tlSessionReady; } catch (e) {} }
+  if (typeof tlIsSignedIn === "function" && tlIsSignedIn() && tlProfile) {
+    // ensure Pro status is loaded before rendering account/badges
+    if (typeof tlFetchMySubscription === "function") { try { await tlFetchMySubscription(); } catch (e) {} }
+    renderProfile();
+  } else {
+    renderSignedOut();
+  }
+  if (typeof tlOnAuthChange === "function") {
+    tlOnAuthChange(async (event) => {
+      if (event === "SIGNED_IN") {
+        if (typeof tlFetchMyProfile === "function") await tlFetchMyProfile();
+        if (typeof tlFetchMySubscription === "function") { try { await tlFetchMySubscription(); } catch (e) {} }
+        if (tlProfile) renderProfile();
+      } else if (event === "SIGNED_OUT") {
+        renderSignedOut();
+      }
+    });
+  }
+})();
+</script>
+</body>
+</html>
