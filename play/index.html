@@ -4474,7 +4474,7 @@ function showPaywallSheet(title, body, opts) {
       <div class="paywall-badge">${escapeHtml(opts.badge || "PRO")}</div>
       <h3>${escapeHtml(title)}</h3>
       ${bodyHtml}
-      <button class="paywall-join-btn" id="paywallGetProBtn">Get Pro — $9/mo →</button>
+      <button class="paywall-join-btn" id="paywallGetProBtn">Get Pro — $9.99/mo →</button>
       <p class="legal-consent-line">Cancel anytime. <a href="/premium/">See full pricing & annual option →</a></p>
       <button class="paywall-dismiss" id="paywallDismiss">Maybe later</button>
     </div>
@@ -5148,7 +5148,7 @@ function maybeShowWaitlistNudge() {
   const el = document.createElement("div");
   el.className = "funded-nudge-card";
   el.innerHTML = `
-    <div class="fn-text">Lock in founding pricing on Pro. <a href="/premium/" id="waitlistNudgeJoin">Get Pro — $9/mo →</a></div>
+    <div class="fn-text">Lock in founding pricing on Pro. <a href="/premium/" id="waitlistNudgeJoin">Get Pro — $9.99/mo →</a></div>
     <button class="fn-close" aria-label="Dismiss">✕</button>
   `;
   document.body.appendChild(el);
